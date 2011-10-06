@@ -1,7 +1,8 @@
-DEPENDPATH += EpisodesParser \
+DEPENDPATH += FacebookLogParser \
               Analytics \
               UI
-include("EpisodesParser/EpisodesParser.pri")
+
+include("FacebookLogParser/FacebookLogParser.pri")
 include("Analytics/Analytics.pri")
 include("UI/UI.pri")
 
