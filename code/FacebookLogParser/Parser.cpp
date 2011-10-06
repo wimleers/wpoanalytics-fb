@@ -469,8 +469,8 @@ namespace FacebookLogParser {
             // ignored. Considering that this only affects quarters, this bug
             // is ignored for now. It doesn't significantly influence the
             // results of the data set used for testing this master thesis.
-            if (sample.time / 900 > quarterID) {
-                quarterID = sample.time / 900;
+            if (sample.time / 2 > quarterID) {
+                quarterID = sample.time / 2;
                 if (!batch.isEmpty()) {
                     this->processBatch(batch);
                     batch.clear();
