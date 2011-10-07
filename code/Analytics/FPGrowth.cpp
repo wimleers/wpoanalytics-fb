@@ -461,18 +461,21 @@ namespace Analytics {
                 frequentItemset.IDNameHash = this->itemIDNameHash;
 #endif
 
+                // Check if there are supersets to be mined.
+                FPTree * cfptree = this->considerFrequentItemsupersets(ctree, frequentItemset.itemset);
+
                 // Only store the current frequent itemset if it matches the
-                // constraints.
+                // constraints *OR* when its superset has the potential to match
+                // the constraints.
                 frequentItemsetMatchesConstraints = this->constraints.matchItemset(frequentItemset.itemset);
-                if (!asynchronous && frequentItemsetMatchesConstraints) {
+                if (!asynchronous && (frequentItemsetMatchesConstraints || cfptree != NULL)) {
                     frequentItemsets.append(frequentItemset);
 #ifdef FPGROWTH_DEBUG
                 qDebug() << "\t\t\t\t new frequent itemset:" << frequentItemset;
 #endif
                 }
 
-                // Check if there are supersets to be mined.
-                FPTree * cfptree = this->considerFrequentItemsupersets(ctree, frequentItemset.itemset);
+                // If there are supersets to be mined, mine them.
                 if (cfptree != NULL && !asynchronous) {
                     // Attempt to generate more frequent itemsets, with the
                     // current frequent itemset as the suffix.
