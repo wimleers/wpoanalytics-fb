@@ -156,20 +156,30 @@ namespace FacebookLogParser {
 
         // HARDCODED CONFIG (for now)
         QStringList acceptedIntegers = QStringList()
+                // perfpipe_cavalry
                 << "e2e"              // end-to-end time
                 << "flush_time_early" // early flush time
                 << "gen_time"         // server time
                 << "network"          // network time
                 << "tti"              // Time To Interact
+
+                // perfpipe_doppler_cdn
+                << "load_time"
                 ;
         QStringList acceptedNormals = QStringList()
+                // <shared>
                 << "browser"
+                << "country"
+                << "platform"
+
+                // perfpipe_cavalry
                 << "colo"
                 << "connection_speed"
-                << "country"
                 << "page"
-                << "platform"
                 << "site_category"
+
+                // perfpipe_doppler_cdn
+                << "asn"
                 ;
         QStringList acceptedDenorms = QStringList()
                 // None!
@@ -201,7 +211,8 @@ namespace FacebookLogParser {
             if (acceptedNormals.contains(key))
                 sample.circumstances.append(key + ":" + normals[key].toString());
         // Special case: browser + major are combined into a hierarchical item.
-        sample.circumstances.append("browser:" + normals["browser"].toString() + ":" + normals["major"].toString());
+        if (normals.contains("browser") && normals.contains("major"))
+            sample.circumstances.append("browser:" + normals["browser"].toString() + ":" + normals["major"].toString());
 
         // 3) Process denormals.
         const QVariantMap & denorms = json["denorm"].toMap();
