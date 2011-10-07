@@ -328,7 +328,7 @@ void MainWindow::importFile() {
     QSettings settings;
     QString lastDirectory = settings.value("UI/lastImportDirectory", QDesktopServices::storageLocation(QDesktopServices::DesktopLocation)).toString();
 
-    QString logFile = QFileDialog::getOpenFileName(this, tr("Open Episodes log file"), lastDirectory, tr("Episodes log files (*.log)"), NULL, QFileDialog::ReadOnly);
+    QString logFile = QFileDialog::getOpenFileName(this, tr("Open JSON log dump file"), lastDirectory, tr("JSON log dump (*.json)"), NULL, QFileDialog::ReadOnly);
 
     if (!logFile.isEmpty()) {
         settings.setValue("UI/lastImportDirectory", QFileInfo(logFile).path());
@@ -358,15 +358,10 @@ void MainWindow::initLogic() {
     QString defaultValue = basePath + "/config/EpisodesSpeeds.csv";
     QString episodeDiscretizerCSV = settings.value("parser/episodeDiscretizerCSVFile", defaultValue).toString();
 
-    EpisodesParser::Parser::initParserHelpers(basePath + "/config/browscap.csv",
-                                              basePath + "/config/browscap-index.db",
-                                              basePath + "/config/GeoIPCity.dat",
-                                              basePath + "/config/GeoIPASNum.dat",
-                                              episodeDiscretizerCSV
-                                              );
+    FacebookLogParser::Parser::initParserHelpers(episodeDiscretizerCSV);
 
-    // Instantiate the EpisodesParser and the Analytics. Then connect them.
-    this->parser = new EpisodesParser::Parser();
+    // Instantiate the FacebookLogParser and the Analytics. Then connect them.
+    this->parser = new FacebookLogParser::Parser();
 
     double minSupport = settings.value("analyst/minimumSupport", 0.05).toDouble();
     double minPatternTreeSupport = settings.value("analyst/minimumPatternTreeSupport", 0.04).toDouble();

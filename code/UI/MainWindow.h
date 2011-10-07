@@ -44,7 +44,7 @@
 #include "CausesTableFilterProxyModel.h"
 #include "SettingsDialog.h"
 
-#include "../EpisodesParser/Parser.h"
+#include "../FacebookLogParser//Parser.h"
 #include "../Analytics/Analyst.h"
 #include "../Analytics/TiltedTimeWindow.h"
 
@@ -125,7 +125,7 @@ private:
     static QPair<uint, uint> mapTimerangeChoiceToBucket(int choice);
 
     // Logic.
-    EpisodesParser::Parser * parser;
+    FacebookLogParser::Parser * parser;
     Analytics::Analyst * analyst;
     QThread parserThread;
     QThread analystThread;
