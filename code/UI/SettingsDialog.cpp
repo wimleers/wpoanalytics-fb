@@ -118,9 +118,9 @@ QWidget * SettingsDialog::createAnalystTab() {
     QLabel * minSupSuffixLabel = new QLabel(tr("of all log lines"));
     this->minSupport = new QDoubleSpinBox();
     this->minSupport->setSuffix("%");
-    this->minSupport->setMinimum(1);
+    this->minSupport->setMinimum(0.1);
     this->minSupport->setMaximum(100);
-    this->minSupport->setValue(qRound(settings.value("analyst/minimumSupport", 0.05).toDouble() * 100));
+    this->minSupport->setValue(settings.value("analyst/minimumSupport", 0.05).toDouble() * 100);
     minSupLayout->addWidget(minSupPrefixLabel);
     minSupLayout->addWidget(this->minSupport);
     minSupLayout->addWidget(minSupSuffixLabel);
@@ -132,7 +132,7 @@ QWidget * SettingsDialog::createAnalystTab() {
     QLabel * minPatternTreeSupSuffixLabel = new QLabel(tr(")"));
     this->patternTreeSupportErrorMargin = new QDoubleSpinBox();
     this->patternTreeSupportErrorMargin->setSuffix("%");
-    this->patternTreeSupportErrorMargin->setMinimum(1);
+    this->patternTreeSupportErrorMargin->setMinimum(0.1);
     this->patternTreeSupportErrorMargin->setMaximum(100);
     this->patternTreeSupportErrorMargin->setValue(SettingsDialog::absoluteToErrorMargin(this->minSupport->value(), settings.value("analyst/minimumPatternTreeSupport", 0.04).toDouble() * 100));
 
@@ -149,7 +149,7 @@ QWidget * SettingsDialog::createAnalystTab() {
     this->minConfidence->setSuffix("%");
     this->minConfidence->setMinimum(1);
     this->minConfidence->setMaximum(100);
-    this->minConfidence->setValue(qRound(settings.value("analyst/minimumConfidence", 0.2).toDouble() * 100));
+    this->minConfidence->setValue(settings.value("analyst/minimumConfidence", 0.2).toDouble() * 100);
     minConfidenceLayout->addWidget(minConfidencePrefixLabel);
     minConfidenceLayout->addWidget(this->minConfidence);
     minConfidenceLayout->addWidget(minConfidenceSuffixLabel);
