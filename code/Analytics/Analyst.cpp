@@ -393,15 +393,6 @@ namespace Analytics {
             item = this->itemIDNameHash[(ItemID) id];
             parts = item.split(':', QString::SkipEmptyParts);
 
-            // Ban "duration:*" from the concept hierarchy, since we only accept
-            // "duration:slow" in the first place.
-            if (parts[0].compare("duration") == 0)
-                continue;
-
-            // Ban "url:*" from the concept hierarchy, as it is fairly useless.
-            if (parts[0].compare("url") == 0)
-                continue;
-
             // Update the concept hierarchy model.
             parent = parts[0];
             // Root level.
