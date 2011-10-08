@@ -75,9 +75,9 @@ public slots:
     void updateParsingDuration(int duration);
 
     // Analyst: analyzing.
-    void updateAnalyzingStatus(bool analyzing, Time start, Time end, int numPageViews, int numTransactions);
+    void updateAnalyzingStatus(bool analyzing, Time start, Time end, quint64 numPageViews, quint64 numTransactions);
     void updateAnalyzingDuration(int duration);
-    void updateAnalyzingStats(Time start, Time end, int pageViews, int transactions, int uniqueItems, int frequentItems, int patternTreeSize);
+    void updateAnalyzingStats(Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize);
 
     // Analyst: mining.
     void updateMiningStatus(bool mining);

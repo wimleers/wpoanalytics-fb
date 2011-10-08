@@ -43,9 +43,9 @@ namespace Analytics {
 
     signals:
         // Signals for UI.
-        void analyzing(bool, Time start, Time end, int pageViews, int transactions);
+        void analyzing(bool, Time start, Time end, quint64 pageViews, quint64 transactions);
         void analyzedDuration(int duration);
-        void stats(Time start, Time end, int pageViews, int transactions, int uniqueItems, int frequentItems, int patternTreeSize);
+        void stats(Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize);
         void mining(bool);
         void minedDuration(int duration);
 
@@ -89,13 +89,13 @@ namespace Analytics {
         ItemIDList sortedFrequentItemIDs;
 
         // Stats for the UI.
-        int currentBatchStartTime;
-        int currentBatchEndTime;
-        int currentBatchNumPageViews;
-        int currentBatchNumTransactions;
-        int allBatchesStartTime;
-        int allBatchesNumPageViews;
-        int allBatchesNumTransactions;
+        uint currentBatchStartTime;
+        uint currentBatchEndTime;
+        quint64 currentBatchNumPageViews;
+        quint64 currentBatchNumTransactions;
+        quint64 allBatchesStartTime;
+        quint64 allBatchesNumPageViews;
+        quint64 allBatchesNumTransactions;
         QTime timer;
 
         // Browsable concept hierarchy for the UI.

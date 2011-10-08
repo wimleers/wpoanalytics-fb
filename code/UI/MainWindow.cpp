@@ -68,7 +68,7 @@ void MainWindow::updateMiningDuration(int duration) {
     );
 }
 
-void MainWindow::updateAnalyzingStatus(bool analyzing, Time start, Time end, int numPageViews, int numTransactions) {
+void MainWindow::updateAnalyzingStatus(bool analyzing, Time start, Time end, quint64 numPageViews, quint64 numTransactions) {
     // Analysis started.
     if (analyzing) {
         this->updateStatus(
@@ -91,7 +91,7 @@ void MainWindow::updateMiningStatus(bool mining) {
         this->updateStatus();
 }
 
-void MainWindow::updateAnalyzingStats(Time start, Time end, int pageViews, int transactions, int uniqueItems, int frequentItems, int patternTreeSize) {
+void MainWindow::updateAnalyzingStats(Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize) {
     this->statusMutex.lock();
     this->totalPageViews = pageViews;
     this->totalTransactions = transactions;
@@ -394,11 +394,11 @@ void MainWindow::connectLogic() {
     // Logic -> UI.
     connect(this->parser, SIGNAL(parsing(bool)), SLOT(updateParsingStatus(bool)));
     connect(this->parser, SIGNAL(parsedDuration(int)), SLOT(updateParsingDuration(int)));
-    connect(this->analyst, SIGNAL(analyzing(bool,Time,Time,int,int)), SLOT(updateAnalyzingStatus(bool,Time,Time,int,int)));
+    connect(this->analyst, SIGNAL(analyzing(bool,Time,Time,quint64,quint64)), SLOT(updateAnalyzingStatus(bool,Time,Time,quint64,quint64)));
     connect(this->analyst, SIGNAL(analyzedDuration(int)), SLOT(updateAnalyzingDuration(int)));
     connect(this->analyst, SIGNAL(mining(bool)), SLOT(updateMiningStatus(bool)));
     connect(this->analyst, SIGNAL(minedDuration(int)), SLOT(updateMiningDuration(int)));
-    connect(this->analyst, SIGNAL(stats(Time,Time,int,int,int,int,int)), SLOT(updateAnalyzingStats(Time,Time,int,int,int,int,int)));
+    connect(this->analyst, SIGNAL(stats(Time,Time,quint64,quint64,quint64,quint64,quint64)), SLOT(updateAnalyzingStats(Time,Time,quint64,quint64,quint64,quint64,quint64)));
     connect(this->analyst, SIGNAL(minedRules(uint,uint,QList<Analytics::AssociationRule>,Analytics::SupportCount)), SLOT(minedRules(uint,uint,QList<Analytics::AssociationRule>,Analytics::SupportCount)));
     connect(
                 this->analyst,
