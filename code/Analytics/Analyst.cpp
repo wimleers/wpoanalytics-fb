@@ -81,7 +81,7 @@ namespace Analytics {
      *   The itemset (of item IDs) from which to extract the episode.
      * @return
      *   A pair: the first parameter is the episode item, the second parameter
-     *   is a list that contains the remaining episode names.
+     *   is a list that contains the remaining antecedent attributes.
      */
     QPair<ItemName, ItemNameList> Analyst::extractEpisodeFromItemset(ItemIDList itemset) const {
         ItemNameList itemNames;
@@ -101,6 +101,23 @@ namespace Analytics {
         }
 
         return qMakePair(episodeName, itemNames);
+    }
+
+    /**
+     * Convert all item IDs in an itemset to item names. Essential for the UI.
+     *
+     * @param itemset
+     *   The itemset (of item IDs) from which to extract the episode.
+     * @return
+     *   A list of consequent attributes.
+     */
+    ItemNameList Analyst::itemsetIDsToNames(ItemIDList itemset) const {
+        ItemNameList itemNames;
+
+        foreach (ItemID id, itemset)
+            itemNames.append(this->itemIDNameHash[id]);
+
+        return itemNames;
     }
 
 

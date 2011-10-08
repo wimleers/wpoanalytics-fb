@@ -39,6 +39,7 @@ namespace Analytics {
         // UI integration.
         QStandardItemModel * getConceptHierarchyModel() const { return this->conceptHierarchyModel; }
         QPair<ItemName, ItemNameList> extractEpisodeFromItemset(ItemIDList itemset) const;
+        ItemNameList itemsetIDsToNames(ItemIDList itemset) const;
 
     signals:
         // Signals for UI.

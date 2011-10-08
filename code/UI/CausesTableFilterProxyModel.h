@@ -17,9 +17,11 @@ public:
 
     void setEpisodesColumn(int col);
     void setCircumstancesColumn(int col);
+    void setConsequentsColumn(int col);
 
     void setEpisodeFilter(const QString & filter);
     void setCircumstancesFilter(const QStringList & filter);
+    void setConsequentsFilter(const QStringList & filter);
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex & sourceParent) const;
@@ -27,8 +29,10 @@ protected:
 private:
     int episodesColumn;
     int circumstancesColumn;
+    int consequentsColumn;
     QRegExp episodesFilter;
     QList<QRegExp> circumstancesFilter;
+    QList<QRegExp> consequentsFilter;
 };
 
 #endif // CAUSESTABLEFILTERPROXYMODEL_H

@@ -148,10 +148,10 @@ void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule
     QStandardItemModel * model = new QStandardItemModel(associationRules.size(), 4, this);
 
     QStringList headerLabels;
-    headerLabels << tr("Episode") << tr("Circumstances") << tr("% slow") << tr("# slow");
+    headerLabels << tr("Episode") << tr("Circumstances") << tr("Consequence") << tr("Confidence") << tr("Frequency");
     model->setHorizontalHeaderLabels(headerLabels);
 
-    int row = 0;
+    uint row = 0;
     QPair<Analytics::ItemName, Analytics::ItemNameList> antecedent;
     foreach (Analytics::AssociationRule rule, associationRules) {
         antecedent = this->analyst->extractEpisodeFromItemset(rule.antecedent);
@@ -165,9 +165,14 @@ void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule
         circumstancesItem->setData(circumstances, Qt::UserRole);
         model->setItem(row, 1, circumstancesItem);
 
+        QString consequents = ((QStringList) this->analyst->itemsetIDsToNames(rule.consequent)).join(", ");
+        QStandardItem * consequentItem = new QStandardItem(consequents);
+        consequentItem->setData(consequents, Qt::UserRole);
+        model->setItem(row, 2, consequentItem);
+
         QStandardItem * confidenceItem = new QStandardItem(QString("%1%").arg(QString::number(rule.confidence * 100, 'f', 2)));
         confidenceItem->setData(rule.confidence, Qt::UserRole);
-        model->setItem(row, 2, confidenceItem);
+        model->setItem(row, 3, confidenceItem);
 
         double relOccurrences = rule.support * 100.0 / eventsInTimeRange;
         QStandardItem * occurrencesItem = new QStandardItem(
@@ -176,7 +181,7 @@ void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule
                     .arg(QString::number(relOccurrences, 'f', 2))
         );
         occurrencesItem->setData(rule.support, Qt::UserRole);
-        model->setItem(row, 3, occurrencesItem);
+        model->setItem(row, 4, occurrencesItem);
 
         row++;
     }
@@ -235,7 +240,7 @@ void MainWindow::comparedMinedRules(uint fromOlder, uint toOlder,
     headerLabels << tr("Episode") << tr("Circumstances") << tr("% slow") << tr("% slow change") << tr("# slow") << tr("# slow change");
     model->setHorizontalHeaderLabels(headerLabels);
 
-    int row = 0;
+    uint row = 0;
     QPair<Analytics::ItemName, Analytics::ItemNameList> antecedent;
     for (int i = 0; i < comparedRules.size(); i++) {
         Analytics::AssociationRule rule = comparedRules.at(i);
@@ -311,17 +316,20 @@ void MainWindow::causesFilterChanged(QString filterString) {
     this->causesTableProxyModel->invalidate();
 
     QString episodeFilter = QString::null;
-    QStringList circumstancesFilter;
+    QStringList nonEpisodeFilter;
     foreach (QString f, filterString.split(",", QString::SkipEmptyParts)) {
         f = f.trimmed();
         if (f.startsWith("episode:"))
             episodeFilter = f.section(':', 1);
         else
-            circumstancesFilter.append(f);
+            nonEpisodeFilter.append(f);
     }
 
     this->causesTableProxyModel->setEpisodeFilter(episodeFilter);
-    this->causesTableProxyModel->setCircumstancesFilter(circumstancesFilter);
+
+    // Apply the non-episode filter to both other columns.
+    this->causesTableProxyModel->setCircumstancesFilter(nonEpisodeFilter);
+    this->causesTableProxyModel->setConsequentsFilter(nonEpisodeFilter);
 }
 
 void MainWindow::importFile() {
@@ -600,6 +608,7 @@ void MainWindow::createCausesGroupbox() {
     this->causesTableProxyModel->setFilterRole(Qt::DisplayRole);
     this->causesTableProxyModel->setEpisodesColumn(0);
     this->causesTableProxyModel->setCircumstancesColumn(1);
+    this->causesTableProxyModel->setConsequentsColumn(2);
     this->causesTable->setModel(this->causesTableProxyModel);
     this->causesTable->setSortingEnabled(true);
     this->causesTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
