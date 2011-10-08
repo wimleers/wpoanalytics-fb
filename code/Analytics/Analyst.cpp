@@ -128,7 +128,7 @@ namespace Analytics {
         // Stats for the UI.
         this->currentBatchStartTime = start;
         this->currentBatchEndTime = end;
-        this->currentBatchNumPageViews = transactions.size() / transactionsPerEvent;
+        this->currentBatchNumPageViews = ((transactionsPerEvent == 0) ? 0 : (transactions.size() / transactionsPerEvent));
         this->currentBatchNumTransactions = transactions.size();
         this->timer.start();
 
