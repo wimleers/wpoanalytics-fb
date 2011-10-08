@@ -115,7 +115,7 @@ QWidget * SettingsDialog::createAnalystTab() {
     // Minimum frequent itemset support.
     QHBoxLayout * minSupLayout = new QHBoxLayout();
     QLabel * minSupPrefixLabel = new QLabel(tr("affect at least"));
-    QLabel * minSupSuffixLabel = new QLabel(tr("of all page views"));
+    QLabel * minSupSuffixLabel = new QLabel(tr("of all log lines"));
     this->minSupport = new QDoubleSpinBox();
     this->minSupport->setSuffix("%");
     this->minSupport->setMinimum(1);

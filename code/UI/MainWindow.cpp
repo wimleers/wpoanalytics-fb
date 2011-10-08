@@ -42,7 +42,7 @@ void MainWindow::updateParsingDuration(int duration) {
     QMutexLocker(&this->statusMutex);
     this->totalParsingDuration += duration;
     this->status_performance_parsing->setText(
-                QString("%1 s (%2 page views/s)")
+                QString("%1 s (%2 log lines/s)")
                 .arg(QString::number(this->totalParsingDuration / 1000.0, 'f', 2))
                 .arg(QString::number(this->totalPageViews / (this->totalParsingDuration / 1000.0), 'f', 0))
     );
@@ -52,7 +52,7 @@ void MainWindow::updateAnalyzingDuration(int duration) {
     QMutexLocker(&this->statusMutex);
     this->totalAnalyzingDuration += duration;
     this->status_performance_analyzing->setText(
-                QString("%1 s (%2 episodes/s)")
+                QString("%1 s (%2 transactions/s)")
                 .arg(QString::number(this->totalAnalyzingDuration / 1000.0, 'f', 2))
                 .arg(QString::number(this->totalTransactions / (this->totalAnalyzingDuration / 1000.0), 'f', 0))
     );
@@ -72,7 +72,7 @@ void MainWindow::updateAnalyzingStatus(bool analyzing, Time start, Time end, int
     // Analysis started.
     if (analyzing) {
         this->updateStatus(
-                    tr("Processing %1 page views (%2 transactions) between %3 and %4")
+                    tr("Processing %1 log lines (%2 transactions) between %3 and %4")
                     .arg(numPageViews)
                     .arg(numTransactions)
                     .arg(QDateTime::fromTime_t(start).toString("yyyy-MM-dd hh:mm:ss"))
@@ -133,7 +133,7 @@ void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule
     this->statusMutex.lock();
     this->totalPatternsExaminedWhileMining += this->patternTreeSize;
     this->causesDescription->setText(
-                QString(tr("%1 causes mined from %2 page views (from %3 until %4)"))
+                QString(tr("%1 causes mined from %2 log lines (from %3 until %4)"))
                 .arg(associationRules.size())
                 .arg(eventsInTimeRange)
                 .arg(QDateTime::fromTime_t(startTime).toString("yyyy-MM-dd hh:mm:ss"))
@@ -685,9 +685,9 @@ void MainWindow::createStatusGroupbox() {
     this->status_measurements_startDate = new QLabel(tr("N/A yet"));
     QLabel * me2 = new QLabel(tr("End date:"));
     this->status_measurements_endDate = new QLabel(tr("N/A yet"));
-    QLabel * me3 = new QLabel(tr("Page views:"));
+    QLabel * me3 = new QLabel(tr("Log lines:"));
     this->status_measurements_pageViews = new QLabel("0");
-    QLabel * me4 = new QLabel(tr("Episodes:"));
+    QLabel * me4 = new QLabel(tr("Transactions:"));
     this->status_measurements_episodes = new QLabel("0");
     measurementsLayout->addWidget(me1);
     measurementsLayout->addWidget(this->status_measurements_startDate);
