@@ -49,7 +49,7 @@ namespace FacebookLogParser {
         void processBatch(const QList<Sample> batch);
 
     protected:
-        void processParsedChunk(const QStringList & chunk);
+        void processParsedChunk(const QStringList & chunk, bool forceProcessing = false);
 
         QMutex mutex;
         QWaitCondition condition;

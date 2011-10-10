@@ -85,9 +85,10 @@ namespace FacebookLogParser {
 
             // Check if we have another chunk (with size < CHUNK_SIZE).
             if (chunk.size() > 0) {
-                this->processParsedChunk(chunk);
+                // TODO: remove the forceProcessing = true parameter!
+                this->processParsedChunk(chunk, true);
             }
-            qDebug() << "parsing ready!";
+
             // Notify the UI.
             emit parsing(false);
         }
@@ -312,8 +313,7 @@ namespace FacebookLogParser {
     //---------------------------------------------------------------------------
     // Protected methods.
 
-    void Parser::processParsedChunk(const QStringList & chunk) {
-        qDebug() << "processing parsed chunk";
+    void Parser::processParsedChunk(const QStringList & chunk, bool forceProcessing) {
         static unsigned int quarterID = 0;
         static QList<Sample> batch;
 
@@ -350,11 +350,9 @@ namespace FacebookLogParser {
             batch.append(sample);
         }
 
-        if (!batch.isEmpty()) {
+        if (forceProcessing && !batch.isEmpty()) {
             this->processBatch(batch);
             batch.clear();
         }
-
-        qDebug() << "processing done!";
     }
 }
