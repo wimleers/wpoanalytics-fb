@@ -121,6 +121,13 @@ void MainWindow::updateAnalyzingStats(Time start, Time end, quint64 pageViews, q
                 .arg(QString::number(patternTreeSize))
                 .arg(QString::number(((12 + (patternTreeSize * (STATS_TILTED_TIME_WINDOW_BYTES + STATS_FPNODE_ESTIMATED_CHILDREN_AVG_BYTES))) / 1000.0 / 1000.0), 'f', 2))
     );
+
+    // Also update performance stats.
+    this->updateParsingDuration(this->totalParsingDuration);
+    if (this->totalTransactions)
+        this->updateAnalyzingDuration(this->totalAnalyzingDuration);
+    if (this->totalPatternsExaminedWhileMining)
+        this->updateMiningDuration(this->totalMiningDuration);
 }
 
 void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange) {
