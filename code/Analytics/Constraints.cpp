@@ -160,10 +160,20 @@ namespace Analytics {
      *   True if the itemset matches the constraints, false otherwise.
      */
     bool Constraints::matchItemset(const ItemIDList & itemset) const {
+#ifdef CONSTRAINTS_DEBUG
+        FrequentItemset fis(itemset, 0);
+        fis.IDNameHash = this->itemIDNameHash;
+        qDebug() << "Matching itemset" << fis << " to constraints " << this->itemConstraints;
+#endif
+        bool match;
         for (int i = CONSTRAINT_POSITIVE_MATCH_ALL; i <= CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
             ItemConstraintType type = (ItemConstraintType) i;
             foreach (ItemName category, this->preprocessedItemConstraints[type].keys()) {
-                if (!Constraints::matchItemsetHelper(itemset, type, this->preprocessedItemConstraints[type][category]))
+                match = Constraints::matchItemsetHelper(itemset, type, this->preprocessedItemConstraints[type][category]);
+#ifdef CONSTRAINTS_DEBUG
+                qDebug() << "\t" << Constraints::ItemConstraintTypeName[type] << ": " << match;
+#endif
+                if (!match)
                     return false;
             }
         }

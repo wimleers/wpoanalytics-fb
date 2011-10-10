@@ -11,6 +11,10 @@
 
 namespace Analytics {
 
+#ifdef DEBUG
+//    #define CONSTRAINTS_DEBUG 0
+#endif
+
     enum ItemConstraintType {
         CONSTRAINT_POSITIVE_MATCH_ALL,
         CONSTRAINT_POSITIVE_MATCH_ANY,
