@@ -168,7 +168,7 @@ namespace Analytics {
             // pruning) by simply not asking it to continue to mine for
             // supersets.
             // Conversely, when the tilted time window is *not* empty, let
-            // FP-Growth now it should continue to mine supersets. But if
+            // FP-Growth know it should continue to mine supersets. But if
             // the received ctree (conditional tree) is NULL, then it was
             // determined through constraint search space matching that it
             // would be impossible to find frequent supersets that match the
@@ -392,7 +392,7 @@ namespace Analytics {
         //    timeslot).
         // AND perform tail pruning on its tilted time window; when it is
         //    empty after tail pruning and it is a leaf, drop it
-        // (i.e. only for itemsets where a 0 was inserted0
+        // (i.e. only for itemsets where a 0 was inserted)
 
         if (node == NULL)
             return;
