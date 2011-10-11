@@ -298,6 +298,10 @@ namespace Analytics {
     Granularity FPStream::calculateDroppableTail(const TiltedTimeWindow & window, double minSupport, double maxSupportError, const TiltedTimeWindow & batchSizes) {
         Q_ASSERT(window.oldestBucketFilled <= batchSizes.oldestBucketFilled);
 
+        // If it's empty, there can't be anything worth calculating.
+        if (window.oldestBucketFilled == -1)
+            return (Granularity) -1;
+
         // Iterate over all buckets in the tilted time window, starting at the
         // tail (i.e. the last/oldest bucket).
         int n = window.oldestBucketFilled;
