@@ -46,6 +46,7 @@ void TestPatternTree::basic() {
     QVERIFY(node != NULL);
     QCOMPARE(node->getItemID(), (ItemID) 1);
     QCOMPARE(node->getValue().getBuckets(0), referenceBuckets);
+    QCOMPARE(node->getValue().getLastUpdate(), (quint32) 0);
     QCOMPARE(node->getNodeID(), (unsigned int) 1);
     QCOMPARE(PatternTree::getPatternForNode(node), referencePattern);
     QCOMPARE(patternTree->getPatternSupport(referencePattern)->getBuckets(0), referenceBuckets);
@@ -57,6 +58,7 @@ void TestPatternTree::basic() {
     QVERIFY(node != NULL);
     QCOMPARE(node->getItemID(), (ItemID) 2);
     QCOMPARE(node->getValue().getBuckets(2), referenceBuckets);
+    QCOMPARE(node->getValue().getLastUpdate(), (quint32) 2);
     QCOMPARE(node->getNodeID(), (unsigned int) 2);
     QCOMPARE(PatternTree::getPatternForNode(node), referencePattern);
     QCOMPARE(patternTree->getPatternSupport(referencePattern)->getBuckets(2), referenceBuckets);
@@ -67,6 +69,7 @@ void TestPatternTree::basic() {
     QVERIFY(node != NULL);
     QCOMPARE(node->getItemID(), (ItemID) 3);
     QCOMPARE(node->getValue().getBuckets(1), referenceBuckets);
+    QCOMPARE(node->getValue().getLastUpdate(), (quint32) 1);
     QCOMPARE(node->getNodeID(), (unsigned int) 3);
     QCOMPARE(PatternTree::getPatternForNode(node), referencePattern);
     QCOMPARE(patternTree->getPatternSupport(referencePattern)->getBuckets(1), referenceBuckets);
@@ -79,6 +82,7 @@ void TestPatternTree::basic() {
     QVERIFY(node != NULL);
     QCOMPARE(node->getItemID(), (ItemID) 4);
     QCOMPARE(node->getValue().getBuckets(1), referenceBuckets);
+    QCOMPARE(node->getValue().getLastUpdate(), (quint32) 1);
     QCOMPARE(node->getNodeID(), (unsigned int) 4);
     QCOMPARE(PatternTree::getPatternForNode(node), referencePattern);
     QCOMPARE(patternTree->getPatternSupport(referencePattern)->getBuckets(1), referenceBuckets);
