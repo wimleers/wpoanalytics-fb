@@ -15,7 +15,7 @@ namespace Analytics {
 
         this->statusMutex.lock();
         this->processingBatch = false;
-        this->currentBatchID  = -1;
+        this->currentBatchID  = 0;
         this->statusMutex.unlock();
     }
 
