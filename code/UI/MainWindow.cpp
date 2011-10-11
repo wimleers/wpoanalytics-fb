@@ -393,7 +393,7 @@ void MainWindow::initLogic() {
 
 void MainWindow::connectLogic() {
     // Pure logic.
-    connect(this->parser, SIGNAL(parsedBatch(QList<QStringList>, double, Time, Time)), this->analyst, SLOT(analyzeTransactions(QList<QStringList>, double, Time, Time)));
+    connect(this->parser, SIGNAL(parsedBatch(QList<QStringList>, double, Time, Time, quint32, bool)), this->analyst, SLOT(analyzeTransactions(QList<QStringList>, double, Time, Time, quint32, bool)));
 
     // Logic -> main thread -> logic (wake up sleeping threads).
     connect(this->analyst, SIGNAL(processedBatch()), SLOT(wakeParser()));

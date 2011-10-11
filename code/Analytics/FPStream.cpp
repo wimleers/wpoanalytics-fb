@@ -47,12 +47,23 @@ namespace Analytics {
      * @param transactionsPerEvent
      *   The number of transactions per event. Necessary to determine the
      *   correct minimum absolute support when a single event is expanded
-     *   into multiple transactions..
+     *   into multiple transactions.
+     * @param startNewTimeWindow
+     *   Whether to start a new time window (in each pattern's TiltedTimeWindow
+     *   object) or not. This will only true when entering a new time window,
+     *   i.e. not when the data for a time window is split in multiple batches,
+     *   to reduce memory consumption and improve performance.
+     * @param lastChunkOfBatch
+     *   Whether this is the last chunk of the batch of transactions for this
+     *   time window. (i.e. the next chunk will be for the batch of the next
+     *   time window.)
      */
-    void FPStream::processBatchTransactions(const QList<QStringList> & transactions, double transactionsPerEvent) {
+    void FPStream::processBatchTransactions(const QList<QStringList> & transactions, double transactionsPerEvent, bool startNewTimeWindow, bool lastChunkOfBatch) {
         this->statusMutex.lock();
         this->processingBatch = true;
-        this->currentBatchID++;
+        this->lastChunkOfBatch = lastChunkOfBatch;
+        if (startNewTimeWindow)
+            this->currentBatchID++;
         this->statusMutex.unlock();
 
         // Store the batch sizes. By storing it in a tilted time window, they
@@ -96,7 +107,8 @@ namespace Analytics {
             // Keep track of the current quarter we're in, in case we're
             // starting a new TiltedTimeWindow (by adding a new pattern to the
             // PatternTree).
-            this->patternTree.nextQuarter();
+            if (startNewTimeWindow)
+                this->patternTree.nextQuarter();
 
             // Connect signals/slots using queued connections, because TODO.
             // TODO: make Qt::QueuedConnection actually work, by running
@@ -158,10 +170,24 @@ namespace Analytics {
             // Add the frequent itemset to the pattern tree.
             this->patternTree.addPattern(frequentItemset, this->currentBatchID);
 
-            // Conduct tail pruning.
+            // *Pretend* to conduct tail pruning.
+            // In this modified version of FP-Stream, we actually only really
+            // perform tail pruning when we're in the last chunk of the batch;
+            // in preceding chunks of the batch, we only *calculate* the part of
+            // the tail that can be dropped. We use this information instead of
+            // checking whether the TiltedTimeWindow is empty to decide whether
+            // the supersets should be calculated. This is not exactly the same
+            // as the original algorithm, but it's a close approximation that
+            // allows for parallellization and/or processing chunks of batches,
+            // thus allowing for more efficiency and/or less memory consumption.
             dropTailStartGranularity = FPStream::calculateDroppableTail(*tiltedTimeWindow, this->minSupport, this->maxSupportError, this->eventsPerBatch);
-            if (dropTailStartGranularity != (Granularity) -1)
-                tiltedTimeWindow->dropTail(dropTailStartGranularity);
+            if (dropTailStartGranularity != (Granularity) -1) {
+                this->statusMutex.lock();
+                bool lastChunkOfBatch = this->lastChunkOfBatch;
+                this->statusMutex.unlock();
+                if (lastChunkOfBatch)
+                    tiltedTimeWindow->dropTail(dropTailStartGranularity);
+            }
 
             // If the tilted time window is empty, then tell FP-Growth to
             // stop mining supersets of this frequent itemset (type II
@@ -173,7 +199,7 @@ namespace Analytics {
             // determined through constraint search space matching that it
             // would be impossible to find frequent supersets that match the
             // constraints.
-            if (!tiltedTimeWindow->isEmpty() && ctree != NULL) {
+            if (dropTailStartGranularity != (Granularity) 0 && ctree != NULL) {
                 this->statusMutex.lock();
                 this->supersetsBeingCalculated.append(frequentItemset.itemset);
                 this->statusMutex.unlock();
@@ -261,10 +287,16 @@ namespace Analytics {
 #ifdef FPSTREAM_DEBUG
             qDebug() << "CLOOOOOOOOOOOOOOOOOOOOOSING UP!";
 #endif
-            // Since all frequent itemsets have been mined and processed, we
-            // should now update nodes in the pattern tree that remained
-            // unaffected during this batch.
-            this->updateUnaffectedNodes(this->patternTree.getRoot());
+
+            this->statusMutex.lock();
+            bool lastChunkOfBatch = this->lastChunkOfBatch;
+            this->statusMutex.unlock();
+            if (lastChunkOfBatch) {
+                // Since all frequent itemsets have been mined and processed, we
+                // should now update nodes in the pattern tree that remained
+                // unaffected during this batch.
+                this->updateUnaffectedNodes(this->patternTree.getRoot());
+            }
 
             // Now the processing of this batch is officially over.
             this->processingBatch = false;

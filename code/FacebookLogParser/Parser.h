@@ -22,7 +22,9 @@
 
 namespace FacebookLogParser {
 
-    #define CHUNK_SIZE 4000
+    #define PARSE_CHUNK_SIZE 4000
+    #define PROCESS_CHUNK_SIZE 50000
+    #define CHECK_TIME_INTERVAL 100
 
     class Parser : public QObject {
         Q_OBJECT
@@ -39,17 +41,18 @@ namespace FacebookLogParser {
     signals:
         void parsing(bool);
         void parsedDuration(int duration);
-        void parsedBatch(QList<QStringList> transactions, double transactionsPerEvent, Time start, Time end);
+        void parsedBatch(QList<QStringList> transactions, double transactionsPerEvent, Time start, Time end, quint32 quarterID, bool lastChunkOfBatch);
 
     public slots:
         void parse(const QString & fileName);
         void continueParsing();
 
     protected slots:
-        void processBatch(const QList<Sample> batch);
+        void processBatch(const QList<Sample> batch, quint32 quarterID, bool lastChunkOfBatch);
 
     protected:
         void processParsedChunk(const QStringList & chunk, bool forceProcessing = false);
+        static quint32 calculateQuarterID(Time t);
 
         QMutex mutex;
         QWaitCondition condition;

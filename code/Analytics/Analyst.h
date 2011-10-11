@@ -65,7 +65,7 @@ namespace Analytics {
                                 Analytics::SupportCount eventsInNewerTimeRange);
 
     public slots:
-        void analyzeTransactions(const QList<QStringList> & transactions, double transactionsPerEvent, Time start, Time end);
+        void analyzeTransactions(const QList<QStringList> & transactions, double transactionsPerEvent, Time start, Time end, quint32 quarterID, bool lastChunkOfBatch);
         void mineRules(uint from, uint to);
         void mineAndCompareRules(uint fromOlder, uint toOlder, uint fromNewer, uint toNewer);
 
@@ -73,13 +73,14 @@ namespace Analytics {
         void fpstreamProcessedBatch();
 
     protected:
-        void performMining(const QList<QStringList> & transactions, double transactionsPerEvent);
+        void performMining(const QList<QStringList> & transactions, double transactionsPerEvent, quint32 quarterID, bool lastChunkOfBatch);
         void updateConceptHierarchyModel(int itemsAlreadyProcessed);
 
         FPStream * fpstream;
         double minSupport;
         double maxSupportError;
         double minConfidence;
+        quint32 currentQuarterID;
 
         Constraints frequentItemsetItemConstraints;
         Constraints ruleConsequentItemConstraints;

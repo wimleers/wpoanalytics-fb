@@ -55,7 +55,7 @@ namespace Analytics {
         void batchProcessed();
 
     public slots:
-        void processBatchTransactions(const QList<QStringList> & transactions, double transactionsPerEvent = 1.0);
+        void processBatchTransactions(const QList<QStringList> & transactions, double transactionsPerEvent = 1.0, bool startNewTimeWindow = true, bool lastChunkOfBatch = true);
         void processFrequentItemset(const FrequentItemset & frequentItemset,
                                     bool frequentItemsetMatchesConstraints,
                                     const FPTree * ctree);
@@ -88,6 +88,7 @@ namespace Analytics {
         QMutex statusMutex;
         bool processingBatch;
         quint32 currentBatchID;
+        bool lastChunkOfBatch;
         FPGrowth * currentFPGrowth;
         QList<ItemIDList> supersetsBeingCalculated;
     };

@@ -7,6 +7,8 @@ namespace Analytics {
         this->maxSupportError = maxSupportError;
         this->minConfidence   = minConfidence;
 
+        this->currentQuarterID = 0;
+
         // Stats for the UI.
         this->allBatchesNumPageViews = 0;
         this->allBatchesNumTransactions = 0;
@@ -124,7 +126,7 @@ namespace Analytics {
     //------------------------------------------------------------------------
     // Public slots.
 
-    void Analyst::analyzeTransactions(const QList<QStringList> &transactions, double transactionsPerEvent, Time start, Time end) {
+    void Analyst::analyzeTransactions(const QList<QStringList> &transactions, double transactionsPerEvent, Time start, Time end, quint32 quarterID, bool lastChunkOfBatch) {
         // Stats for the UI.
         this->currentBatchStartTime = start;
         this->currentBatchEndTime = end;
@@ -140,7 +142,7 @@ namespace Analytics {
         emit analyzing(true, this->currentBatchStartTime, this->currentBatchEndTime, this->currentBatchNumPageViews, this->currentBatchNumTransactions);
 
         // Perform the actual mining.
-        this->performMining(transactions, transactionsPerEvent);
+        this->performMining(transactions, transactionsPerEvent, quarterID, lastChunkOfBatch);
 
         // Since the mining above is performed asynchronously, this is NOT the
         // place where we know the calculations end. Only FP-Stream can know,
@@ -336,8 +338,9 @@ namespace Analytics {
     //------------------------------------------------------------------------
     // Protected methods.
 
-    void Analyst::performMining(const QList<QStringList> & transactions, double transactionsPerEvent) {
+    void Analyst::performMining(const QList<QStringList> & transactions, double transactionsPerEvent, quint32 quarterID, bool lastChunkOfBatch) {
         bool fpstream = true;
+        bool startNewTimeWindow;
 
         if (!fpstream) {
 //            qDebug() << "----------------------> FPGROWTH";
@@ -374,7 +377,13 @@ namespace Analytics {
             this->fpstream->setConstraintsToPreprocess(this->ruleConsequentItemConstraints);
             initial = false;
         }
-        this->fpstream->processBatchTransactions(transactions, transactionsPerEvent);
+        if (quarterID != this->currentQuarterID) {
+            this->currentQuarterID = quarterID;
+            startNewTimeWindow = true;
+        }
+        else
+            startNewTimeWindow = false;
+        this->fpstream->processBatchTransactions(transactions, transactionsPerEvent, startNewTimeWindow, lastChunkOfBatch);
         /*
         qDebug() << this->fpstream->getPatternTree().getNodeCount();
         qDebug() << this->itemIDNameHash.size() << this->itemNameIDHash.size() << this->sortedFrequentItemIDs.size();

@@ -50,8 +50,8 @@ namespace FacebookLogParser {
     /**
      * Parse the given Episodes log file.
      *
-     * Emits a signal for every chunk (with CHUNK_SIZE lines). This signal can
-     * then be used to process that chunk. This allows multiple chunks to be
+     * Emits a signal for every chunk (with PARSE_CHUNK_SIZE lines). This signal
+     * can then be used to process that chunk. This allows multiple chunks to be
      * processed in parallel (by using QtConcurrent), if that is desired.
      *
      * @param fileName
@@ -77,13 +77,13 @@ namespace FacebookLogParser {
             while (!in.atEnd()) {
                 chunk.append(in.readLine());
                 numLines++;
-                if (chunk.size() == CHUNK_SIZE) {
+                if (chunk.size() == PARSE_CHUNK_SIZE) {
                     this->processParsedChunk(chunk);
                     chunk.clear();
                 }
             }
 
-            // Check if we have another chunk (with size < CHUNK_SIZE).
+            // Check if we have another chunk (with size < PARSE_CHUNK_SIZE).
             if (chunk.size() > 0) {
                 // TODO: remove the forceProcessing = true parameter!
                 this->processParsedChunk(chunk, true);
@@ -253,7 +253,7 @@ namespace FacebookLogParser {
     //---------------------------------------------------------------------------
     // Protected slots.
 
-    void Parser::processBatch(const QList<Sample> batch) {
+    void Parser::processBatch(const QList<Sample> batch, quint32 quarterID, bool lastChunkOfBatch) {
         double transactionsPerEvent;
 #ifdef DEBUG
         uint items = 0;
@@ -288,6 +288,7 @@ namespace FacebookLogParser {
         transactionsPerEvent = ((double) transactions.size()) / batch.size();
 
         qDebug() << "Processed batch of" << batch.size() << "lines!"
+                 << "(Last chunk?" << (lastChunkOfBatch ? "Yes" : "No") << ")"
                  << "Transactions generated:" << transactions.size() << "."
                  << "(" << transactionsPerEvent << "transactions/event)"
 #ifdef DEBUG
@@ -299,7 +300,7 @@ namespace FacebookLogParser {
                  << "and"
                  << QDateTime::fromTime_t(batch.last().time).toString("yyyy-MM-dd hh:mm:ss").toStdString().c_str();
         emit parsedDuration(timer.elapsed());
-        emit parsedBatch(transactions, transactionsPerEvent, batch.first().time, batch.last().time);
+        emit parsedBatch(transactions, transactionsPerEvent, batch.first().time, batch.last().time, quarterID, lastChunkOfBatch);
 
 
         // Pause the parsing until these transactions have been processed!
@@ -314,9 +315,9 @@ namespace FacebookLogParser {
     // Protected methods.
 
     void Parser::processParsedChunk(const QStringList & chunk, bool forceProcessing) {
-        static unsigned int quarterID = 0;
+        static quint32 currentQuarterID = 0;
         static QList<Sample> batch;
-
+        quint16 sampleNumber = 0;
 
         // Perform the mapping from strings to EpisodesLogLine concurrently.
 //        QList<EpisodesLogLine> mappedChunk = QtConcurrent::blockingMapped(chunk, Parser::mapLineToEpisodesLogLine);
@@ -329,30 +330,55 @@ namespace FacebookLogParser {
 
             sample = Parser::parseSample(rawSample);
 
+            // Calculate the initial currentQuarterID.
+            if (currentQuarterID == 0)
+                currentQuarterID = Parser::calculateQuarterID(sample.time);
+
+            sampleNumber++;
+
             // Create a batch for each quarter (900 seconds) and process it.
-            // TRICKY: this also ensures that quarters that have already been
-            // processed are not processed again (if it is attempted to parse
-            // the same file multiple times), plus it forces the user to parse
-            // older files first.
-            // FIXME: if file A does not end with a full quarter, i.e. a file B
-            // contains the remaining episodes of a quarter, these episodes are
-            // ignored. Considering that this only affects quarters, this bug
-            // is ignored for now. It doesn't significantly influence the
-            // results of the data set used for testing this master thesis.
-            if (sample.time / 900 > quarterID) {
-                quarterID = sample.time / 900;
-                if (!batch.isEmpty()) {
-                    this->processBatch(batch);
+            if (sampleNumber % CHECK_TIME_INTERVAL == 0) { // Only check once very CHECK_TIME_INTERVAL lines.
+                sampleNumber = 0; // Reset.
+                quint32 quarterID = Parser::calculateQuarterID(sample.time);
+                if (quarterID > currentQuarterID && !batch.isEmpty()) {
+                    currentQuarterID = quarterID;
+
+                    // The batch we just finished is the previous quarter ID!
+                    this->processBatch(batch, quarterID - 1, true);
                     batch.clear();
                 }
+            }
+
+            // Ensure that the batch doesn't get too large (and thus consumes
+            // too much memory): let it be processed when it has grown to
+            // PROCESS_CHUNK_SIZE lines.
+            if (batch.size() == PROCESS_CHUNK_SIZE) {
+                this->processBatch(batch, currentQuarterID, false); // The batch doesn't end here!
+                batch.clear();
             }
 
             batch.append(sample);
         }
 
         if (forceProcessing && !batch.isEmpty()) {
-            this->processBatch(batch);
+            this->processBatch(batch, currentQuarterID, true);
             batch.clear();
         }
+    }
+
+    quint32 Parser::calculateQuarterID(Time t) {
+        static quint32 minQuarterID = 0;
+
+        quint32 quarterID;
+
+        quarterID = t / 900;
+
+        // Cope with data that is not chronologically ordered perfectly.
+        if (quarterID > minQuarterID)
+            minQuarterID = quarterID;
+        else if (minQuarterID > quarterID)
+            quarterID = minQuarterID;
+
+        return quarterID;
     }
 }
