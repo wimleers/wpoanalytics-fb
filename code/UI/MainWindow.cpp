@@ -123,11 +123,11 @@ void MainWindow::updateAnalyzingStats(Time start, Time end, quint64 pageViews, q
     );
 
     // Also update performance stats.
-    this->updateParsingDuration(this->totalParsingDuration);
+    this->updateParsingDuration(0);
     if (this->totalTransactions)
-        this->updateAnalyzingDuration(this->totalAnalyzingDuration);
+        this->updateAnalyzingDuration(0);
     if (this->totalPatternsExaminedWhileMining)
-        this->updateMiningDuration(this->totalMiningDuration);
+        this->updateMiningDuration(0);
 }
 
 void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange) {
