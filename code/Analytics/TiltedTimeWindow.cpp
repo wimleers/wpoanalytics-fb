@@ -19,9 +19,30 @@ namespace Analytics {
             this->capacityUsed[g] = 0;
     }
 
+    /**
+     * Append a quarter for the given update ID.
+     *
+     * @param supportCount
+     *   The support for this quarter.
+     * @param updateID
+     *   The updateID that corresponds with this quarter. Should start at 1.
+     *   When it equals the last used updateID of this TiltedTimeWindow, the
+     *   given supportCount will simply be added to the supportCount in the last
+     *   bucket to which was appended (which is always the same one). When it
+     *   equals 0, a new quarter is always created (this can be used to sync
+     *   TiltedTimeWindows).
+     */
     void TiltedTimeWindow::appendQuarter(SupportCount supportCount, quint32 updateID) {
-        this->lastUpdate = updateID;
-        store(GRANULARITY_QUARTER, supportCount);
+        if (updateID != this->lastUpdate || updateID == 0) {
+            if (updateID != 0)
+                this->lastUpdate = updateID;
+            this->store(GRANULARITY_QUARTER, supportCount);
+        }
+        else {
+            // Allow adding to the last bucket that was created. This is always
+            // bucket 0.
+            this->buckets[0] += supportCount;
+        }
     }
 
     /**

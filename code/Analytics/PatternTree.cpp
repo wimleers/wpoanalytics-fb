@@ -106,7 +106,7 @@ namespace Analytics {
 
         // Make sure the quarters are in sync.
         for (uint i = ttw->getCapacityUsed(GRANULARITY_QUARTER); i < this->currentQuarter; i++)
-            ttw->appendQuarter(0, updateID);
+            ttw->appendQuarter(0, 0);
 
         // Now that the quarters are in sync, finally append the quarter.
         ttw->appendQuarter(pattern.support, updateID);
