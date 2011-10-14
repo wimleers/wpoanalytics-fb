@@ -12,3 +12,9 @@ QMAKE_CXXFLAGS_RELEASE = -O3 \
     -fstrict-aliasing
 
 SOURCES += main.cpp
+
+# Cleanup.
+HEADERS = $$unique(HEADERS)
+DEFINES = $$unique(DEFINES)
+SOURCES = $$unique(SOURCES)
+INCLUDEPATH = $$unique(INCLUDEPATH)
