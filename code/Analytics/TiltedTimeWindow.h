@@ -1,7 +1,10 @@
 #ifndef TILTEDTIMEWINDOW_H
 #define TILTEDTIMEWINDOW_H
 
+#include <QList>
 #include <QVector>
+#include <QVariant>
+
 #include <QDebug>
 
 #include "Item.h"
@@ -32,6 +35,10 @@ namespace Analytics {
         int getOldestBucketFilled() const { return this->oldestBucketFilled; }
         uint getCapacityUsed(Granularity g) const { return this->capacityUsed[g]; }
         SupportCount getSupportForRange(uint from, uint to) const;
+
+        // (De)serialization helper methods.
+        QVariantMap toVariantMap() const;
+        bool fromVariantMap(const QVariantMap & json);
 
         // Unit testing helper method.
         QVector<SupportCount> getBuckets(int numBuckets = TTW_NUM_BUCKETS) const;

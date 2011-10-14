@@ -48,6 +48,8 @@ namespace Analytics {
         void stats(Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize);
         void mining(bool);
         void minedDuration(int duration);
+        void loaded(bool success);
+        void saved(bool success);
 
         // Signals for calculations.
         void processedBatch();
@@ -68,6 +70,8 @@ namespace Analytics {
         void analyzeTransactions(const QList<QStringList> & transactions, double transactionsPerEvent, Time start, Time end, quint32 quarterID, bool lastChunkOfBatch);
         void mineRules(uint from, uint to);
         void mineAndCompareRules(uint fromOlder, uint toOlder, uint fromNewer, uint toNewer);
+        void load(QString fileName);
+        void save(QString fileName);
 
     protected slots:
         void fpstreamProcessedBatch();

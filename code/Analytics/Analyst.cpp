@@ -304,6 +304,34 @@ namespace Analytics {
         emit minedDuration(duration);
     }
 
+    void Analyst::load(QString fileName) {
+        QFile file(fileName);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            qCritical("Could not open file %s for reading.", qPrintable(fileName));
+            emit loaded(false);
+        }
+        else {
+            QTextStream input(&file);
+            bool success = this->fpstream->deserialize(input);
+            file.close();
+            emit loaded(success);
+        }
+    }
+
+    void Analyst::save(QString fileName) {
+        QFile file(fileName);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            qCritical("Could not open file %s for writing.", qPrintable(fileName));
+            emit saved(false);
+        }
+        else {
+            QTextStream out(&file);
+            bool success = this->fpstream->serialize(out);
+            file.close();
+            emit saved(success);
+        }
+    }
+
 
     //------------------------------------------------------------------------
     // Protected slots.

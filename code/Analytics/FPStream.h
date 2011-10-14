@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QTextStream>
 
 #include "Item.h"
 #include "Constraints.h"
@@ -13,6 +14,9 @@
 #include "FPTree.h"
 #include "FPGrowth.h"
 #include "PatternTree.h"
+
+#include "qxtjson.h"
+
 
 namespace Analytics {
 
@@ -29,6 +33,10 @@ namespace Analytics {
                  ItemIDNameHash * itemIDNameHash,
                  ItemNameIDHash * itemNameIDHash,
                  ItemIDList * sortedFrequentItemIDs);
+
+        bool serialize(QTextStream & output) const;
+        bool deserialize(QTextStream & input);
+
         SupportCount calculateMinSupportForRange(uint from, uint to) const;
 
         const TiltedTimeWindow * const getTransactionsPerBatch() const { return &this->transactionsPerBatch; }
@@ -43,6 +51,10 @@ namespace Analytics {
 
         // Unit testing helper method.
         const PatternTree & getPatternTree() const { return this->patternTree; }
+        quint32 getCurrentBatchID() const { return this->currentBatchID; }
+        bool getInitialBatchProcessed() const { return this->initialBatchProcessed; }
+        const ItemIDList * getF_list() const { return this->f_list; }
+        const ItemIDNameHash * getItemIDNameHash() const { return this->itemIDNameHash; }
 
         // Static methods (public to allow for unit testing).
         static Granularity calculateDroppableTail(const TiltedTimeWindow & window,

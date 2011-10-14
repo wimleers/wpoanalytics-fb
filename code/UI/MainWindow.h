@@ -29,6 +29,7 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QDialog>
+#include <QMessageBox>
 
 #include <QTableView>
 #include <QHeaderView>
@@ -68,6 +69,9 @@ signals:
     void mine(uint from, uint to);
     void mineAndCompare(uint fromOlder, uint toOlder, uint fromNewer, uint toNewer);
 
+    void load(QString file);
+    void save(QString file);
+
 public slots:
     // Parser.
     void wakeParser();
@@ -101,7 +105,12 @@ protected slots:
     void causesFilterChanged(QString filterString);
 
     void importFile();
+    void loadFile();
+    void saveFile();
     void settingsDialog();
+
+    void loadedFile(bool);
+    void savedFile(bool);
 
 private:
     // Logic.
@@ -184,6 +193,8 @@ private:
 
     // Menu bar.
     QMenu * menuFile;
+    QAction * menuFileLoad;
+    QAction * menuFileSave;
     QAction * menuFileImport;
     QAction * menuFileSettings;
 };

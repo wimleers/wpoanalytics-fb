@@ -93,6 +93,55 @@ namespace Analytics {
         return sum;
     }
 
+    QVariantMap TiltedTimeWindow::toVariantMap() const {
+        QVariantMap variantRepresentation;
+
+        QList<QVariant> bucketsVariant;
+        if (this->oldestBucketFilled != -1)
+            for (int i = 0; i <= this->oldestBucketFilled; i++)
+                bucketsVariant << QVariant((int) this->buckets[i]); // TRICKY: typecast to int, uint results in nothing being printed. Probably a bug in QxtJSON.
+
+        variantRepresentation.insert("v", 1); // Version.
+        variantRepresentation.insert("buckets", bucketsVariant);
+        // "oldestBucketFilled" can be deduced from "buckets".
+        // "capacityUsed" can be deduced from "buckets".
+        variantRepresentation.insert("lastUpdate", (int) this->lastUpdate); // TRICKY: typecast to int
+
+        return variantRepresentation;
+    }
+
+    bool TiltedTimeWindow::fromVariantMap(const QVariantMap & json) {
+        int version = json["v"].toInt();
+
+        if (version == 1) {
+            QList<QVariant> bucketValues = json["buckets"].toList();
+
+            // this->oldestBucketFilled
+            this->oldestBucketFilled = bucketValues.size() - 1;
+            // this->buckets
+            for (int i = 0; i < bucketValues.size(); i++)
+                this->buckets[i] = (uint) bucketValues[i].toInt();
+            // this->capacityUsed
+            uint bucketsRemainingToBeFilled = bucketValues.size();
+            for (int g = 0; g < TTW_NUM_GRANULARITIES; g++) {
+                if (bucketsRemainingToBeFilled < TiltedTimeWindow::GranularityBucketCount[g]) {
+                    this->capacityUsed[g] = bucketsRemainingToBeFilled;
+                    bucketsRemainingToBeFilled = 0;
+                }
+                else {
+                    this->capacityUsed[g] = TiltedTimeWindow::GranularityBucketCount[g];
+                    bucketsRemainingToBeFilled -= TiltedTimeWindow::GranularityBucketCount[g];
+                }
+            }
+            // this->lastUpdate
+            this->lastUpdate = (quint32) json["lastUpdate"].toInt();
+
+            return true;
+        }
+
+        return false;
+    }
+
     QVector<SupportCount> TiltedTimeWindow::getBuckets(int numBuckets) const {
         Q_ASSERT(numBuckets <= TTW_NUM_BUCKETS);
 

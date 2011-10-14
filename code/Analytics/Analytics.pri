@@ -3,6 +3,10 @@ QT -= gui
 
 INCLUDEPATH += $${PWD}
 
+DEPENDPATH += $${PWD}
+
+include("../shared/qxtjson.pri")
+
 SOURCES += \
     $${PWD}/Item.cpp \
     $${PWD}/FPTree.cpp \

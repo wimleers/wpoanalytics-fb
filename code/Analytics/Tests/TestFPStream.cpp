@@ -86,86 +86,15 @@ void TestFPStream::basic() {
     //     -> ({C(2), E(4)}, {Q={1}} (lastUpdate=0)) (0x0017)
     // -> ({D(3)}, {Q={4}} (lastUpdate=0)) (0x0008)
     // -> ({E(4)}, {Q={1}} (lastUpdate=0)) (0x0016)
-    const PatternTree & patternTree = fpstream->getPatternTree();
-    QCOMPARE(patternTree.getNodeCount(), (unsigned int) 17);
     //qDebug() << fpstream->getPatternTree();
+    this->verifyShapeOfBasicTree(fpstream);
 
-    // Verify the tree shape.
+    // Variables assumed by subsequent verifications; these are now part of
+    // TestFPStream::verifyShapeOfBasicTree().
+    const PatternTree & patternTree = fpstream->getPatternTree();
     FPNode<TiltedTimeWindow> * node;
     FPNode<TiltedTimeWindow> * root = patternTree.getRoot();
-    QCOMPARE(root->getNodeID(), (unsigned int) 0);
-    QCOMPARE(root->getItemID(), (ItemID) ROOT_ITEMID);
 
-    // First branch.
-    // root -> ({A(0)}, {Q={6}}) (0x0001)
-    node = root->getChild(0);
-    this->verifyNode(patternTree, node, 0, 1, ItemIDList() << 0, QVector<SupportCount>() << 6);
-    // root -> ({A(0)}, {Q={6}}) (0x0001) -> ({A(0), B(1)}, {Q={3}}) (0x0005)
-    node = node->getChild(1);
-    this->verifyNode(patternTree, node, 1, 5, ItemIDList() << 0 << 1, QVector<SupportCount>() << 3);
-    // root -> ({A(0)}, {Q={6}}) (0x0001) -> ({A(0), B(1)}, {Q={3}}) (0x0005) -> ({A(0), B(1), D(3)}, {Q={1}}) (0x0012)
-    node = node->getChild(3);
-    this->verifyNode(patternTree, node, 3, 12, ItemIDList() << 0 << 1 << 3, QVector<SupportCount>() << 1);
-
-    // Second branch.
-    // root -> ({A(0)}, {Q={6}}) (0x0001) -> ({A(0), D(3)}, {Q={3}}) (0x0009)
-    node = root->getChild(0)->getChild(3);
-    this->verifyNode(patternTree, node, 3, 9, ItemIDList() << 0 << 3, QVector<SupportCount>() << 3);
-
-    // Third branch.
-    // root -> ({B(1)}, {Q={5}}) (0x0004)
-    node = root->getChild(1);
-    this->verifyNode(patternTree, node, 1, 4, ItemIDList() << 1, QVector<SupportCount>() << 5);
-    // root -> ({B(1)}, {Q={5}}) (0x0004) -> ({B(1), D(3)}, {Q={1}}) (0x0011)
-    node = node->getChild(3);
-    this->verifyNode(patternTree, node, 3, 11, ItemIDList() << 1 << 3, QVector<SupportCount>() << 1);
-
-    // Fourth branch.
-    // root -> ({C(2)}, {Q={8}}) (0x0002)
-    node = root->getChild(2);
-    this->verifyNode(patternTree, node, 2, 2, ItemIDList() << 2, QVector<SupportCount>() << 8);
-    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), A(0)}, {Q={4}}) (0x0003)
-    node = node->getChild(0);
-    this->verifyNode(patternTree, node, 0, 3, ItemIDList() << 2 << 0, QVector<SupportCount>() << 4);
-    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), A(0)}, {Q={4}}) (0x0003) -> ({C(2), A(0), B(1)}, {Q={2}}) (0x0006)
-    node = node->getChild(1);
-    this->verifyNode(patternTree, node, 1, 6, ItemIDList() << 2 << 0 << 1, QVector<SupportCount>() << 2);
-    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), A(0)}, {Q={4}}) (0x0003) -> ({C(2), A(0), B(1)}, {Q={2}}) (0x0006) -> ({C(2), A(0), B(1), D(3)}, {Q={1}}) (0x0013)
-    node = node->getChild(3);
-    this->verifyNode(patternTree, node, 3, 13, ItemIDList() << 2 << 0 << 1 << 3, QVector<SupportCount>() << 1);
-
-    // Fifth branch.
-    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), A(0)}, {Q={4}}) (0x0003) -> ({C(2), A(0), D(3)}, {Q={2}}) (0x0010)
-    node = root->getChild(2)->getChild(0)->getChild(3);
-    this->verifyNode(patternTree, node, 3, 10, ItemIDList() << 2 << 0 << 3, QVector<SupportCount>() << 2);
-
-    // Sixth branch.
-    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), B(1)}, {Q={4}}) (0x0007)
-    node = root->getChild(2)->getChild(1);
-    this->verifyNode(patternTree, node, 1, 7, ItemIDList() << 2 << 1, QVector<SupportCount>() << 4);
-    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), B(1)}, {Q={4}}) (0x0007) -> ({C(2), B(1), D(3)}, {Q={1}}) (0x0014)
-    node = node->getChild(3);
-    this->verifyNode(patternTree, node, 3, 14, ItemIDList() << 2 << 1 << 3, QVector<SupportCount>() << 1);
-
-    // Seventh branch.
-    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), D(3)}, {Q={3}}) (0x0015)
-    node = root->getChild(2)->getChild(3);
-    this->verifyNode(patternTree, node, 3, 15, ItemIDList() << 2 << 3, QVector<SupportCount>() << 3);
-
-    // Eighth branch.
-    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), E(4)}, {Q={1}}) (0x0017)
-    node = root->getChild(2)->getChild(4);
-    this->verifyNode(patternTree, node, 4, 17, ItemIDList() << 2 << 4, QVector<SupportCount>() << 1);
-
-    // Ninth branch.
-    // root -> ({D(3)}, {Q={4}}) (0x0008)
-    node = root->getChild(3);
-    this->verifyNode(patternTree, node, 3, 8, ItemIDList() << 3, QVector<SupportCount>() << 4);
-
-    // Tenth branch.
-    // root -> ({E(4)}, {Q={1}}) (0x0016)
-    node = root->getChild(4);
-    this->verifyNode(patternTree, node, 4, 16, ItemIDList() << 4, QVector<SupportCount>() << 1);
 
     // Second batch of transactions.
     // Note that there are 22 transactions that include A, 21 that include A
@@ -343,11 +272,173 @@ void TestFPStream::basic() {
     delete fpstream;
 }
 
-void TestFPStream::verifyNode(const PatternTree & patternTree, const FPNode<TiltedTimeWindow> * const node, ItemID itemID, unsigned int nodeID, const ItemIDList & referencePattern, const QVector<SupportCount> & referenceBuckets) {
+void TestFPStream::serialization() {
+	ItemIDNameHash itemIDNameHash;
+    ItemNameIDHash itemNameIDHash;
+    ItemIDList sortedFrequentItemIDs;
+    FPNode<TiltedTimeWindow>::resetLastNodeID();
+    FPStream * fpstream = new FPStream(0.4, 0.05, &itemIDNameHash, &itemNameIDHash, &sortedFrequentItemIDs);
+
+    // First batch of transactions.
+    QList<QStringList> transactions;
+    transactions.append(QStringList() << "A" << "B" << "C" << "D");
+    transactions.append(QStringList() << "A" << "B");
+    transactions.append(QStringList() << "A" << "C");
+    transactions.append(QStringList() << "A" << "B" << "C");
+    transactions.append(QStringList() << "A" << "D");
+    transactions.append(QStringList() << "A" << "C" << "D");
+    transactions.append(QStringList() << "C" << "B");
+    transactions.append(QStringList() << "B" << "C");
+    transactions.append(QStringList() << "C" << "D");
+    transactions.append(QStringList() << "C" << "E");
+
+    fpstream->processBatchTransactions(transactions);
+
+    // Serialize.
+    QTemporaryFile tempFile;
+    QVERIFY(tempFile.open() != false);
+    QTextStream io(&tempFile);
+
+    fpstream->serialize(io);
+
+    // Debug output: the serialized FPStream data.
+    io.seek(0);
+    //qDebug() << io.readAll();
+
+    /*
+    // TODO: maybe in the future?
+    // Deserialize *without* deleting/clearing anything: still correct?.
+    io.seek(0);
+    fpstream->deserializeFromTextStream(io);
+    // Verify.
+    */
+
+    // Delete/clear everything, deserialize, verify.
+    delete fpstream;
+    itemIDNameHash.clear();
+    itemNameIDHash.clear();
+    sortedFrequentItemIDs.clear();
+    FPNode<TiltedTimeWindow>::resetLastNodeID();
+    fpstream = new FPStream(0.4, 0.05, &itemIDNameHash, &itemNameIDHash, &sortedFrequentItemIDs);
+    // Deserialize.
+    io.seek(0);
+    fpstream->deserialize(io);
+    // Verify.
+    this->verifyShapeOfBasicTree(fpstream, false);
+    QCOMPARE(fpstream->getInitialBatchProcessed(), true);
+    QCOMPARE(fpstream->getCurrentBatchID(), (quint32) 1);
+    const TiltedTimeWindow * transactionsPerBatch = fpstream->getTransactionsPerBatch();
+    QCOMPARE(transactionsPerBatch->getBuckets(1), QVector<SupportCount>() << 10);
+    QCOMPARE(transactionsPerBatch->oldestBucketFilled, 0);
+    QCOMPARE(transactionsPerBatch->getLastUpdate(), (uint) 1);
+    const TiltedTimeWindow * eventsPerBatch = fpstream->getEventsPerBatch();
+    QCOMPARE(eventsPerBatch->getBuckets(1), QVector<SupportCount>() << 10);
+    QCOMPARE(eventsPerBatch->oldestBucketFilled, 0);
+    QCOMPARE(eventsPerBatch->getLastUpdate(), (uint) 1);
+    QCOMPARE(*fpstream->getF_list(), ItemIDList() << (ItemID) 2 << (ItemID) 0 << (ItemID) 1 << (ItemID) 3 << (ItemID) 4);
+    ItemIDNameHash ref;
+    ref.insert(0, (ItemName) "A");
+    ref.insert(1, (ItemName) "B");
+    ref.insert(2, (ItemName) "C");
+    ref.insert(3, (ItemName) "D");
+    ref.insert(4, (ItemName) "E");
+    QCOMPARE(*fpstream->getItemIDNameHash(), ref);
+
+    tempFile.close();
+}
+
+
+//-----------------------------------------------------------------------------
+// Private methods.
+
+void TestFPStream::verifyNode(const PatternTree & patternTree, const FPNode<TiltedTimeWindow> * const node, ItemID itemID, unsigned int nodeID, const ItemIDList & referencePattern, const QVector<SupportCount> & referenceBuckets, bool verifyNodeID) {
     QVERIFY(node != NULL);
     QCOMPARE(node->getItemID(), (ItemID) itemID);
     QCOMPARE(node->getValue().getBuckets(referenceBuckets.size()), referenceBuckets);
-    QCOMPARE(node->getNodeID(), nodeID);
+    if (verifyNodeID)
+        QCOMPARE(node->getNodeID(), nodeID);
     QCOMPARE(PatternTree::getPatternForNode(node), referencePattern);
     QCOMPARE(patternTree.getPatternSupport(referencePattern)->getBuckets(referenceBuckets.size()), referenceBuckets);
+}
+
+void TestFPStream::verifyShapeOfBasicTree(const FPStream * fpstream, bool verifyNodeIDs) {
+    const PatternTree & patternTree = fpstream->getPatternTree();
+    QCOMPARE(patternTree.getNodeCount(), (unsigned int) 17);
+
+    // Verify the tree shape.
+    FPNode<TiltedTimeWindow> * node;
+    FPNode<TiltedTimeWindow> * root = patternTree.getRoot();
+    QCOMPARE(root->getNodeID(), (unsigned int) 0);
+    QCOMPARE(root->getItemID(), (ItemID) ROOT_ITEMID);
+
+    // First branch.
+    // root -> ({A(0)}, {Q={6}}) (0x0001)
+    node = root->getChild(0);
+    this->verifyNode(patternTree, node, 0, 1, ItemIDList() << 0, QVector<SupportCount>() << 6, verifyNodeIDs);
+    // root -> ({A(0)}, {Q={6}}) (0x0001) -> ({A(0), B(1)}, {Q={3}}) (0x0005)
+    node = node->getChild(1);
+    this->verifyNode(patternTree, node, 1, 5, ItemIDList() << 0 << 1, QVector<SupportCount>() << 3, verifyNodeIDs);
+    // root -> ({A(0)}, {Q={6}}) (0x0001) -> ({A(0), B(1)}, {Q={3}}) (0x0005) -> ({A(0), B(1), D(3)}, {Q={1}}) (0x0012)
+    node = node->getChild(3);
+    this->verifyNode(patternTree, node, 3, 12, ItemIDList() << 0 << 1 << 3, QVector<SupportCount>() << 1, verifyNodeIDs);
+
+    // Second branch.
+    // root -> ({A(0)}, {Q={6}}) (0x0001) -> ({A(0), D(3)}, {Q={3}}) (0x0009)
+    node = root->getChild(0)->getChild(3);
+    this->verifyNode(patternTree, node, 3, 9, ItemIDList() << 0 << 3, QVector<SupportCount>() << 3, verifyNodeIDs);
+
+    // Third branch.
+    // root -> ({B(1)}, {Q={5}}) (0x0004)
+    node = root->getChild(1);
+    this->verifyNode(patternTree, node, 1, 4, ItemIDList() << 1, QVector<SupportCount>() << 5, verifyNodeIDs);
+    // root -> ({B(1)}, {Q={5}}) (0x0004) -> ({B(1), D(3)}, {Q={1}}) (0x0011)
+    node = node->getChild(3);
+    this->verifyNode(patternTree, node, 3, 11, ItemIDList() << 1 << 3, QVector<SupportCount>() << 1, verifyNodeIDs);
+
+    // Fourth branch.
+    // root -> ({C(2)}, {Q={8}}) (0x0002)
+    node = root->getChild(2);
+    this->verifyNode(patternTree, node, 2, 2, ItemIDList() << 2, QVector<SupportCount>() << 8, verifyNodeIDs);
+    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), A(0)}, {Q={4}}) (0x0003)
+    node = node->getChild(0);
+    this->verifyNode(patternTree, node, 0, 3, ItemIDList() << 2 << 0, QVector<SupportCount>() << 4, verifyNodeIDs);
+    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), A(0)}, {Q={4}}) (0x0003) -> ({C(2), A(0), B(1)}, {Q={2}}) (0x0006)
+    node = node->getChild(1);
+    this->verifyNode(patternTree, node, 1, 6, ItemIDList() << 2 << 0 << 1, QVector<SupportCount>() << 2, verifyNodeIDs);
+    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), A(0)}, {Q={4}}) (0x0003) -> ({C(2), A(0), B(1)}, {Q={2}}) (0x0006) -> ({C(2), A(0), B(1), D(3)}, {Q={1}}) (0x0013)
+    node = node->getChild(3);
+    this->verifyNode(patternTree, node, 3, 13, ItemIDList() << 2 << 0 << 1 << 3, QVector<SupportCount>() << 1, verifyNodeIDs);
+
+    // Fifth branch.
+    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), A(0)}, {Q={4}}) (0x0003) -> ({C(2), A(0), D(3)}, {Q={2}}) (0x0010)
+    node = root->getChild(2)->getChild(0)->getChild(3);
+    this->verifyNode(patternTree, node, 3, 10, ItemIDList() << 2 << 0 << 3, QVector<SupportCount>() << 2, verifyNodeIDs);
+
+    // Sixth branch.
+    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), B(1)}, {Q={4}}) (0x0007)
+    node = root->getChild(2)->getChild(1);
+    this->verifyNode(patternTree, node, 1, 7, ItemIDList() << 2 << 1, QVector<SupportCount>() << 4, verifyNodeIDs);
+    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), B(1)}, {Q={4}}) (0x0007) -> ({C(2), B(1), D(3)}, {Q={1}}) (0x0014)
+    node = node->getChild(3);
+    this->verifyNode(patternTree, node, 3, 14, ItemIDList() << 2 << 1 << 3, QVector<SupportCount>() << 1, verifyNodeIDs);
+
+    // Seventh branch.
+    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), D(3)}, {Q={3}}) (0x0015)
+    node = root->getChild(2)->getChild(3);
+    this->verifyNode(patternTree, node, 3, 15, ItemIDList() << 2 << 3, QVector<SupportCount>() << 3, verifyNodeIDs);
+
+    // Eighth branch.
+    // root -> ({C(2)}, {Q={8}}) (0x0002) -> ({C(2), E(4)}, {Q={1}}) (0x0017)
+    node = root->getChild(2)->getChild(4);
+    this->verifyNode(patternTree, node, 4, 17, ItemIDList() << 2 << 4, QVector<SupportCount>() << 1, verifyNodeIDs);
+
+    // Ninth branch.
+    // root -> ({D(3)}, {Q={4}}) (0x0008)
+    node = root->getChild(3);
+    this->verifyNode(patternTree, node, 3, 8, ItemIDList() << 3, QVector<SupportCount>() << 4, verifyNodeIDs);
+
+    // Tenth branch.
+    // root -> ({E(4)}, {Q={1}}) (0x0016)
+    node = root->getChild(4);
+    this->verifyNode(patternTree, node, 4, 16, ItemIDList() << 4, QVector<SupportCount>() << 1, verifyNodeIDs);
 }

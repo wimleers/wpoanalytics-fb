@@ -34,6 +34,8 @@ void MainWindow::updateParsingStatus(bool parsing) {
     this->parsing = parsing;
     this->updateStatus();
     this->menuFileImport->setEnabled(!parsing);
+    this->menuFileLoad->setEnabled(!parsing);
+    this->menuFileSave->setEnabled(!parsing);
     if (!parsing)
         this->mineOrCompare();
 }
@@ -69,6 +71,10 @@ void MainWindow::updateMiningDuration(int duration) {
 }
 
 void MainWindow::updateAnalyzingStatus(bool analyzing, Time start, Time end, quint64 numPageViews, quint64 numTransactions) {
+    this->menuFileImport->setEnabled(!analyzing);
+    this->menuFileLoad->setEnabled(!analyzing);
+    this->menuFileSave->setEnabled(!analyzing);
+
     // Analysis started.
     if (analyzing) {
         this->updateStatus(
@@ -85,6 +91,10 @@ void MainWindow::updateAnalyzingStatus(bool analyzing, Time start, Time end, qui
 }
 
 void MainWindow::updateMiningStatus(bool mining) {
+    this->menuFileImport->setEnabled(!mining);
+    this->menuFileLoad->setEnabled(!mining);
+    this->menuFileSave->setEnabled(!mining);
+
     if (mining)
         this->updateStatus("Mining association rules");
     else
@@ -343,11 +353,36 @@ void MainWindow::importFile() {
     QSettings settings;
     QString lastDirectory = settings.value("UI/lastImportDirectory", QDesktopServices::storageLocation(QDesktopServices::DesktopLocation)).toString();
 
-    QString logFile = QFileDialog::getOpenFileName(this, tr("Open JSON log dump file"), lastDirectory, tr("JSON log dump (*.json)"), NULL, QFileDialog::ReadOnly);
+    QString logFile = QFileDialog::getOpenFileName(this, tr("Import JSON log dump file"), lastDirectory, tr("JSON log dump (*.json)"), NULL, QFileDialog::ReadOnly);
 
     if (!logFile.isEmpty()) {
         settings.setValue("UI/lastImportDirectory", QFileInfo(logFile).path());
         emit parse(logFile);
+    }
+}
+
+void MainWindow::loadFile() {
+    // TODO: delete parser & analyst, init & connect new ones.
+    QSettings settings;
+    QString lastDirectory = settings.value("UI/lastLoadSaveDirectory", QDesktopServices::storageLocation(QDesktopServices::DesktopLocation)).toString();
+
+    QString patternFinderFile = QFileDialog::getOpenFileName(this, tr("Load PatternFinder file"), lastDirectory, tr("PatternFinder file (*.pf)"), NULL, QFileDialog::ReadOnly);
+
+    if (!patternFinderFile.isEmpty()) {
+        settings.setValue("UI/lastLoadSaveDirectory", QFileInfo(patternFinderFile).path());
+        emit load(patternFinderFile);
+    }
+}
+
+void MainWindow::saveFile() {
+    QSettings settings;
+    QString lastDirectory = settings.value("UI/lastLoadSaveDirectory", QDesktopServices::storageLocation(QDesktopServices::DesktopLocation)).toString();
+
+    QString patternFinderFile = QFileDialog::getSaveFileName(this, tr("Save PatternFinder file"), lastDirectory, tr("PatternFinder file (*.pf)"));
+
+    if (!patternFinderFile.isEmpty()) {
+        settings.setValue("UI/lastLoadSaveDirectory", QFileInfo(patternFinderFile).path());
+        emit save(patternFinderFile);
     }
 }
 
@@ -356,6 +391,31 @@ void MainWindow::settingsDialog() {
     settingsDialog->show();
     settingsDialog->raise();
     settingsDialog->activateWindow();
+}
+
+
+void MainWindow::loadedFile(bool success) {
+    if (!success) {
+        QMessageBox messageBox;
+        messageBox.setText("Loading calculations");
+        messageBox.setInformativeText("The calculations could not be loaded.");
+        messageBox.setIcon(QMessageBox::Warning);
+        messageBox.setStandardButtons(QMessageBox::Ok);
+        messageBox.setDefaultButton(QMessageBox::Ok);
+        messageBox.exec();
+    }
+}
+
+void MainWindow::savedFile(bool success) {
+    if (!success) {
+        QMessageBox messageBox;
+        messageBox.setText("Saving calculations");
+        messageBox.setInformativeText("The calculations could not be saved.");
+        messageBox.setIcon(QMessageBox::Warning);
+        messageBox.setStandardButtons(QMessageBox::Ok);
+        messageBox.setDefaultButton(QMessageBox::Ok);
+        messageBox.exec();
+    }
 }
 
 
@@ -412,11 +472,15 @@ void MainWindow::connectLogic() {
                 SIGNAL(comparedMinedRules(uint,uint,uint,uint,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::Confidence>,QList<float>,Analytics::SupportCount,Analytics::SupportCount,Analytics::SupportCount)),
                 SLOT(comparedMinedRules(uint,uint,uint,uint,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::Confidence>,QList<float>,Analytics::SupportCount,Analytics::SupportCount,Analytics::SupportCount))
     );
+    connect(this->analyst, SIGNAL(loaded(bool)), this, SLOT(loadedFile(bool)));
+    connect(this->analyst, SIGNAL(saved(bool)), this, SLOT(savedFile(bool)));
 
     // UI -> logic.
     connect(this, SIGNAL(parse(QString)), this->parser, SLOT(parse(QString)));
     connect(this, SIGNAL(mine(uint,uint)), this->analyst, SLOT(mineRules(uint,uint)));
     connect(this, SIGNAL(mineAndCompare(uint,uint,uint,uint)), this->analyst, SLOT(mineAndCompareRules(uint,uint,uint,uint)));
+    connect(this, SIGNAL(load(QString)), this->analyst, SLOT(load(QString)));
+    connect(this, SIGNAL(save(QString)), this->analyst, SLOT(save(QString)));
 }
 
 void MainWindow::assignLogicToThreads() {
@@ -757,6 +821,14 @@ void MainWindow::createMenuBar() {
     this->menuFileImport->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_I));
     this->menuFile->addAction(this->menuFileImport);
 
+    this->menuFileLoad = new QAction(tr("Load"), this->menuFile);
+    this->menuFileLoad->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_L));
+    this->menuFile->addAction(this->menuFileLoad);
+
+    this->menuFileSave = new QAction(tr("Save"), this->menuFile);
+    this->menuFileSave->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_S));
+    this->menuFile->addAction(this->menuFileSave);
+
     this->menuFileSettings = new QAction(tr("Settings"), this->menuFile);
     this->menuFile->addAction(this->menuFileSettings);
 
@@ -771,5 +843,7 @@ void MainWindow::connectUI() {
 
     // Menus.
     connect(this->menuFileImport, SIGNAL(triggered()), SLOT(importFile()));
+    connect(this->menuFileLoad, SIGNAL(triggered()), SLOT(loadFile()));
+    connect(this->menuFileSave, SIGNAL(triggered()), SLOT(saveFile()));
     connect(this->menuFileSettings, SIGNAL(triggered()), SLOT(settingsDialog()));
 }

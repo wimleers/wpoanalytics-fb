@@ -19,6 +19,90 @@ namespace Analytics {
         this->statusMutex.unlock();
     }
 
+    bool FPStream::serialize(QTextStream & output) const {
+        // Convert itemNameIDHash to a variant.
+        QVariantMap itemNameIDHashVariant;
+        foreach (ItemName itemName, this->itemNameIDHash->keys())
+            itemNameIDHashVariant.insert(itemName, (int) this->itemNameIDHash->value(itemName));
+
+        // Convert f_list to a variant.
+        QList<QVariant> f_listVariant;
+        foreach (const ItemID & itemID, *this->f_list)
+            f_listVariant << QVariant(this->itemIDNameHash->value(itemID));
+
+        QVariantMap json;
+        json.insert("v", 1);
+        json.insert("start time of first batch", (int) 0); // TODO
+        json.insert("end time of last batch", (int) 0); // TODO
+        json.insert("current batch ID", (int) this->currentBatchID); // Bug in QxtJSON prevents uints from being stringified.
+        json.insert("transactions per batch", this->transactionsPerBatch.toVariantMap());
+        json.insert("events per batch", this->eventsPerBatch.toVariantMap());
+        json.insert("item name -> ID mapping", itemNameIDHashVariant);
+        json.insert("frequent items by descending frequency", f_listVariant);
+
+        output << QxtJSON::stringify(json) << "\n";
+
+        this->patternTree.serialize(output, *this->itemIDNameHash);
+
+        // TODO: add JSON conversion error checks.
+
+        return true;
+    }
+
+    bool FPStream::deserialize(QTextStream & input) {
+        // All data specific to FPStream is on the first line.
+        QVariantMap json = QxtJSON::parse(input.readLine()).toMap();
+
+        int version = json["v"].toInt();
+        if (version == 1) {
+            // TODO: support loading of state without restarting
+            if (this->initialBatchProcessed || !this->itemIDNameHash->isEmpty() || this->patternTree.getNodeCount() > 0)
+                qCritical("Data structures not empty. Restart the app to load.");
+
+            bool success = true;
+
+            // TODO: read "time of first batch" and "end time of last batch"
+            this->initialBatchProcessed = true;
+            this->currentBatchID = json["current batch ID"].toUInt();
+            success = success && this->transactionsPerBatch.fromVariantMap(json["transactions per batch"].toMap());
+            success = success && this->eventsPerBatch.fromVariantMap(json["events per batch"].toMap());
+            if (!success)
+                return false;
+
+            QVariantMap itemNameIDHashVariant = json["item name -> ID mapping"].toMap();
+            ItemID itemID;
+            ItemName itemName;
+            foreach (const QString & key, itemNameIDHashVariant.keys()) {
+                itemName = (ItemName) key;
+                itemID = (ItemID) itemNameIDHashVariant[key].toUInt();
+                this->itemIDNameHash->insert(itemID, itemName);
+                this->itemNameIDHash->insert(itemName, itemID);
+            }
+
+            // f_list; but since it contains strings only (EpisodeNames), this
+            // also means we can (and *must*!) rebuild the item name -> id and
+            // vice versa hashes.
+            QList<QVariant> f_listValues = json["frequent items by descending frequency"].toList();
+            foreach (const QVariant & variant, f_listValues) {
+                itemName = (ItemName) variant.toString();
+                itemID = this->itemNameIDHash->value(itemName);
+
+                // Consider this item for use with constraints.
+                this->constraints.preprocessItem(itemName, itemID);
+                this->constraintsToPreprocess.preprocessItem(itemName, itemID);
+
+                this->f_list->append(itemID);
+            }
+
+            // All remaining data is for the PatternTree data structure.
+            this->patternTree.deserialize(input, this->itemIDNameHash, *this->itemNameIDHash, this->currentBatchID);
+        }
+
+        // TODO: add JSON conversion error checks.
+
+        return true;
+    }
+
 
     //----------------------------------------------------------------------
     // Public slots.

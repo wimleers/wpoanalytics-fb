@@ -15,6 +15,85 @@ namespace Analytics {
         delete root;
     }
 
+    /**
+     * Serialize *all* patterns in the tree to a writable stream; one node per
+     * line.
+     */
+    bool PatternTree::serialize(QTextStream & output,
+                                            const ItemIDNameHash & itemIDNameHash) const
+    {
+        // First line: PatternTree metadata.
+        QVariantMap json;
+        json.insert("v", 1);
+        json.insert("currentQuarter", (int) currentQuarter);
+
+        output << QxtJSON::stringify(json) << "\n";
+
+        // Remaining lines: nodes in PatternTree.
+        PatternTree::recursiveSerializer(this->root, itemIDNameHash, output, QList<ItemName>());
+
+        // TODO: add JSON conversion error checks.
+
+        return true;
+    }
+
+    /**
+     * Deserialize *one* pattern from a readable stream (i.e. only one node,
+     * thus one line).
+     */
+    bool PatternTree::deserialize(QTextStream & input,
+                                                const ItemIDNameHash * itemIDNameHash,
+                                                const ItemNameIDHash & itemNameIDHash,
+                                                quint32 updateID)
+    {
+        QVariantMap json;
+
+        // First line: PatternTree metadata.
+        json = QxtJSON::parse(input.readLine()).toMap();
+
+        int version = json["v"].toInt();
+        if (version == 1) {
+            // First line: PatternTree metadata.
+            // Don't store "currentQuarter" right away, or it would interfere
+            // with addPattern() calls. Set it after all patterns have been
+            // loaded.
+            uint futureCurrentQuarter = json["currentQuarter"].toInt();
+
+            // Remaining lines: nodes in PatternTree.
+            TiltedTimeWindow * ttw;
+            QList<QVariant> patternVariant;
+            FrequentItemset frequentItemset;
+#ifdef DEBUG
+            frequentItemset.IDNameHash = itemIDNameHash;
+#endif
+            ItemID itemID;
+            while (!input.atEnd()) {
+                // Parse a line.
+                json = QxtJSON::parse(input.readLine()).toMap();
+
+                // Store pattern (which is a frequent itemset) in PatternTree.
+                patternVariant = json["pattern"].toList();
+                frequentItemset.itemset.clear();
+                foreach (const QVariant & variant, patternVariant) {
+                    itemID = itemNameIDHash[(ItemName) variant.toString()];
+                    frequentItemset.itemset.append(itemID);
+                }
+                this->addPattern(frequentItemset, updateID);
+
+                // Update the TiltedTimeWindow for the pattern we just stored.
+                ttw = this->getPatternSupport(frequentItemset.itemset);
+                ttw->fromVariantMap(json["tilted time window"].toMap());
+            }
+
+            // Set "currentQuarter".
+            this->currentQuarter = futureCurrentQuarter;
+        }
+
+        // TODO: add JSON conversion error checks.
+
+        return true;
+    }
+
     TiltedTimeWindow * PatternTree::getPatternSupport(const ItemIDList & pattern) const {
         return this->root->findNodeByPattern(pattern);
     }
@@ -132,6 +211,38 @@ namespace Analytics {
         }
 
         return pattern;
+    }
+
+
+    //------------------------------------------------------------------------
+    // Static protected methods.
+
+    void PatternTree::recursiveSerializer(const FPNode<TiltedTimeWindow> * node,
+                                          const ItemIDNameHash & itemIDNameHash,
+                                          QTextStream & output,
+                                          QList<ItemName> pattern)
+    {
+        ItemID itemID = node->getItemID();
+        if (itemID != ROOT_ITEMID) {
+            // Update pattern.
+            pattern << itemIDNameHash[itemID];
+
+            // Convert pattern to a variant.
+            QList<QVariant> patternVariant;
+            foreach (const ItemName & name, pattern)
+                patternVariant << QVariant(name);
+
+            // Build a variant map, which we can then convert to JSON.
+            QVariantMap v;
+            v.insert("pattern", patternVariant);
+            v.insert("tilted time window", node->getValue().toVariantMap());
+            output << QxtJSON::stringify(v) << "\n";
+        }
+
+        // Recurse.
+        if (node->numChildren() > 0)
+            foreach (const FPNode<TiltedTimeWindow> * child, node->getChildren())
+                PatternTree::recursiveSerializer(child, itemIDNameHash, output, pattern);
     }
 
 

@@ -3,11 +3,15 @@
 
 #include <QDebug>
 #include <QMetaType>
+#include <QFile>
+#include <QTextStream>
 
 #include "Item.h"
 #include "TiltedTimeWindow.h"
 #include "FPNode.h"
 #include "Constraints.h"
+
+#include "qxtjson.h"
 
 
 namespace Analytics {
@@ -15,6 +19,13 @@ namespace Analytics {
     public:
         PatternTree();
         ~PatternTree();
+
+        bool serialize(QTextStream & output,
+                                   const ItemIDNameHash & itemIDNameHash) const;
+        bool deserialize(QTextStream & input,
+                                       const ItemIDNameHash * itemIDNameHash,
+                                       const ItemNameIDHash & itemNameIDHash,
+                                       quint32 updateID);
 
         // Accessors.
         FPNode<TiltedTimeWindow> * getRoot() const { return this->root; }
@@ -37,6 +48,12 @@ namespace Analytics {
         static ItemIDList getPatternForNode(FPNode<TiltedTimeWindow> const * const node);
 
     protected:
+        // Static (class) methods.
+        static void recursiveSerializer(const FPNode<TiltedTimeWindow> * node,
+                                        const ItemIDNameHash & itemIDNameHash,
+                                        QTextStream & output,
+                                        QList<ItemName> pattern);
+
         FPNode<TiltedTimeWindow> * root;
         uint currentQuarter;
         unsigned int nodeCount;
