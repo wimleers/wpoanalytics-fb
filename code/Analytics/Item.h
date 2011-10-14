@@ -51,11 +51,11 @@ namespace Analytics {
         SupportCount supportCount;
 
 #ifdef DEBUG
-        Item(ItemID id, ItemIDNameHash * IDNameHash)
+        Item(ItemID id, const ItemIDNameHash * IDNameHash)
             : id(id), supportCount(1), IDNameHash(IDNameHash) {}
-        Item(ItemID id, SupportCount supportCount, ItemIDNameHash * IDNameHash)
+        Item(ItemID id, SupportCount supportCount, const ItemIDNameHash * IDNameHash)
             : id(id), supportCount(supportCount), IDNameHash(IDNameHash) {}
-        ItemIDNameHash * IDNameHash;
+        const ItemIDNameHash * IDNameHash;
 #endif
     };
     inline bool operator==(const Item & i1, const Item & i2) {
@@ -101,7 +101,7 @@ namespace Analytics {
         FrequentItemset(ItemIDList itemset, SupportCount support, ItemIDNameHash * IDNameHash)
             : itemset(itemset), support(support), IDNameHash(IDNameHash) {}
 
-        ItemIDNameHash * IDNameHash;
+        const ItemIDNameHash * IDNameHash;
 #endif
     };
     inline bool operator==(const FrequentItemset & fis1, const FrequentItemset & fis2) {
@@ -122,7 +122,7 @@ namespace Analytics {
         Confidence confidence;
 
 #ifdef DEBUG
-        ItemIDNameHash * IDNameHash;
+        const ItemIDNameHash * IDNameHash;
 #endif
     };
     uint qHash(const AssociationRule & r);

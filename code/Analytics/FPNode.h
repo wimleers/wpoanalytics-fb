@@ -106,7 +106,7 @@ namespace Analytics {
         unsigned int getNodeID() const { return this->nodeID; }
         static void resetLastNodeID() { FPNode<T>::lastNodeID = 0; }
 
-        ItemIDNameHash * itemIDNameHash;
+        const ItemIDNameHash * itemIDNameHash;
 #endif
 
     protected:
