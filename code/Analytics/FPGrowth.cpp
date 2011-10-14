@@ -218,7 +218,7 @@ namespace Analytics {
      * processed for use in constraints as well.
      */
     void FPGrowth::scanTransactions() {
-        // Consider items with item names that have been mapped to  item IDs
+        // Consider items with item names that have been mapped to item IDs
         // in previous executions of FPGrowth for use with constraints.
         if (!this->itemIDNameHash->isEmpty()) {
             foreach (ItemID itemID, this->itemIDNameHash->keys()) {
