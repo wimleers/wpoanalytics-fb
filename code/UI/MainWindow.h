@@ -42,6 +42,7 @@
 #include <QSettings>
 
 #include "ConceptHierarchyCompleter.h"
+#include "ConceptHierarchyModel.h"
 #include "CausesTableFilterProxyModel.h"
 #include "SettingsDialog.h"
 
@@ -172,6 +173,7 @@ private:
     QComboBox * causesCompareTimerangeChoice;
     QLineEdit * causesFilter;
     ConceptHierarchyCompleter * causesFilterCompleter;
+    ConceptHierarchyModel * conceptHierarchyModel;
     QLabel * causesDescription;
     QTableView * causesTable;
     QStandardItemModel * causesTableModel;

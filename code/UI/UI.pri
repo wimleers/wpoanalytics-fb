@@ -4,11 +4,14 @@ INCLUDEPATH += $${PWD}
 
 SOURCES += \
     $${PWD}/MainWindow.cpp \
+    $${PWD}/ConceptHierarchyModel.cpp \
     $${PWD}/ConceptHierarchyCompleter.cpp \
     $${PWD}/CausesTableFilterProxyModel.cpp \
     $${PWD}/SettingsDialog.cpp
+
 HEADERS += \
     $${PWD}/MainWindow.h \
+    $${PWD}/ConceptHierarchyModel.h \
     $${PWD}/ConceptHierarchyCompleter.h \
     $${PWD}/CausesTableFilterProxyModel.h \
     $${PWD}/SettingsDialog.h

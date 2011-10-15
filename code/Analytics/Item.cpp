@@ -17,6 +17,7 @@ namespace Analytics {
         qRegisterMetaType<Analytics::FrequentItemset>("FrequentItemset");
         qRegisterMetaType< QList<Analytics::Confidence> >("QList<Analytics::Confidence>");
         qRegisterMetaType< QList<Analytics::AssociationRule> >("QList<Analytics::AssociationRule>");
+        qRegisterMetaType<Analytics::ItemIDNameHash>("Analytics::ItemIDNameHash");
     }
 
     uint qHash(const AssociationRule & r) {

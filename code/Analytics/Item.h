@@ -148,8 +148,9 @@ namespace Analytics {
 
 }
 
-Q_DECLARE_METATYPE(Analytics::ItemIDList);
-Q_DECLARE_METATYPE(Analytics::FrequentItemset);
+Q_DECLARE_METATYPE(Analytics::ItemIDList)
+Q_DECLARE_METATYPE(Analytics::FrequentItemset)
+Q_DECLARE_METATYPE(Analytics::ItemIDNameHash)
 
 
 #endif // ITEM_H

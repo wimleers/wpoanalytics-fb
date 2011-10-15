@@ -14,9 +14,6 @@ namespace Analytics {
         this->allBatchesNumTransactions = 0;
         this->allBatchesStartTime = 0;
 
-        // Browsable concept hierarchy.
-        this->conceptHierarchyModel = new QStandardItemModel(this);
-
 #ifdef DEBUG
         this->frequentItemsetItemConstraints.itemIDNameHash = &this->itemIDNameHash;
         this->ruleConsequentItemConstraints.itemIDNameHash = &this->itemIDNameHash;
@@ -346,7 +343,7 @@ namespace Analytics {
         this->currentBatchNumTransactions = 0;
 
         // Update the browsable concept hierarchy.
-        this->updateConceptHierarchyModel(this->uniqueItemsBeforeMining);
+        emit newItemsEncountered(this->itemIDNameHash);
 
         emit processedBatch();
         emit analyzing(false, 0, 0, 0, 0);
@@ -418,48 +415,5 @@ namespace Analytics {
         qDebug() << this->fpstream->getPatternTree();
         */
         }
-    }
-
-    void Analyst::updateConceptHierarchyModel(int itemsAlreadyProcessed) {
-        if (this->itemIDNameHash.size() <= itemsAlreadyProcessed)
-            return;
-
-        ItemName item, parent, child;
-        QStringList parts;
-        for (int id = itemsAlreadyProcessed; id < this->itemIDNameHash.size(); id++) {
-            item = this->itemIDNameHash[(ItemID) id];
-            parts = item.split(':', QString::SkipEmptyParts);
-
-            // Update the concept hierarchy model.
-            parent = parts[0];
-            // Root level.
-            if (!this->conceptHierarchyHash.contains(parent)) {
-                QStandardItem * modelItem = new QStandardItem(parent);
-                modelItem->setData(parent.toUpper(), Qt::UserRole); // For sorting.
-
-                // Store in hierarchy.
-                this->conceptHierarchyHash.insert(parent, modelItem);
-                QStandardItem * root = this->conceptHierarchyModel->invisibleRootItem();
-                root->appendRow(modelItem);
-            }
-            // Subsequent levels.
-            for (int p = 1; p < parts.size(); p++) {
-                child = parent + ':' + parts[p];
-                if (!this->conceptHierarchyHash.contains(child)) {
-                    QStandardItem * modelItem = new QStandardItem(parts[p]);
-                    modelItem->setData(parts[p].toUpper(), Qt::UserRole); // For sorting.
-
-                    // Store in hierarchy.
-                    this->conceptHierarchyHash.insert(child, modelItem);
-                    QStandardItem * parentModelItem = this->conceptHierarchyHash[parent];
-                    parentModelItem->appendRow(modelItem);
-                }
-                parent = child;
-            }
-        }
-
-        // Sort the model case-insensitively.
-        this->conceptHierarchyModel->setSortRole(Qt::UserRole);
-        this->conceptHierarchyModel->sort(0, Qt::AscendingOrder);
     }
 }

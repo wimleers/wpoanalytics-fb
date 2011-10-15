@@ -7,8 +7,6 @@
 #include <QHash>
 #include <QStringList>
 #include <QPair>
-#include <QStandardItemModel>
-#include <QStandardItem>
 
 #include <QThread>
 #include <QWaitCondition>
@@ -37,7 +35,6 @@ namespace Analytics {
         void moveToThread(QThread * thread);
 
         // UI integration.
-        QStandardItemModel * getConceptHierarchyModel() const { return this->conceptHierarchyModel; }
         QPair<ItemName, ItemNameList> extractEpisodeFromItemset(ItemIDList itemset) const;
         ItemNameList itemsetIDsToNames(ItemIDList itemset) const;
 
@@ -50,6 +47,7 @@ namespace Analytics {
         void minedDuration(int duration);
         void loaded(bool success);
         void saved(bool success);
+        void newItemsEncountered(Analytics::ItemIDNameHash itemIDNameHash);
 
         // Signals for calculations.
         void processedBatch();
@@ -78,7 +76,6 @@ namespace Analytics {
 
     protected:
         void performMining(const QList<QStringList> & transactions, double transactionsPerEvent, quint32 quarterID, bool lastChunkOfBatch);
-        void updateConceptHierarchyModel(int itemsAlreadyProcessed);
 
         FPStream * fpstream;
         double minSupport;
@@ -103,10 +100,7 @@ namespace Analytics {
         quint64 allBatchesNumTransactions;
         QTime timer;
 
-        // Browsable concept hierarchy for the UI.
         int uniqueItemsBeforeMining;
-        QStandardItemModel * conceptHierarchyModel;
-        QHash<ItemName, QStandardItem *> conceptHierarchyHash;
     };
 }
 

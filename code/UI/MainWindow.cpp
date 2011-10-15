@@ -11,8 +11,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Logic + connections.
     this->initLogic();
-    this->connectLogic();
     this->initUI();
+    this->connectLogic();
     this->connectUI();
     this->assignLogicToThreads();
 }
@@ -474,6 +474,7 @@ void MainWindow::connectLogic() {
     );
     connect(this->analyst, SIGNAL(loaded(bool)), this, SLOT(loadedFile(bool)));
     connect(this->analyst, SIGNAL(saved(bool)), this, SLOT(savedFile(bool)));
+    connect(this->analyst, SIGNAL(newItemsEncountered(Analytics::ItemIDNameHash)), this->conceptHierarchyModel, SLOT(update(Analytics::ItemIDNameHash)));
 
     // UI -> logic.
     connect(this, SIGNAL(parse(QString)), this->parser, SLOT(parse(QString)));
@@ -713,9 +714,10 @@ void MainWindow::createCausesGroupbox() {
 
     // Add children to "filter" layout.
     QLabel * filterLabel = new QLabel(tr("Filter") + ":");
+    this->conceptHierarchyModel = new ConceptHierarchyModel();
     this->causesFilterCompleter = new ConceptHierarchyCompleter();
     this->causesFilterCompleter->setCaseSensitivity(Qt::CaseInsensitive);
-    this->causesFilterCompleter->setModel(this->analyst->getConceptHierarchyModel());
+    this->causesFilterCompleter->setModel(this->conceptHierarchyModel);
     this->causesFilterCompleter->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
     this->causesFilter = new QLineEdit();
     this->causesFilter->setCompleter(this->causesFilterCompleter);
