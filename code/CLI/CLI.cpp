@@ -99,13 +99,13 @@ void CLI::init() {
     // associations will be found by the Analyst.
     Analytics::ItemConstraintType constraintType;
     Analytics::ItemConstraintsHash frequentItemsetItemConstraints, ruleConsequentItemConstraints;
-    frequentItemsetItemConstraints = this->config->getPatternConstraints();
+    frequentItemsetItemConstraints = this->config->getPatternItemConstraints();
     for (int i = Analytics::CONSTRAINT_POSITIVE_MATCH_ALL; i <= Analytics::CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
         constraintType = (Analytics::ItemConstraintType) i;
         foreach (const Analytics::ItemName & itemName, frequentItemsetItemConstraints[constraintType])
             this->analyst->addFrequentItemsetItemConstraint(itemName, constraintType);
     }
-    ruleConsequentItemConstraints = this->config->getRuleConsequentConstraints();
+    ruleConsequentItemConstraints = this->config->getRuleConsequentItemConstraints();
     for (int i = Analytics::CONSTRAINT_POSITIVE_MATCH_ALL; i <= Analytics::CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
         constraintType = (Analytics::ItemConstraintType) i;
         foreach (const Analytics::ItemName & itemName, ruleConsequentItemConstraints[constraintType])

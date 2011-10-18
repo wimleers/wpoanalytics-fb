@@ -1,13 +1,17 @@
 {
 	"query" : {
-		"minimum pattern support" : 0.05,
-		"minimum potential pattern support" : 0.03,
-		"minimum association rule confidence" : 0.10,
-		"pattern constraints" : {
-			"positive" : ["episode:*"],
-		},
-		"rule consequent constraints" : {
-			"positive" : ["duration:*"],
+		"patterns" : {
+			"minimum support" : 0.05,
+			"minimum potential pattern support" : 0.03,
+			"item constraints" : {
+				"positive" : ["episode:*"],
+			},
+		}
+		"association rules" : {
+			"minimum confidence" : 0.10,
+			"consequent item constraints" : {
+				"positive" : ["duration:*"],
+			},
 		},
 	},
 	"attributes" : {

@@ -17,11 +17,15 @@ namespace Config {
 
             // Query.
             const QVariantMap & queryJSON = json["query"].toMap();
-            this->minPatternSupport          = Config::parseDouble(queryJSON, "minimum pattern support");
-            this->minPotentialPatternSupport = Config::parseDouble(queryJSON, "minimum potential pattern support");
-            this->minRuleConfidence          = Config::parseDouble(queryJSON, "minimum association rule confidence");
-            this->patternConstraints         = Config::parseConstraints(queryJSON, "pattern constraints");
-            this->ruleConsequentConstraints  = Config::parseConstraints(queryJSON, "rule consequent constraints");
+            // Query: patterns.
+            const QVariantMap & patternsJSON = queryJSON["patterns"].toMap();
+            this->minPatternSupport             = Config::parseDouble(patternsJSON, "minimum support");
+            this->minPotentialPatternSupport    = Config::parseDouble(patternsJSON, "minimum potential pattern support");
+            this->patternItemConstraints        = Config::parseConstraints(patternsJSON, "item constraints");
+            // Query: association rules.
+            const QVariantMap & associationRulesJSON = queryJSON["association rules"].toMap();
+            this->minRuleConfidence             = Config::parseDouble(associationRulesJSON, "minimum confidence");
+            this->ruleConsequentItemConstraints = Config::parseConstraints(associationRulesJSON, "consequent item constraints");
 
             // Attributes.
             const QVariantMap & attributesJSON = json["attributes"].toMap();
@@ -222,14 +226,18 @@ namespace Config {
     QDebug operator<<(QDebug dbg, const Config & config) {
         dbg.nospace() << "{" << endl;
         dbg.nospace() << "  query : {" << endl;
-        dbg.nospace() << "    \"minimum pattern support\" : " << config.minPatternSupport << "," << endl;
-        dbg.nospace() << "    \"minimum potential pattern support\" : " << config.minPotentialPatternSupport << "," << endl;
-        dbg.nospace() << "    \"minimum association rule confidence\" : " << config.minRuleConfidence << "," << endl;
-        dbg.nospace() << "    \"pattern constraints\" : {," << endl;
-        constraintHashHelper(dbg, config.patternConstraints);
+        dbg.nospace() << "    \"patterns\" : {" << endl;
+        dbg.nospace() << "      \"minimum support\" : " << config.minPatternSupport << "," << endl;
+        dbg.nospace() << "      \"minimum potential pattern support\" : " << config.minPotentialPatternSupport << "," << endl;
+        dbg.nospace() << "      \"item constraints\" : {," << endl;
+        constraintHashHelper(dbg, config.patternItemConstraints);
+        dbg.nospace() << "      }," << endl;
         dbg.nospace() << "    }," << endl;
-        dbg.nospace() << "    \"rule consequent constraints\" : {" << endl;
-        constraintHashHelper(dbg, config.ruleConsequentConstraints);
+        dbg.nospace() << "    \"association rules\" : {" << endl;
+        dbg.nospace() << "      \"minimum confidence\" : " << config.minRuleConfidence << "," << endl;
+        dbg.nospace() << "      \"consequent item constraints\" : {" << endl;
+        constraintHashHelper(dbg, config.ruleConsequentItemConstraints);
+        dbg.nospace() << "      }," << endl;
         dbg.nospace() << "    }," << endl;
         dbg.nospace() << "  }," << endl;
         dbg.nospace() << "  attributes : {" << endl;
@@ -347,11 +355,11 @@ namespace Config {
 
     QDebug constraintHashHelper(QDebug dbg, const QHash<Analytics::ItemConstraintType, QSet<Analytics::ItemName> > & hash) {
         if (!hash[Analytics::CONSTRAINT_POSITIVE_MATCH_ANY].isEmpty()) {
-            dbg.nospace() << "      positive : ";
+            dbg.nospace() << "        positive : ";
             constraintItemsHelper(dbg, hash[Analytics::CONSTRAINT_POSITIVE_MATCH_ANY]);
         }
         if (!hash[Analytics::CONSTRAINT_NEGATIVE_MATCH_ANY].isEmpty()) {
-            dbg.nospace() << "      negative : ";
+            dbg.nospace() << "        negative : ";
             constraintItemsHelper(dbg, hash[Analytics::CONSTRAINT_NEGATIVE_MATCH_ANY]);
         }
         return dbg.nospace();

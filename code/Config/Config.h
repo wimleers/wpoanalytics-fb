@@ -54,12 +54,14 @@ namespace Config {
         Config();
         bool parse(const QString & fileName);
 
-        // Getters (pattern mining query).
+        // Getters (query: patterns).
         double getMinPatternSupport() const { return this->minPatternSupport; }
         double getMinPotentialPatternSupport() const { return this->minPotentialPatternSupport; }
+        const Analytics::ItemConstraintsHash & getPatternItemConstraints() const { return this->patternItemConstraints; }
+
+        // Getters (query: association rules).
         double getMinRuleConfidence() const { return this->minRuleConfidence; }
-        const Analytics::ItemConstraintsHash & getPatternConstraints() const { return this->patternConstraints; }
-        const Analytics::ItemConstraintsHash & getRuleConsequentConstraints() const { return this->ruleConsequentConstraints; }
+        const Analytics::ItemConstraintsHash & getRuleConsequentItemConstraints() const { return this->ruleConsequentItemConstraints; }
 
         // Getters (attributes).
         const QHash<FacebookLogParser::EpisodeName, Attribute> & getCategoricalAttributes() const { return this->categoricalAttributes; }
@@ -78,11 +80,16 @@ namespace Config {
         static Attribute parseAttribute(const QVariantMap & json, const QString & field);
         static QSet<Discretization> parseDiscretizations(const QVariant & json, const QString & field);
 
+        // Query: patterns
         double minPatternSupport;
         double minPotentialPatternSupport;
+        Analytics::ItemConstraintsHash patternItemConstraints;
+
+        // Query: association rules
         double minRuleConfidence;
-        Analytics::ItemConstraintsHash patternConstraints;
-        Analytics::ItemConstraintsHash ruleConsequentConstraints;
+        Analytics::ItemConstraintsHash ruleConsequentItemConstraints;
+
+        // Attributes
         QHash<FacebookLogParser::EpisodeName, Attribute> categoricalAttributes;
         QHash<FacebookLogParser::EpisodeName, Attribute> numericalAttributes;
 
