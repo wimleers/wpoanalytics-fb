@@ -76,8 +76,6 @@ namespace Analytics {
     }
 
     QDebug operator<<(QDebug dbg, const FrequentItemset & frequentItemset) {
-        QString itemOutput;
-
         dbg.nospace() << "({";
         itemIDHelper(dbg, frequentItemset.itemset, frequentItemset.IDNameHash);
         dbg.nospace() << "}, sup: "
