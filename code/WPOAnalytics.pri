@@ -1,5 +1,7 @@
-DEPENDPATH += FacebookLogParser \
+DEPENDPATH += Config \
+              FacebookLogParser \
               Analytics
+include("Config/Config.pri")
 include("FacebookLogParser/FacebookLogParser.pri")
 include("Analytics/Analytics.pri")
 

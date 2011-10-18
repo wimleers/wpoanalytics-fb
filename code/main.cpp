@@ -2,7 +2,8 @@
 
 #ifdef INTERFACE_COMMANDLINE
 #include <QCoreApplication>
-#include <qxtcommandoptions.h>
+//#include <QTimer>
+#include "CLI/CLI.h"
 #endif
 
 #ifdef INTERFACE_GRAPHICAL
@@ -14,38 +15,23 @@
 int main(int argc, char *argv[]) {
 #ifdef INTERFACE_COMMANDLINE
     QCoreApplication app(argc, argv);
-    QxtCommandOptions options;
-    // Config.
-    options.add("config", "config file");
-    options.add("verify-config", "verify a config file");
-    // State.
-    options.add("load", "load state");
-    options.alias("load", "l");
-    options.add("save", "save state");
-    options.alias("save", "s");
-    // Data.
-    options.add("stdin", "use stdin as input instead of input file (overrides --input)");
-    options.add("input", "define input file");
-    options.add("stdout", "use stdout as output instead of output file");
-    options.add("output", "define output file");
-    // Other.
-    options.add("help", "Help text -- yet to be written");
-    options.alias("help", "h");
-    options.parse(QCoreApplication::arguments());
-    if (options.count("help") || options.showUnrecognizedWarning()) {
-        options.showUsage();
+
+    CLI * cli = new CLI();
+//    QObject::connect(cli, SIGNAL(finished()), &app, SLOT(quit()));
+
+    // Parse command-line options. Stop immediately if there's an error.
+    if (cli->parseCommandOptions() == -1) {
+        delete cli;
         return -1;
     }
-    bool verbose = options.count("verbose");
-    int level = 5;
-    if (options.count("level")) {
-        level = options.value("level").toInt();
+    else {
+//        QTimer::singleShot(0, cli, SLOT(run()));
+        cli->run();
+        delete cli;
     }
 
-    // For now.
+//    return app.exec();
     return 0;
-
-    return app.exec();
 #endif
 
 #ifdef INTERFACE_GRAPHICAL

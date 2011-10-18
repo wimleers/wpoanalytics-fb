@@ -1,0 +1,151 @@
+{
+	"query" : {
+		"minimum pattern support" : 0.05,
+		"minimum potential pattern support" : 0.03,
+		"minimum association rule confidence" : 0.10,
+		"pattern constraints" : {
+			"positive" : ["episode:*"],
+		},
+		"rule consequent constraints" : {
+			"positive" : ["duration:*"],
+		},
+	},
+	"attributes" : {
+		"categorical" : {
+			"browser" : {},
+			"major" : {
+				"name" : "browser",
+				"parentAttribute" : "browser",
+			},
+			"country" : {},
+			"platform" : {},
+			"colo" : {},
+			"connection_speed" : {},
+			"page" : {},
+			"site_category" : {},
+		},
+		"numerical" : {
+			"cssrules" : {
+				"name" : "css:rules",
+				"discretizations" : [
+					{
+						"thresholds" : { "few" : 200, "acceptable" : 350, "many" : 1000 },
+						"circumstances" : [
+							"page:/timeline.php",
+						]
+					},
+					{
+						"thresholds" : { "few" : 150, "acceptable" : 250, "many" : -1 }
+					}
+				]
+			},
+			"js_filebytes" : {
+				"name" : "js:file:bytes",
+				"discretizations" : [
+					{
+						"thresholds" : { "few" : 10000, "acceptable" : 20000, "many" : -1 }
+					}					
+				]
+			},
+			"js_pkgbytes" : {
+				"name" : "js:pkg:bytes",
+				"discretizations" : [
+					{
+						"thresholds" : { "few" : 40000, "acceptable" : 60000, "many" : -1 }
+					}					
+				]
+			},
+			"jspackages" : {
+				"name" : "js:pkg:count",
+				"discretizations" : [
+					{
+						"thresholds" : { "few" : 4, "acceptable" : 6, "many": 8, "way too many" : -1 }
+					}					
+				]
+			},
+			"e2e" : {
+				"name" : "e2eTime",
+				"isEpisode" : true,
+				"discretizations" : [
+					{
+						"thresholds" : { "fast" : 1200, "acceptable" : 2200, "slow" : -1 },
+						"circumstances" : [
+							"connection:broadband",
+						]
+					},
+					{
+						"thresholds" : { "fast" : 2000, "acceptable" : 3500, "slow" : -1 },
+						"circumstances" : [
+							"connection:mobile",
+						]
+					},
+					{
+						"thresholds" : { "fast" : 1700, "acceptable" : 2800, "slow" : -1 },
+						"circumstances" : [
+							"connection:mobile",
+							"country:US"
+						]
+					},
+					{
+						"thresholds" : { "fast" : 1500, "acceptable" : 2400, "slow" : -1 },
+					},
+				]
+			},
+			"flush_time_early" : {
+				"name" : "earlyFlushTime",
+				"isEpisode" : true,
+				"discretizations" : [
+					{
+						"thresholds" : { "fast" : 50, "acceptable" : 100, "slow" : -1 },
+					},
+				]
+			},
+			"gen_time" : {
+				"name" : "serverTime",
+				"isEpisode" : true,
+				"discretizations" : [
+					{
+						"thresholds" : { "fast" : 400, "acceptable" : 1000, "slow" : -1 },
+					},
+				]
+			},
+			"network" : {
+				"name" : "networkTime",
+				"isEpisode" : true,
+				"discretizations" : [
+					{
+						"thresholds" : { "fast" : 600, "acceptable" : 1200, "slow" : -1 },
+					},
+				]
+			},
+			"tti" : {
+				"name" : "ttiTime",
+				"isEpisode" : true,
+				"discretizations" : [
+					{
+						"thresholds" : { "fast" : 1000, "acceptable" : 2000, "slow" : -1 },
+						"circumstances" : [
+							"connection:broadband",
+						]
+					},
+					{
+						"thresholds" : { "fast" : 1600, "acceptable" : 2400, "slow" : -1 },
+						"circumstances" : [
+							"connection:mobile",
+						]
+					},
+					{
+						"thresholds" : { "fast" : 1500, "acceptable" : 2100, "slow" : -1 },
+						"circumstances" : [
+							"connection:mobile",
+							"country:US"
+						]
+					},
+					{
+						"thresholds" : { "fast" : 1500, "acceptable" : 2200, "slow" : -1 },
+					},
+				]
+			},
+		}
+	}
+}
