@@ -22,6 +22,8 @@ namespace Analytics {
         CONSTRAINT_NEGATIVE_MATCH_ANY
     };
 
+    typedef QHash<ItemConstraintType, QSet<ItemName> > ItemConstraintsHash;
+
     class Constraints {
 
 #ifdef DEBUG
@@ -60,7 +62,7 @@ namespace Analytics {
 
         void addPreprocessedItemConstraint(ItemConstraintType type, const ItemName & category, ItemID id);
 
-        QHash<ItemConstraintType, QSet<ItemName> > itemConstraints;
+        ItemConstraintsHash itemConstraints;
         QHash<ItemConstraintType, QHash<ItemName, QSet<ItemID> > > preprocessedItemConstraints;
         ItemID highestPreprocessedItemID;
     };
