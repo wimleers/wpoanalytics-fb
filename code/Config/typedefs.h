@@ -13,7 +13,7 @@
 #endif
 
 
-namespace FacebookLogParser {
+namespace Config {
 
 
 typedef uint Time;
@@ -47,14 +47,13 @@ typedef QList<Episode> EpisodeList;
 
 // Efficient storage of circumstances.
 typedef QString Circumstance;
-typedef QList<Circumstance> CircumstanceList;
-
+typedef QSet<Circumstance> Circumstances;
 
 // Parsed sample.
 struct Sample {
     Time time;
     EpisodeList episodes;
-    CircumstanceList circumstances;
+    Circumstances circumstances;
 #ifdef DEBUG
     EpisodeIDNameHash * episodeIDNameHash;
 #endif
@@ -64,15 +63,11 @@ struct Sample {
 // QDebug() streaming output operators.
 QDebug operator<<(QDebug dbg, const Episode & episode);
 QDebug operator<<(QDebug dbg, const Episode & episodeList);
-QDebug operator<<(QDebug dbg, const CircumstanceList & circumstanceList);
+QDebug operator<<(QDebug dbg, const Circumstances & circumstances);
 QDebug operator<<(QDebug dbg, const Sample & sample);
 #endif
 
 
 }
-
-// Register metatypes to allow these types to be streamed in QTests.
-Q_DECLARE_METATYPE(FacebookLogParser::EpisodeList)
-Q_DECLARE_METATYPE(FacebookLogParser::Episode)
 
 #endif // TYPEDEFS_H

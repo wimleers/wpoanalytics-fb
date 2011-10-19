@@ -8,9 +8,11 @@ DEPENDPATH += $${PWD}
 include("../shared/qxtjson.pri")
 
 SOURCES += \
+    $${PWD}/typedefs.cpp \
     $${PWD}/Config.cpp
 
 HEADERS += \
+    $${PWD}/typedefs.h \
     $${PWD}/Config.h
 
 # Disable qDebug() output when in release mode.

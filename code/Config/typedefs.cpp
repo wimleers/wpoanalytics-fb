@@ -1,7 +1,7 @@
 #include "typedefs.h"
 
 
-namespace FacebookLogParser {
+namespace Config {
 
 #ifdef DEBUG
     QDebug operator<<(QDebug dbg, const Episode & e) {
@@ -35,15 +35,15 @@ namespace FacebookLogParser {
         return dbg.nospace();
     }
 
-    QDebug operator<<(QDebug dbg, const CircumstanceList & cl) {
-        dbg.nospace() << "[size=" << cl.size() << "] ";
+    QDebug operator<<(QDebug dbg, const Circumstances & c) {
+        dbg.nospace() << "[size=" << c.size() << "] ";
         dbg.nospace() << "{";
 
-        for (int i = 0; i < cl.size(); i++) {
+        for (int i = 0; i < c.size(); i++) {
             if (i > 0)
                 dbg.nospace() << ", ";
 
-            dbg.nospace() << cl.at(i).toStdString().c_str();
+            dbg.nospace() << c.toList().at(i).toStdString().c_str();
         }
         dbg.nospace() << "}";
 

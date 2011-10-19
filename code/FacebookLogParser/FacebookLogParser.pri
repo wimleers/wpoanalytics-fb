@@ -5,17 +5,14 @@ INCLUDEPATH += $${PWD}
 
 DEPENDPATH += $${PWD}
 
+include("../Config/config.pri")
 include("../shared/qxtjson.pri")
 
 SOURCES += \
-    $${PWD}/Parser.cpp \
-    $${PWD}/typedefs.cpp \
-    $${PWD}/EpisodeDurationDiscretizer.cpp
+    $${PWD}/Parser.cpp
 
 HEADERS += \
-    $${PWD}/Parser.h \
-    $${PWD}/typedefs.h \
-    $${PWD}/EpisodeDurationDiscretizer.h
+    $${PWD}/Parser.h
 
 # Disable qDebug() output when in release mode.
 CONFIG(release, debug|release):DEFINES += QT_NO_DEBUG_OUTPUT

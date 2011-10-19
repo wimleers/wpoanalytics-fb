@@ -45,16 +45,20 @@ namespace Config {
         return true;
     }
 
-    const FacebookLogParser::EpisodeSpeed & Config::discretize(const FacebookLogParser::EpisodeName & episodeName,
-                                                       FacebookLogParser::EpisodeDuration duration,
-                                                       QSet<FacebookLogParser::EpisodeName> circumstances
-                                                       )
+    EpisodeSpeed Config::discretize(const EpisodeName & episodeName,
+                                                       EpisodeDuration duration,
+                                                       Circumstances circumstances
+                                                       ) const
     {
+        if (this->numericalAttributes[episodeName].discretizations.size() == 0) {
+            qDebug() << this->numericalAttributes;
+            qDebug() << episodeName;
+        }
         Q_ASSERT(this->numericalAttributes[episodeName].discretizations.size() > 0);
 
         // Are there conditional discretizations (different discretizations
         // depending on the circumstances), or is there just one?
-        bool conditional = this->numericalAttributes[episodeName].discretizations.size() == 1;
+        bool conditional = this->numericalAttributes[episodeName].discretizations.size() > 1;
 
         Discretization discretization;
 
@@ -65,14 +69,12 @@ namespace Config {
         // Find the most specific matching circumstances.
         else {
             QSet<Discretization> matchingDiscretizations = this->numericalAttributes[episodeName].discretizations;
-            qDebug() << "before:" << matchingDiscretizations;
             QMutableSetIterator<Discretization> i(matchingDiscretizations);
             while (i.hasNext()) {
                 Discretization d = i.next();
                 if (d.circumstances.intersect(circumstances).isEmpty())
                     i.remove();
             }
-            qDebug() << "after:" << matchingDiscretizations;
 
             // If we *still* have multiple matching discretizations, sort by
             // size and then pick the first one. If multiple circumstances have
@@ -98,21 +100,23 @@ namespace Config {
                 QMutableSetIterator<Discretization> i(discretizations);
                 while (i.hasNext()) {
                     const Discretization & d = i.next();
-                    if (!d.circumstances.isEmpty())
-                        i.remove();
+                    if (d.isDefault()) {
+                        discretization = d;
+                        break;
+                    }
                 }
-                discretization = discretizations.toList()[0];
             }
+            // Just one matching discretization.
+            else
+                discretization = matchingDiscretizations.toList()[0];
         }
 
-        qDebug() << "selected discretization: " << discretization;
 
         // Now we have a discretization to apply. Apply it.
-        FacebookLogParser::EpisodeDuration maxDuration;
-        foreach (maxDuration, discretization.thresholds.keys()) {
+        EpisodeDuration maxDuration;
+        foreach (maxDuration, discretization.thresholds.keys())
             if (duration <= maxDuration)
                 return discretization.thresholds[maxDuration];
-        }
 
         qCritical("The duration %d for the Episode '%s' could not be mapped to a discretized speed.", duration, qPrintable(episodeName));
         static QString compilerSatisfaction = QString("satisfy the compiler");
@@ -193,7 +197,7 @@ namespace Config {
                 qCritical("The 'thresholds' data is missing for the attribute '%s'.", qPrintable(field));
             else {
                 QVariantMap thresholdsJSON = relevantJSON["thresholds"].toMap();
-                foreach (const FacebookLogParser::EpisodeSpeed & episodeSpeed, thresholdsJSON.keys())
+                foreach (const EpisodeSpeed & episodeSpeed, thresholdsJSON.keys())
                     d.thresholds.insert(thresholdsJSON[episodeSpeed].toUInt(), episodeSpeed);
             }
 
@@ -215,9 +219,9 @@ namespace Config {
 
     uint qHash(const Discretization & d) {
         QString s;
-        foreach (FacebookLogParser::EpisodeDuration episodeDuration, d.thresholds.keys())
+        foreach (EpisodeDuration episodeDuration, d.thresholds.keys())
             s += d.thresholds[episodeDuration] + '=' + QString::number(episodeDuration) + ':';
-        foreach (const FacebookLogParser::EpisodeName & episodeName, d.circumstances)
+        foreach (const EpisodeName & episodeName, d.circumstances)
             s += episodeName + ':';
         return qHash(s);
     }
@@ -242,11 +246,11 @@ namespace Config {
         dbg.nospace() << "  }," << endl;
         dbg.nospace() << "  attributes : {" << endl;
         dbg.nospace() << "    categorical : {" << endl;
-        foreach (const FacebookLogParser::EpisodeName & episodeName, config.categoricalAttributes.keys())
+        foreach (const EpisodeName & episodeName, config.categoricalAttributes.keys())
             attributeHelper(dbg, config.categoricalAttributes[episodeName], "      ");
         dbg.nospace() << "    }," << endl;
         dbg.nospace() << "    numerical : {" << endl;
-        foreach (const FacebookLogParser::EpisodeName & episodeName, config.numericalAttributes.keys()) {
+        foreach (const EpisodeName & episodeName, config.numericalAttributes.keys()) {
             attributeHelper(dbg, config.numericalAttributes[episodeName], "      ");
         }
         dbg.nospace() << "    }," << endl;
@@ -266,7 +270,7 @@ namespace Config {
     }
 
     QDebug operator<<(QDebug dbg, const Discretization & discretization) {
-        QList<FacebookLogParser::EpisodeDuration> durations = discretization.thresholds.keys();
+        QList<EpisodeDuration> durations = discretization.thresholds.keys();
         qSort(durations.begin(), durations.end());
 
         dbg.nospace() << "{ ";
@@ -276,7 +280,7 @@ namespace Config {
         for (int i = 0; i < durations.size(); i++) {
             if (i > 0)
                 dbg.nospace() << ", ";
-            FacebookLogParser::EpisodeDuration duration = durations[i];
+            EpisodeDuration duration = durations[i];
             dbg.nospace() << '"' << discretization.thresholds[duration].toStdString().c_str() << '"';
             dbg.nospace() << " : " << duration;
         }
@@ -295,7 +299,7 @@ namespace Config {
 
         dbg.nospace() << " }";
 
-        return dbg.nospace();
+        return dbg.maybeSpace();
     }
 
     QDebug attributeHelper(QDebug dbg, const Attribute & attribute, const char * prefix) {

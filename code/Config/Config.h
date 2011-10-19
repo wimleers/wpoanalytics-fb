@@ -13,7 +13,7 @@
 
 #include "qxtjson.h"
 
-#include "../FacebookLogParser/typedefs.h"
+#include "typedefs.h"
 #include "../Analytics/Item.h"
 #include "../Analytics/Constraints.h"
 
@@ -22,8 +22,8 @@ namespace Config {
     struct Discretization {
         bool isDefault() const { return this->circumstances.isEmpty(); }
 
-        QMap<FacebookLogParser::EpisodeDuration, FacebookLogParser::EpisodeSpeed> thresholds;
-        QSet<Analytics::ItemName> circumstances;
+        QMap<EpisodeDuration, EpisodeSpeed> thresholds;
+        Circumstances circumstances;
     };
 
     struct Attribute {
@@ -64,14 +64,14 @@ namespace Config {
         const Analytics::ItemConstraintsHash & getRuleConsequentItemConstraints() const { return this->ruleConsequentItemConstraints; }
 
         // Getters (attributes).
-        const QHash<FacebookLogParser::EpisodeName, Attribute> & getCategoricalAttributes() const { return this->categoricalAttributes; }
-        const QHash<FacebookLogParser::EpisodeName, Attribute> & getNumericalAttributes() const { return this->numericalAttributes; }
+        const QHash<EpisodeName, Attribute> & getCategoricalAttributes() const { return this->categoricalAttributes; }
+        const QHash<EpisodeName, Attribute> & getNumericalAttributes() const { return this->numericalAttributes; }
 
         // Utility methods.
-        const FacebookLogParser::EpisodeSpeed & discretize(const FacebookLogParser::EpisodeName & episodeName,
-                                                           FacebookLogParser::EpisodeDuration duration,
-                                                           QSet<FacebookLogParser::EpisodeName> circumstances
-                                                           );
+        EpisodeSpeed discretize(const EpisodeName & episodeName,
+                                        EpisodeDuration duration,
+                                        Circumstances circumstances
+                                        ) const;
 
     protected:
         // Parsing helper methods (all static).
@@ -90,8 +90,8 @@ namespace Config {
         Analytics::ItemConstraintsHash ruleConsequentItemConstraints;
 
         // Attributes
-        QHash<FacebookLogParser::EpisodeName, Attribute> categoricalAttributes;
-        QHash<FacebookLogParser::EpisodeName, Attribute> numericalAttributes;
+        QHash<EpisodeName, Attribute> categoricalAttributes;
+        QHash<EpisodeName, Attribute> numericalAttributes;
 
 #ifdef DEBUG
     friend QDebug operator<<(QDebug dbg, const Config & config);

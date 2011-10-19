@@ -16,8 +16,12 @@
 
 #include "qxtjson.h"
 
-#include "EpisodeDurationDiscretizer.h"
-#include "typedefs.h"
+
+
+#include "../Config/Config.h"
+
+
+typedef uint Time;
 
 
 namespace FacebookLogParser {
@@ -30,13 +34,11 @@ namespace FacebookLogParser {
         Q_OBJECT
 
     public:
-        Parser();
-        static void initParserHelpers(const QString & discretizerCSV);
-        static void clearParserHelperCaches();
+        Parser(const Config::Config * const config);
 
         // Processing logic.
-        static Sample parseSample(const QString & rawSample);
-        static QList<QStringList> mapSampleToTransactions(const Sample & sample);
+        static Config::Sample parseSample(const QString & rawSample, const Config::Config * const config);
+        static QList<QStringList> mapSampleToTransactions(const Config::Sample & sample, const Config::Config * const config);
 
     signals:
         void parsing(bool);
@@ -48,7 +50,7 @@ namespace FacebookLogParser {
         void continueParsing();
 
     protected slots:
-        void processBatch(const QList<Sample> batch, quint32 quarterID, bool lastChunkOfBatch);
+        void processBatch(const QList<Config::Sample> batch, quint32 quarterID, bool lastChunkOfBatch);
 
     protected:
         void processParsedChunk(const QStringList & chunk, bool forceProcessing = false);
@@ -60,18 +62,17 @@ namespace FacebookLogParser {
 
 
         // QHashes that are used to minimize memory usage.
-        static EpisodeNameIDHash episodeNameIDHash;
-        static EpisodeIDNameHash episodeIDNameHash;
+        static Config::EpisodeNameIDHash episodeNameIDHash;
+        static Config::EpisodeIDNameHash episodeIDNameHash;
+        static QHash<Config::EpisodeName, QString> episodeNameFieldNameHash;
 
-        static bool parserHelpersInitialized;
-        static EpisodeDurationDiscretizer episodeDiscretizer;
+        const Config::Config * config;
 
         // Mutexes used to ensure thread-safety.
-        static QMutex parserHelpersInitMutex;
         static QMutex episodeHashMutex;
 
         // Methods to actually use the above QHashes.
-        static EpisodeID mapEpisodeNameToID(EpisodeName name);
+        static Config::EpisodeID mapEpisodeNameToID(const Config::EpisodeName & name, const QString & fieldName);
     };
 
 }

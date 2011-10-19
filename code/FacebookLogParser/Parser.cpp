@@ -1,45 +1,14 @@
 #include "Parser.h"
 
 namespace FacebookLogParser {
-    EpisodeNameIDHash Parser::episodeNameIDHash;
-    EpisodeIDNameHash Parser::episodeIDNameHash;
-    bool Parser::parserHelpersInitialized = false;
+    Config::EpisodeNameIDHash Parser::episodeNameIDHash;
+    Config::EpisodeIDNameHash Parser::episodeIDNameHash;
+    QHash<Config::EpisodeName, QString> Parser::episodeNameFieldNameHash;
 
-    EpisodeDurationDiscretizer Parser::episodeDiscretizer;
-
-    QMutex Parser::parserHelpersInitMutex;
     QMutex Parser::episodeHashMutex;
 
-    Parser::Parser() {
-        Parser::parserHelpersInitMutex.lock();
-        if (!Parser::parserHelpersInitialized)
-            qFatal("Call Parser::initParserHelper()  before creating Parser instances.");
-        Parser::parserHelpersInitMutex.unlock();
-    }
-
-    void Parser::initParserHelpers(const QString & episodeDiscretizerCSV) {
-        Parser::parserHelpersInitMutex.lock();
-        if (!Parser::parserHelpersInitialized) {
-            // No significant permanent memory consumption.
-            Parser::episodeDiscretizer.parseCsvFile(episodeDiscretizerCSV);
-
-            Parser::parserHelpersInitialized = true;
-        }
-        Parser::parserHelpersInitMutex.unlock();
-    }
-
-    /**
-     * Clear parser helpers' caches.
-     *
-     * Call this function whenever the Parser will not be used for long
-     * periods of time.
-     */
-    void Parser::clearParserHelperCaches() {
-        Parser::parserHelpersInitMutex.lock();
-        if (Parser::parserHelpersInitialized) {
-            Parser::parserHelpersInitialized = false;
-        }
-        Parser::parserHelpersInitMutex.unlock();
+    Parser::Parser(const Config::Config * const config) {
+        this->config = config;
     }
 
 
@@ -92,8 +61,6 @@ namespace FacebookLogParser {
             // Notify the UI.
             emit parsing(false);
         }
-
-        Parser::clearParserHelperCaches();
     }
 
     void Parser::continueParsing() {
@@ -110,6 +77,8 @@ namespace FacebookLogParser {
      *
      * @param name
      *   Episode name.
+     * @param fieldName
+     *   The name of the field; this may differ from the episode name sometimes.
      * @return
      *   The corresponding episode ID.
      *
@@ -117,13 +86,15 @@ namespace FacebookLogParser {
      * inserted in the QHash), hence we need to use a mutex to ensure thread
      * safety.
      */
-    EpisodeID Parser::mapEpisodeNameToID(EpisodeName name) {
+    Config::EpisodeID Parser::mapEpisodeNameToID(const Config::EpisodeName & name, const QString & fieldName) {
         if (!Parser::episodeNameIDHash.contains(name)) {
             Parser::episodeHashMutex.lock();
 
-            EpisodeID id = Parser::episodeNameIDHash.size();
+            Config::EpisodeID id = Parser::episodeNameIDHash.size();
             Parser::episodeNameIDHash.insert(name, id);
             Parser::episodeIDNameHash.insert(id, name);
+
+            Parser::episodeNameFieldNameHash.insert(name, fieldName);
 
             Parser::episodeHashMutex.unlock();
         }
@@ -139,109 +110,93 @@ namespace FacebookLogParser {
      * @return
      *   Corresponding Sample data structure.
      */
-    Sample Parser::parseSample(const QString & rawSample) {
-        Sample sample;
-        Episode episode;
+    Config::Sample Parser::parseSample(const QString & rawSample, const Config::Config * const config) {
+        Config::Sample sample;
 
-        // rawSample is of the format
-        // 1) checkpoint
-        //      # cp=@@@[lots of stuff here]@@@
-        //    -> in this case, QxtJSON::parse() will return QVariant(bool, false)
-        // 2) log entry: JSON object of the form
-        //      { "int" : { "key" : 1345345, ...},
-        //        "normal" : { "key" : "low cardinality" },
-        //        "denorm" : { "key" : "high cardinality" }
-        //      }
-        //    -> in this case, QxtJSON::parse() will return a QVariant()
+        // Get config.
+        QHash<Config::EpisodeName, Config::Attribute> numericalAttributes = config->getNumericalAttributes();
+        QHash<Config::EpisodeName, Config::Attribute> categoricalAttributes = config->getCategoricalAttributes();
+        Config::Attribute attribute;
 
-
-        // HARDCODED CONFIG (for now)
-        QStringList acceptedIntegers = QStringList()
-                // perfpipe_cavalry
-                << "e2e"              // end-to-end time
-                << "flush_time_early" // early flush time
-                << "gen_time"         // server time
-                << "network"          // network time
-                << "tti"              // Time To Interact
-
-                // perfpipe_doppler_cdn
-                << "load_time"
-                ;
-        QStringList acceptedNormals = QStringList()
-                // <shared>
-                << "browser"
-                << "country"
-                << "platform"
-
-                // perfpipe_cavalry
-                << "colo"
-                << "connection_speed"
-                << "page"
-                << "site_category"
-
-                // perfpipe_doppler_cdn
-                << "asn"
-                ;
-        QStringList acceptedDenorms = QStringList()
-                // None!
-                ;
-
-
+        // Parse.
         QVariantMap json = QxtJSON::parse(rawSample).toMap();
 
-        // 1) Process ints.
+        // 1) Process normals.
+        const QVariantMap & normals = json["normal"].toMap();
+        foreach (const QString & key, normals.keys()) {
+            if (categoricalAttributes.contains(key)) {
+                attribute = categoricalAttributes[key];
+
+                if (attribute.parentAttribute.isNull())
+                    sample.circumstances.insert(attribute.name + ':' + normals[key].toString());
+                else if (!normals.contains(attribute.parentAttribute)) {
+                    qWarning("A sample did NOT contain the parent attribute '%s' for the attribute '%s'!", qPrintable(attribute.parentAttribute), qPrintable(attribute.name));
+                    sample.circumstances.insert(attribute.name + ':' + normals[attribute.parentAttribute].toString() + ':' + normals[key].toString());
+                }
+            }
+        }
+
+        // 2) Process denormals.
+        const QVariantMap & denorms = json["denorm"].toMap();
+        foreach (const QString & key, denorms.keys()) {
+            if (categoricalAttributes.contains(key)) {
+                attribute = categoricalAttributes[key];
+                sample.circumstances.insert(attribute.name + ":" + denorms[key].toString());
+            }
+        }
+
+        Config::Circumstances categoricalCircumstances = sample.circumstances;
+
+        // 3) Process ints.
         const QVariantMap & integers = json["int"].toMap();
+        Config::Episode episode;
+        Config::EpisodeSpeed speed;
         foreach (const QString & key, integers.keys()) {
-            if (acceptedIntegers.contains(key)) {
-                episode.id = Parser::mapEpisodeNameToID(key);
-                episode.duration = integers[key].toInt();
+            if (numericalAttributes.contains(key)) {
+                attribute = numericalAttributes[key];
+
+                if (attribute.isEpisode) {
+                    episode.id = Parser::mapEpisodeNameToID(attribute.name, attribute.field);
+                    episode.duration = integers[key].toInt();
 #ifdef DEBUG
-                episode.IDNameHash = &Parser::episodeIDNameHash;
+                    episode.IDNameHash = &Parser::episodeIDNameHash;
 #endif
-                // Drop the episode when no data was collected.
-                if (episode.duration > 0)
-                    sample.episodes.append(episode);
+                    // Drop the episode when no data was collected.
+                    if (episode.duration > 0)
+                        sample.episodes.append(episode);
+                }
+                else {
+                    // Discretize based on the circumstances gathered from the
+                    // categorical attributes. This ensures that all numerical
+                    // attributes that follow this code path will receive an
+                    // identical set of circumstances.
+                    speed = config->discretize(attribute.field, integers[key].toInt(), categoricalCircumstances);
+                    sample.circumstances.insert(attribute.name + ":" + speed);
+                }
             }
         }
         // One special case: time.
         sample.time = integers["time"].toInt();
 
-        // 2) Process normals.
-        const QVariantMap & normals = json["normal"].toMap();
-        foreach (const QString & key, normals.keys())
-            if (acceptedNormals.contains(key))
-                sample.circumstances.append(key + ":" + normals[key].toString());
-        // Special case: browser + major are combined into a hierarchical item.
-        if (normals.contains("browser") && normals.contains("major"))
-            sample.circumstances.append("browser:" + normals["browser"].toString() + ":" + normals["major"].toString());
-
-        // 3) Process denormals.
-        const QVariantMap & denorms = json["denorm"].toMap();
-        foreach (const QString & key, denorms.keys())
-            if (acceptedDenorms.contains(key))
-                sample.circumstances.append(key + ":" + denorms[key].toString());
-
-//        static int n = 0;
-//        n++;
-//        if (n == 1) {
-//            exit(1);
-//        }
-
         return sample;
     }
 
-    QList<QStringList> Parser::mapSampleToTransactions(const Sample & sample) {
+    QList<QStringList> Parser::mapSampleToTransactions(const Config::Sample & sample, const Config::Config * const config) {
         QList<QStringList> transactions;
 
-        Episode episode;
-        EpisodeName episodeName;
+        Config::Episode episode;
+        Config::EpisodeName episodeName;
         QStringList transaction;
         foreach (episode, sample.episodes) {
             episodeName = Parser::episodeIDNameHash[episode.id];
             transaction << QString("episode:") + episodeName
-                        << QString("duration:") + Parser::episodeDiscretizer.mapToSpeed(episodeName, episode.duration)
+                        << QString("duration:") + config->discretize(
+                               Parser::episodeNameFieldNameHash[episodeName],
+                               episode.duration,
+                               sample.circumstances
+                           )
                         // Append the circumstances.
-                        << sample.circumstances;
+                        << sample.circumstances.toList();
             transactions << transaction;
             transaction.clear();
         }
@@ -253,7 +208,7 @@ namespace FacebookLogParser {
     //---------------------------------------------------------------------------
     // Protected slots.
 
-    void Parser::processBatch(const QList<Sample> batch, quint32 quarterID, bool lastChunkOfBatch) {
+    void Parser::processBatch(const QList<Config::Sample> batch, quint32 quarterID, bool lastChunkOfBatch) {
         double transactionsPerEvent;
 #ifdef DEBUG
         uint items = 0;
@@ -268,9 +223,9 @@ namespace FacebookLogParser {
         // transactions concurrently
 //        QList< QList<QStringList> > groupedTransactions = QtConcurrent::blockingMapped(expandedChunk, Parser::mapExpandedEpisodesLogLineToTransactions);
         QList< QList<QStringList> > groupedTransactions;
-        Sample sample;
+        Config::Sample sample;
         foreach (sample, batch) {
-            groupedTransactions << Parser::mapSampleToTransactions(sample);
+            groupedTransactions << Parser::mapSampleToTransactions(sample, this->config);
         }
 
         // Perform the merging of transaction groups into a single list of
@@ -316,19 +271,19 @@ namespace FacebookLogParser {
 
     void Parser::processParsedChunk(const QStringList & chunk, bool forceProcessing) {
         static quint32 currentQuarterID = 0;
-        static QList<Sample> batch;
+        static QList<Config::Sample> batch;
         quint16 sampleNumber = 0;
 
         // Perform the mapping from strings to EpisodesLogLine concurrently.
 //        QList<EpisodesLogLine> mappedChunk = QtConcurrent::blockingMapped(chunk, Parser::mapLineToEpisodesLogLine);
         QString rawSample;
-        Sample sample;
+        Config::Sample sample;
         foreach (rawSample, chunk) {
             // Don't waste time parsing checkpointing lines.
             if (rawSample.at(0) == '#')
                 continue;
 
-            sample = Parser::parseSample(rawSample);
+            sample = Parser::parseSample(rawSample, this->config);
 
             // Calculate the initial currentQuarterID.
             if (currentQuarterID == 0)
