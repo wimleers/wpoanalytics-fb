@@ -50,10 +50,6 @@ namespace Config {
                                                        Circumstances circumstances
                                                        ) const
     {
-        if (this->numericalAttributes[episodeName].discretizations.size() == 0) {
-            qDebug() << this->numericalAttributes;
-            qDebug() << episodeName;
-        }
         Q_ASSERT(this->numericalAttributes[episodeName].discretizations.size() > 0);
 
         // Are there conditional discretizations (different discretizations
