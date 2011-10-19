@@ -17,7 +17,6 @@
 #include "qxtjson.h"
 
 
-
 #include "../Config/Config.h"
 
 

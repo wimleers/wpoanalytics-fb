@@ -393,7 +393,6 @@ void MainWindow::settingsDialog() {
     settingsDialog->activateWindow();
 }
 
-
 void MainWindow::loadedFile(bool success) {
     if (!success) {
         QMessageBox messageBox;
