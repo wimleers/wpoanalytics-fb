@@ -34,6 +34,8 @@ namespace Analytics {
         // Override moveToThread to also move the FPStream instance.
         void moveToThread(QThread * thread);
 
+        int getPatternTreeSize() const { return this->fpstream->getPatternTreeSize(); }
+
         // UI integration.
         QPair<ItemName, ItemNameList> extractEpisodeFromItemset(ItemIDList itemset) const;
         ItemNameList itemsetIDsToNames(ItemIDList itemset) const;
