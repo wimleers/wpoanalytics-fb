@@ -42,9 +42,9 @@ namespace Analytics {
 
     signals:
         // Signals for UI.
-        void analyzing(bool, Time start, Time end, quint64 pageViews, quint64 transactions);
         void analyzedDuration(int duration);
         void stats(Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize);
+        void analyzing(bool analyzing, Time start, Time end, quint64 pageViews, quint64 transactions);
         void mining(bool);
         void minedDuration(int duration);
         void loaded(bool success);

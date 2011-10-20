@@ -339,8 +339,6 @@ namespace Analytics {
             this->allBatchesStartTime = this->currentBatchStartTime;
         this->allBatchesNumPageViews += this->currentBatchNumPageViews;
         this->allBatchesNumTransactions += this->currentBatchNumTransactions;
-        this->currentBatchNumPageViews = 0;
-        this->currentBatchNumTransactions = 0;
 
         // Update the browsable concept hierarchy.
         emit newItemsEncountered(this->itemIDNameHash);
