@@ -41,7 +41,7 @@ namespace FacebookLogParser {
 
     signals:
         void parsing(bool);
-        void parsedDuration(int duration);
+        void stats(int duration, quint64 transactions, double transactionsPerEvent, double averageTransactionLength, bool lastChunkOfBatch, Time start, Time end);
         void parsedBatch(QList<QStringList> transactions, double transactionsPerEvent, Time start, Time end, quint32 quarterID, bool lastChunkOfBatch);
 
     public slots:

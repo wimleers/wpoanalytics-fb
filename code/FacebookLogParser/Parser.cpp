@@ -210,9 +210,8 @@ namespace FacebookLogParser {
 
     void Parser::processBatch(const QList<Config::Sample> batch, quint32 quarterID, bool lastChunkOfBatch) {
         double transactionsPerEvent;
-#ifdef DEBUG
         uint items = 0;
-#endif
+        double averageTransactionLength;
 
         // This 100% concurrent approach fails, because QGeoIP still has
         // thread-safety issues. Hence, we only do the mapping from a QString
@@ -234,27 +233,15 @@ namespace FacebookLogParser {
         QList<QStringList> transactionGroup;
         foreach (transactionGroup, groupedTransactions) {
             transactions.append(transactionGroup);
-#ifdef DEBUG
+            // NOTE: this somewhat impacts performance. But it provides useful
+            // insight.
             foreach (const QStringList & transaction, transactionGroup)
                 items += transaction.size();
-#endif
         }
 
         transactionsPerEvent = ((double) transactions.size()) / batch.size();
-
-        qDebug() << "Processed batch of" << batch.size() << "lines!"
-                 << "(Last chunk?" << (lastChunkOfBatch ? "Yes" : "No") << ")"
-                 << "Transactions generated:" << transactions.size() << "."
-                 << "(" << transactionsPerEvent << "transactions/event)"
-#ifdef DEBUG
-                 << "Avg. transaction length:" << 1.0 * items / transactions.size() << "."
-                 << "(" << items << "items in total)"
-#endif
-                 << "Events occurred between"
-                 << QDateTime::fromTime_t(batch.first().time).toString("yyyy-MM-dd hh:mm:ss").toStdString().c_str()
-                 << "and"
-                 << QDateTime::fromTime_t(batch.last().time).toString("yyyy-MM-dd hh:mm:ss").toStdString().c_str();
-        emit parsedDuration(timer.elapsed());
+        averageTransactionLength = 1.0 * items / transactions.size();
+        emit stats(timer.elapsed(), transactions.size(), transactionsPerEvent, averageTransactionLength, lastChunkOfBatch, batch.first().time, batch.last().time);
         emit parsedBatch(transactions, transactionsPerEvent, batch.first().time, batch.last().time, quarterID, lastChunkOfBatch);
 
 
