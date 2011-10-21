@@ -183,11 +183,17 @@ namespace Analytics {
 
         int duration = this->timer.elapsed();
 
-        emit minedRules(from, to, associationRules, this->fpstream->getNumEventsInRange(from, to));
-
         // Notify the UI.
         emit mining(false);
-        emit minedDuration(duration);
+        emit ruleMiningStats(
+                    duration,
+                    from,
+                    to,
+                    associationRules.size(),
+                    this->fpstream->getNumTransactionsInRange(from, to),
+                    this->fpstream->getNumEventsInRange(from, to)
+        );
+        emit minedRules(from, to, associationRules, this->fpstream->getNumEventsInRange(from, to));
     }
 
     void Analyst::mineAndCompareRules(uint fromOlder, uint toOlder, uint fromNewer, uint toNewer) {
@@ -284,6 +290,16 @@ namespace Analytics {
 
         int duration = this->timer.elapsed();
 
+        // Notify the UI.
+        emit mining(false);
+        emit ruleMiningStats(
+                    duration,
+                    fromOlder,
+                    toOlder,
+                    olderRules.size() + newerRules.size() + comparedRules.size(),
+                    this->fpstream->getNumTransactionsInRange(fromOlder, toOlder) + this->fpstream->getNumTransactionsInRange(fromNewer, toNewer),
+                    this->fpstream->getNumEventsInRange(fromOlder, toOlder) + this->fpstream->getNumEventsInRange(fromNewer, toNewer)
+        );
         emit comparedMinedRules(fromOlder, toOlder,
                                 fromNewer, toNewer,
                                 intersectedRules,
@@ -295,10 +311,6 @@ namespace Analytics {
                                 supportForIntersectedRange,
                                 supportForNewerRange,
                                 supportForOlderRange);
-
-        // Notify the UI.
-        emit mining(false);
-        emit minedDuration(duration);
     }
 
     void Analyst::load(QString fileName) {
@@ -343,18 +355,18 @@ namespace Analytics {
         // Update the browsable concept hierarchy.
         emit newItemsEncountered(this->itemIDNameHash);
 
-        emit processedBatch();
-        emit analyzing(false, 0, 0, 0, 0);
-        emit analyzedDuration(duration);
         emit stats(
+                    duration,
                     this->allBatchesStartTime,
                     this->currentBatchEndTime,
-                    this->allBatchesNumPageViews,
-                    this->allBatchesNumTransactions,
+                    this->currentBatchNumPageViews,
+                    this->currentBatchNumTransactions,
                     this->itemIDNameHash.size(),
                     this->fpstream->getNumFrequentItems(),
                     this->fpstream->getPatternTreeSize()
         );
+        emit analyzing(false, 0, 0, 0, 0);
+        emit processedBatch();
     }
 
 
