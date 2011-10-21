@@ -2,7 +2,6 @@
 
 #ifdef INTERFACE_COMMANDLINE
 #include <QCoreApplication>
-//#include <QTimer>
 #include "CLI/CLI.h"
 #endif
 
@@ -17,21 +16,10 @@ int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
 
     CLI * cli = new CLI();
-//    QObject::connect(cli, SIGNAL(finished()), &app, SLOT(quit()));
+    if (!cli->start())
+        exit(1);
 
-    // Parse command-line options. Stop immediately if there's an error.
-    if (cli->parseCommandOptions() == -1) {
-        delete cli;
-        return -1;
-    }
-    else {
-//        QTimer::singleShot(0, cli, SLOT(run()));
-        cli->run();
-        delete cli;
-    }
-
-//    return app.exec();
-    return 0;
+    return app.exec();
 #endif
 
 #ifdef INTERFACE_GRAPHICAL

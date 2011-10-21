@@ -1,8 +1,12 @@
 #ifndef CLI_H
 #define CLI_H
 
-#include <qxtcommandoptions.h>
 #include <QTextStream>
+#include <QMutex>
+#include <QMutexLocker>
+
+#include <qxtcommandoptions.h>
+#include <qxtjson.h>
 
 #include "../Config/Config.h"
 #include "../FacebookLogParser/Parser.h"
@@ -15,30 +19,83 @@ public:
     CLI();
     ~CLI();
 
-    int parseCommandOptions();
+    bool start();
 
 signals:
+    // For cross-thread communication.
     void parse(QString file);
+    void mine(uint from, uint to);
+//    void mineAndCompare(uint fromOlder, uint toOlder, uint fromNewer, uint toNewer);
 
-    void finished();
+    void load(QString file);
+    void save(QString file);
 
 public slots:
-    void run();
-
+    // Parser.
     void wakeParser();
     void updateParsingStatus(bool parsing);
+    void updateParserStats(int duration, quint64 transactions, double transactionsPerEvent, double averageTransactionLength, bool lastChunkOfBatch, Time start, Time end);
+
+    // Analyst: mining patterns.
+    void updatePatternMiningStatus(bool miningPatterns, Time start, Time end, quint64 lines, quint64 transactions);
+    void updatePatternMiningStats(int duration, Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize);
+    void loaded(bool success, Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize);
+    void saved(bool success);
+
+    // Analyst: mining association rules.
+    void updateRuleMiningStatus(bool mining);
+    void updateRuleMiningStats(int duration, Time start, Time end, quint64 numAssociationRules, quint64 numTransactions, quint64 numLines);
+    void minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange);
+    /*
+    void comparedMinedRules(uint fromOlder, uint toOlder,
+                            uint fromNewer, uint toNewer,
+                            QList<Analytics::AssociationRule> intersectedRules,
+                            QList<Analytics::AssociationRule> olderRules,
+                            QList<Analytics::AssociationRule> newerRules,
+                            QList<Analytics::AssociationRule> comparedRules,
+                            QList<Analytics::Confidence> confidenceVariance,
+                            QList<float> supportVariance,
+                            Analytics::SupportCount eventsInIntersectedTimeRange,
+                            Analytics::SupportCount eventsInOlderTimeRange,
+                            Analytics::SupportCount eventsInNewerTimeRange);
+*/
+
+private slots:
+    void patterMiningFinished();
 
 private:
+    // CLI functionality.
+    bool parseCommandOptions();
+    void run();
+    void verifyConfig();
+
+    // Helpers.
+    void showHelpText();
+    void out(const QString & module, const QString & output, int verbosity);
+    void exit(int returnCode);
+
+    // Logic.
     void reset();
-    void init();
+    void initConfig();
     void initLogic();
     void connectLogic();
     void assignThreads();
 
     // CLI options.
-    QString configFile;
-    QString inputFile;
-    bool inputStdin;
+    int optionVerbosity;
+    QString optionConfigFile;
+    bool optionVerifyConfig;
+    bool optionInput;
+    QString optionInputFile;
+    bool optionInputStdin;
+    bool optionLoad;
+    QString optionLoadFile;
+    bool optionSave;
+    QString optionSaveFile;
+    bool optionMineRules;
+    bool optionOutput;
+    QString optionOutputFile;
+    bool optionOutputStdout;
 
     // Threads.
     QThread parserThread;
@@ -49,8 +106,43 @@ private:
     FacebookLogParser::Parser * parser;
     Analytics::Analyst * analyst;
 
-    // Other.
-    QTextStream * out;
+    // Status.
+    QMutex statusMutex;
+    bool parsing;
+    bool miningPatterns;
+    bool miningRules;
+
+    // run() flow.
+    bool configVerificationCompleted;
+    bool loadCompleted;
+    bool inputCompleted;
+    bool saveCompleted;
+    bool mineCompleted;
+
+    // Stats.
+    QMutex statsMutex;
+    int patternTreeSize;
+    Time startTime;
+    Time endTime;
+    // Parser.
+    quint64 statsParserDuration;
+    quint64 statsParserLines;
+    quint64 statsParserTransactions;
+    double statsParserAvgTransactionLength;
+    // Analyst: pattern mining.
+    quint64 statsAnalystDuration;
+    quint64 statsAnalystLines;
+    quint64 statsAnalystTransactions;
+    quint64 statsAnalystPatternTreeSize;
+    quint64 statsAnalystNumFrequentItems;
+    quint64 statsAnalystNumUniqueItems;
+    quint64 statsAnalystLoadedLines;
+    quint64 statsAnalystLoadedTransactions;
+    // Analyst: rule mining.
+    quint64 statsRuleMiningDuration;
+    quint64 statsRuleMiningLines;
+    quint64 statsRuleMiningTransactions;
+    quint64 statsRuleMiningPatterns;
 };
 
 #endif // CLI_H
