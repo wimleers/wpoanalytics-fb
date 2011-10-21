@@ -601,10 +601,26 @@ void CLI::verifyConfig() {
 
 void CLI::showHelpText() {
     QTextStream out(stdout);
+    QString indent = "    ";
     QString startBold = "\033[7m";
     QString stopBold = "\033[0m";
-    out << startBold << "PatternMiner" << stopBold << " alpha (Project AwesomeLlama)" << endl;
+
+    out << startBold << "PatternMiner" << stopBold << " prototype (" << "\033[33m" << "Project AwesomeLlama" << "\033[0m" << ")" << endl;
     out << endl << endl;
+
+    out << startBold << "Examples" << stopBold << endl;
+    out << indent << "1. Mine TTI-related patterns from a dump of the perfpipe_cavalry dataset and saving the resulting state, so we can continue with a subsequent dump later. Also mine rules." << endl;
+    out << indent << indent << "PatternMiner --config ~/perfpipe_cavalry/tti_config.json --input ~/perfpipe_cavalry/dump.json --save ~/perfpipe_cavalry/state.pf -vv" << endl;
+    out << endl;
+    out << indent << "2. Load a state we saved before and mine association rules from it." << endl;
+    out << indent << indent << "PatternMiner --config ~/perfpipe_cavalry/tti_config.json --load ~/perfpipe_cavalry/state.pf --rules --output-stdout -vv" << endl;
+    out << endl;
+    out << indent << "3. The same, but this time store the asociation rules in a file." << endl;
+    out << indent << indent << "PatternMiner --config ~/perfpipe_cavalry/tti_config.json --load ~/perfpipe_cavalry/state.pf --rules --output ~/perfpipe_cavalry_rules.json -vv" << endl;
+    out << endl << endl;
+
+    out << startBold << "Options" << stopBold << endl;
+
     out.flush();
 }
 
