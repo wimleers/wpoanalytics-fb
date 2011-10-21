@@ -345,8 +345,11 @@ void CLI::minedRules(uint from, uint to, QList<Analytics::AssociationRule> assoc
 // Private slots.
 
 void CLI::patterMiningFinished() {
+    QString startBold = "\033[7m";
+    QString stopBold = "\033[0m";
+
     // Final stats.
-    this->out("Stats", "Parser", 0);
+    this->out("Stats", startBold + "Parser" + stopBold, 0);
     this->out(
                 "Stats",
                 QString(" |- %1 lines/s (%2 s)")
@@ -370,7 +373,7 @@ void CLI::patterMiningFinished() {
                 .arg(QString::number(this->statsParserAvgTransactionLength * this->statsParserTransactions / (this->statsParserDuration / 1000.0) / 1000.0, 'f', 2) + 'K'),
                 0
     );
-    this->out("Stats", "Analyst", 0);
+    this->out("Stats", startBold + "Analyst" + stopBold, 0);
     this->out(
                 "Stats",
                 QString(" |- %1 lines/s (%2 s)")
@@ -396,8 +399,18 @@ void CLI::patterMiningFinished() {
     this->out(
                 "Stats",
                 QString(" \\- %1 transactions/s or %2 items/s")
-                .arg(QString::number(this->statsAnalystTransactions / (this->statsAnalystDuration/ 1000.0) / 1000.0, 'f', 2) + 'K')
+                .arg(QString::number(this->statsAnalystTransactions / (this->statsAnalystDuration / 1000.0) / 1000.0, 'f', 2) + 'K')
                 .arg(QString::number(this->statsAnalystTransactions * this->statsParserAvgTransactionLength / (this->statsAnalystDuration/ 1000.0) / 1000.0, 'f', 2) + 'K'),
+                0
+    );
+    quint64 totalDuration = this->statsParserDuration + this->statsAnalystDuration;
+    this->out(
+                "Stats",
+                QString(startBold + "TOTAL: %1 lines/s, %2 transactions/s, %3 items/s (%4s)" + stopBold)
+                .arg(QString::number(this->statsAnalystLines / (totalDuration / 1000.0), 'f', 2))
+                .arg(QString::number(this->statsAnalystTransactions / (totalDuration / 1000.0) / 1000.0, 'f', 2) + 'K')
+                .arg(QString::number(this->statsAnalystTransactions * this->statsParserAvgTransactionLength / (totalDuration / 1000.0) / 1000.0, 'f', 2) + 'K')
+                .arg(QString::number(totalDuration / 1000.0, 'f', 2)),
                 0
     );
 
