@@ -313,23 +313,62 @@ namespace Analytics {
                                 supportForOlderRange);
     }
 
+    /**
+     * Load the Analyst state from a file.
+     *
+     * @param fileName
+     *   The name of the file to load from, or ":stdin" to load from stdin.
+     */
     void Analyst::load(QString fileName) {
-        QFile file(fileName);
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QFile file;
+        bool opened = false;
+
+        if (fileName == ":stdin")
+            opened = file.open(stdin, QIODevice::ReadOnly | QIODevice::Text);
+        else {
+            file.setFileName(fileName);
+            opened = file.open(QIODevice::ReadOnly | QIODevice::Text);
+        }
+
+        if (!opened) {
             qCritical("Could not open file %s for reading.", qPrintable(fileName));
-            emit loaded(false);
+            emit loaded(false, 0, 0, 0, 0, 0, 0, 0);
         }
         else {
             QTextStream input(&file);
             bool success = this->fpstream->deserialize(input);
             file.close();
-            emit loaded(success);
+            emit loaded(
+                success,
+                0,
+                0,
+                this->fpstream->getEventsPerBatch()->getSupportForRange(0, TTW_NUM_BUCKETS-1),
+                this->fpstream->getTransactionsPerBatch()->getSupportForRange(0, TTW_NUM_BUCKETS-1),
+                this->fpstream->getItemIDNameHash()->size(),
+                this->fpstream->getF_list()->size(),
+                this->fpstream->getPatternTreeSize()
+            );
         }
     }
 
+    /**
+     * Save the Analyst state to a file.
+     *
+     * @param fileName
+     *   The name of the file to save to, or ":stdout" to save to stdout.
+     */
     void Analyst::save(QString fileName) {
-        QFile file(fileName);
-        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QFile file;
+        bool opened = false;
+
+        if (fileName == ":stdout")
+            opened = file.open(stdout, QIODevice::WriteOnly | QIODevice::Text);
+        else {
+            file.setFileName(fileName);
+            opened = file.open(QIODevice::WriteOnly | QIODevice::Text);
+        }
+
+        if (!opened) {
             qCritical("Could not open file %s for writing.", qPrintable(fileName));
             emit saved(false);
         }
