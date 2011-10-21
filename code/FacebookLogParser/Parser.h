@@ -33,7 +33,7 @@ namespace FacebookLogParser {
         Q_OBJECT
 
     public:
-        Parser(const Config::Config * const config);
+        Parser(Config::Config config);
 
         // Processing logic.
         static Config::Sample parseSample(const QString & rawSample, const Config::Config * const config);
@@ -65,7 +65,7 @@ namespace FacebookLogParser {
         static Config::EpisodeIDNameHash episodeIDNameHash;
         static QHash<Config::EpisodeName, QString> episodeNameFieldNameHash;
 
-        const Config::Config * config;
+        Config::Config config; // No const reference or const pointer because we need a copy: the Parser will run in its own thread.
 
         // Mutexes used to ensure thread-safety.
         static QMutex episodeHashMutex;

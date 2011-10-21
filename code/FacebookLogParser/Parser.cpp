@@ -7,7 +7,7 @@ namespace FacebookLogParser {
 
     QMutex Parser::episodeHashMutex;
 
-    Parser::Parser(const Config::Config * const config) {
+    Parser::Parser(Config::Config config) {
         this->config = config;
     }
 
@@ -225,7 +225,7 @@ namespace FacebookLogParser {
         QList< QList<QStringList> > groupedTransactions;
         Config::Sample sample;
         foreach (sample, batch) {
-            groupedTransactions << Parser::mapSampleToTransactions(sample, this->config);
+            groupedTransactions << Parser::mapSampleToTransactions(sample, &this->config);
         }
 
         // Perform the merging of transaction groups into a single list of
@@ -283,7 +283,7 @@ namespace FacebookLogParser {
             if (rawSample.at(0) == '#')
                 continue;
 
-            sample = Parser::parseSample(rawSample, this->config);
+            sample = Parser::parseSample(rawSample, &this->config);
 
             // Calculate the initial currentQuarterID.
             if (currentQuarterID == 0)
