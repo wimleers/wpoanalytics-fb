@@ -201,6 +201,12 @@ namespace FacebookLogParser {
             transaction.clear();
         }
 
+        // Only a single transaction if there are no episodes!
+        if (sample.episodes.isEmpty()) {
+            transaction << sample.circumstances.toList();
+            transactions << transaction;
+        }
+
         return transactions;
     }
 
