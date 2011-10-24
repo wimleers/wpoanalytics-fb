@@ -67,7 +67,7 @@ namespace Analytics {
                 }
 
 #ifdef RULEMINER_DEBUG
-                qDebug() << "Generating rules for frequent itemset" << frequentItemset << " and consequents " << consequents;
+                qDebug() << endl << "Generating rules for frequent itemset" << frequentItemset << " and consequents " << consequents;
 #endif
 
                 // If no valid consequents could be found (due to none if the
@@ -185,8 +185,12 @@ namespace Analytics {
             // consequent, to prevent other consequents to be generated that
             // build upon this one since those consequents would have the same
             // insufficiently high confidence in the best case.
-            else
+            else {
                 consequents.removeAll(consequent);
+#ifdef RULEMINER_DEBUG
+                qDebug() << "\tdropped consequent" << consequent;
+#endif
+            }
         }
 
         // If there are still consequents left (i.e. consequents with a
@@ -195,8 +199,16 @@ namespace Analytics {
         // to generate more association rules with them.
         if (consequents.size() >= 2 && k > m + 1) {
             QList<ItemIDList> candidateConsequents = RuleMiner::generateCandidateItemsets(consequents);
+#ifdef RULEMINER_DEBUG
+            qDebug() << "\t\tRecursing!";
+            qDebug() << "\t\t-> candidate consequents:" << candidateConsequents;
+#endif
             associationRules.append(RuleMiner::generateAssociationRulesForFrequentItemset(frequentItemset, candidateConsequents, minimumConfidence, patternTree, from, to));
         }
+#ifdef RULEMINER_DEBUG
+        else
+            qDebug() << "\t\tNOTHING REMAINS TO BE MINED (consequents have reached their max size)";
+#endif
 
         return associationRules;
     }
