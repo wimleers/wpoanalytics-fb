@@ -1,11 +1,14 @@
 #ifndef RULEMINER_H
 #define RULEMINER_H
 
+
+#include <QList>
+#include <QSet>
+
 #include "Item.h"
 #include "Constraints.h"
 #include "FPGrowth.h"
 #include "PatternTree.h"
-#include <QList>
 
 
 namespace Analytics {

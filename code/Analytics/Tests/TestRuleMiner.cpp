@@ -38,3 +38,45 @@ void TestRuleMiner::basic() {
 
     delete fpgrowth;
 }
+
+void TestRuleMiner::generateCandidateItemsets() {
+    QList<ItemIDList> frequentItemsubsets, result;
+
+    // 1-item consequents.
+    frequentItemsubsets.clear();
+    frequentItemsubsets << (ItemIDList() << 1);
+    frequentItemsubsets << (ItemIDList() << 2);
+    frequentItemsubsets << (ItemIDList() << 3);
+    result = RuleMiner::generateCandidateItemsets(frequentItemsubsets);
+    QCOMPARE(result, QList<ItemIDList>() << (ItemIDList() << 1 << 2)
+                                         << (ItemIDList() << 1 << 3)
+                                         << (ItemIDList() << 2 << 3));
+
+    // 2-item consequents.
+    // It looks like (1,2,3) should be the result, but only (1,2) and (1,3)
+    // exist in the source: (2,3) does not exist, hence there are no results.
+    frequentItemsubsets.clear();
+    frequentItemsubsets << (ItemIDList() << 1 << 2);
+    frequentItemsubsets << (ItemIDList() << 3 << 2);
+    frequentItemsubsets << (ItemIDList() << 1 << 3);
+    result = RuleMiner::generateCandidateItemsets(frequentItemsubsets);
+    QCOMPARE(result, QList<ItemIDList>());
+    // Now (1,2,3) is the result.
+    frequentItemsubsets.clear();
+    frequentItemsubsets << (ItemIDList() << 1 << 2);
+    frequentItemsubsets << (ItemIDList() << 2 << 3);
+    frequentItemsubsets << (ItemIDList() << 1 << 3);
+    result = RuleMiner::generateCandidateItemsets(frequentItemsubsets);
+    QCOMPARE(result, QList<ItemIDList>() << (ItemIDList() << 1 << 2 << 3));
+    // Now both (1,2,3) and (1,2,4) are in the result.
+    frequentItemsubsets.clear();
+    frequentItemsubsets << (ItemIDList() << 1 << 2);
+    frequentItemsubsets << (ItemIDList() << 2 << 3);
+    frequentItemsubsets << (ItemIDList() << 1 << 3);
+    frequentItemsubsets << (ItemIDList() << 1 << 4);
+    frequentItemsubsets << (ItemIDList() << 2 << 4);
+    result = RuleMiner::generateCandidateItemsets(frequentItemsubsets);
+    QCOMPARE(result, QList<ItemIDList>() << (ItemIDList() << 1 << 2 << 3)
+                                         << (ItemIDList() << 1 << 2 << 4));
+    
+}

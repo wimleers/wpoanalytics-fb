@@ -4,7 +4,13 @@
 #include <QtTest/QtTest>
 #include <QFile>
 #include "../FPGrowth.h"
+
+#define protected public
+#define private   public
 #include "../Ruleminer.h"
+#undef protected
+#undef private
+
 
 using namespace Analytics;
 
@@ -17,6 +23,7 @@ private slots:
 //    void init();
 //    void cleanup();
     void basic();
+	void generateCandidateItemsets();
 };
 
 #endif // TESTRULEMINER_H
