@@ -5,6 +5,7 @@
 #include <QTime>
 #include <QList>
 #include <QHash>
+#include <QSet>
 #include <QStringList>
 #include <QPair>
 
@@ -28,8 +29,8 @@ namespace Analytics {
     public:
         Analyst(double minSupport, double maxSupportError, double minConfidence);
         ~Analyst();
-        void addFrequentItemsetItemConstraint(ItemName item, ItemConstraintType type);
-        void addRuleConsequentItemConstraint(ItemName item, ItemConstraintType type);
+        void addFrequentItemsetItemConstraint(QSet<ItemName> items, ItemConstraintType type);
+        void addRuleConsequentItemConstraint(QSet<ItemName> items, ItemConstraintType type);
 
         // Override moveToThread to also move the FPStream instance.
         void moveToThread(QThread * thread);

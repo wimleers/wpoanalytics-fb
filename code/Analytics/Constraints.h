@@ -4,7 +4,7 @@
 #include <QRegExp>
 #include <QList>
 #include <QSet>
-#include <QStringList>
+#include <QVector>
 
 #include "Item.h"
 
@@ -16,13 +16,16 @@ namespace Analytics {
 #endif
 
     enum ItemConstraintType {
-        CONSTRAINT_POSITIVE_MATCH_ALL,
-        CONSTRAINT_POSITIVE_MATCH_ANY,
-        CONSTRAINT_NEGATIVE_MATCH_ALL,
-        CONSTRAINT_NEGATIVE_MATCH_ANY
+        CONSTRAINT_POSITIVE,
+        CONSTRAINT_NEGATIVE
     };
 
-    typedef QHash<ItemConstraintType, QSet<ItemName> > ItemConstraintsHash;
+    // For each constraint type (ItemConstraintType, key of QHash), we allow
+    // multiple entries (QVector), each of which is a set of items (QSet<ItemName>)
+    // that are OR'd together (positive: (a == x1 OR b == x1 OR ... OR n == x1);
+    // negative: !(a == x1 OR b == x1 OR ... OR n == x1)), while the entries
+    // (QVector) are AND'ed together.
+    typedef QHash<ItemConstraintType, QVector<QSet<ItemName> > > ItemConstraintsHash;
 
     class Constraints {
 
@@ -35,10 +38,9 @@ namespace Analytics {
 
         bool empty() const { return this->itemConstraints.empty(); }
 
-        void addItemConstraint(ItemName item, ItemConstraintType type);
-        void setItemConstraints(const QSet<ItemName> & constraints, ItemConstraintType type);
+        void addItemConstraint(const QSet<ItemName> & items, ItemConstraintType type);
 
-        QSet<ItemID> getItemIDsForConstraintType(ItemConstraintType type) const;
+        QSet<ItemID> getAllItemIDsForConstraintType(ItemConstraintType type) const;
 
         void preprocessItemIDNameHash(const ItemIDNameHash & hash);
 
@@ -54,16 +56,16 @@ namespace Analytics {
         ItemIDNameHash * itemIDNameHash;
 #endif
 
-        static const char * ItemConstraintTypeName[4];
+        static const char * ItemConstraintTypeName[2];
 
     protected:
         static bool matchItemsetHelper(const ItemIDList & itemset, ItemConstraintType type, const QSet<ItemID> & constraintItems);
         static bool matchSearchSpaceHelper(const ItemIDList & frequentItemset, const QHash<ItemID, SupportCount> & prefixPathsSupportCounts, ItemConstraintType type, const QSet<ItemID> & constraintItems);
 
-        void addPreprocessedItemConstraint(ItemConstraintType type, const ItemName & category, ItemID id);
+        void addPreprocessedItemConstraint(ItemConstraintType type, uint constraint, ItemID id);
 
         ItemConstraintsHash itemConstraints;
-        QHash<ItemConstraintType, QHash<ItemName, QSet<ItemID> > > preprocessedItemConstraints;
+        QHash<ItemConstraintType, QVector<QSet<ItemID> > > preprocessedItemConstraints;
         ItemID highestPreprocessedItemID;
     };
 }

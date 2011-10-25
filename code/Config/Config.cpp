@@ -133,27 +133,35 @@ namespace Config {
         // Fill the key mapping.
         // (This only needs to happen once, since keyMapping is static.)
         if (keyMapping.isEmpty()) {
-            keyMapping.insert("positive", Analytics::CONSTRAINT_POSITIVE_MATCH_ANY);
-            keyMapping.insert("negative", Analytics::CONSTRAINT_NEGATIVE_MATCH_ANY);
+            keyMapping.insert("==", Analytics::CONSTRAINT_POSITIVE);
+            keyMapping.insert("!=", Analytics::CONSTRAINT_NEGATIVE);
         }
 
         Analytics::ItemConstraintsHash patternConstraints;
         Analytics::ItemConstraintType itemConstraintType;
 
-        QVariantMap relevantJSON = json[key].toMap();
-        foreach (const QString & key, relevantJSON.keys()) {
+        QVariantList relevantJSON = json[key].toList();
+        foreach (const QVariant & v, relevantJSON) {
+            QVariantMap constraintJSON = v.toMap();
+
+            QString constraintKey = constraintJSON["type"].toString();
+
             // Ignore non-mapped keys.
-            if (!keyMapping.contains(key))
+            if (!keyMapping.contains(constraintKey))
                 continue;
 
-            itemConstraintType = keyMapping[key];
+            itemConstraintType = keyMapping[constraintKey];
 
             // Collect all the items for the constraint.
-            QList<QVariant> variantList = relevantJSON[key].toList();
+            QList<QVariant> variantList = constraintJSON["items"].toList();
             QSet<Analytics::ItemName> itemsForConstraint;
             foreach (const QVariant & v, variantList)
                 itemsForConstraint.insert((Analytics::ItemName) v.toString());
-            patternConstraints.insert(itemConstraintType, itemsForConstraint);
+
+            // Store it.
+            if (!patternConstraints.contains(itemConstraintType))
+                patternConstraints.insert(itemConstraintType, QVector<QSet<Analytics::ItemName> >());
+            patternConstraints[itemConstraintType].append(itemsForConstraint);
         }
 
         return patternConstraints;
@@ -353,22 +361,26 @@ namespace Config {
         return dbg.nospace();
     }
 
-    QDebug constraintHashHelper(QDebug dbg, const QHash<Analytics::ItemConstraintType, QSet<Analytics::ItemName> > & hash) {
-        if (!hash[Analytics::CONSTRAINT_POSITIVE_MATCH_ANY].isEmpty()) {
-            dbg.nospace() << "        positive : ";
-            constraintItemsHelper(dbg, hash[Analytics::CONSTRAINT_POSITIVE_MATCH_ANY]);
+    QDebug constraintHashHelper(QDebug dbg, const QHash<Analytics::ItemConstraintType, QVector<QSet<Analytics::ItemName> > > & hash) {
+        if (!hash[Analytics::CONSTRAINT_POSITIVE].isEmpty()) {
+            for (int c = 0; c < hash[Analytics::CONSTRAINT_POSITIVE].size(); c++)
+                constraintItemsHelper(dbg, hash[Analytics::CONSTRAINT_POSITIVE][c], Analytics::CONSTRAINT_POSITIVE);
         }
-        if (!hash[Analytics::CONSTRAINT_NEGATIVE_MATCH_ANY].isEmpty()) {
-            dbg.nospace() << "        negative : ";
-            constraintItemsHelper(dbg, hash[Analytics::CONSTRAINT_NEGATIVE_MATCH_ANY]);
+        if (!hash[Analytics::CONSTRAINT_NEGATIVE].isEmpty()) {
+            for (int c = 0; c < hash[Analytics::CONSTRAINT_NEGATIVE].size(); c++)
+                constraintItemsHelper(dbg, hash[Analytics::CONSTRAINT_NEGATIVE][c], Analytics::CONSTRAINT_NEGATIVE);
         }
         return dbg.nospace();
     }
 
-    QDebug constraintItemsHelper(QDebug dbg, const QSet<Analytics::ItemName> & set) {
+    QDebug constraintItemsHelper(QDebug dbg, const QSet<Analytics::ItemName> & set, Analytics::ItemConstraintType constraintType) {
         bool firstPrinted = false;
 
-        dbg.nospace() << "[";
+        dbg.nospace() << "          {";
+        // Type.
+        dbg.nospace() << " \"type\" : \"" << (constraintType == Analytics::CONSTRAINT_POSITIVE ? "==" : "!=") << "\", ";
+        // Items.
+        dbg.nospace() << " \"items\" : [";
         foreach (const Analytics::ItemName & item, set) {
             if (firstPrinted)
                 dbg.nospace() << ", ";
@@ -376,7 +388,7 @@ namespace Config {
                 firstPrinted = true;
             dbg.nospace() << item;
         }
-        dbg.nospace() << "]," << endl;
+        dbg.nospace() << "] }," << endl;
 
         return dbg.nospace();
     }

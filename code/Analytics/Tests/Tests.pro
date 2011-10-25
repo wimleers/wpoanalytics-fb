@@ -9,12 +9,14 @@ TARGET = Tests
 
 
 HEADERS += TestFPTree.h \
+           TestConstraints.h \
            TestFPGrowth.h \
            TestRuleMiner.h \
            TestTiltedTimeWindow.h \
            TestPatternTree.h \
            TestFPStream.h
 SOURCES += Tests.cpp \
+           TestConstraints.cpp \
            TestFPTree.cpp \
            TestFPGrowth.cpp \
            TestRuleMiner.cpp \

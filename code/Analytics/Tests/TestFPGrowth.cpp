@@ -64,7 +64,7 @@ void TestFPGrowth::withConstraints() {
     transactions.append(QStringList() << "C" << "E");
 
     Constraints constraints;
-    constraints.addItemConstraint("A", Analytics::CONSTRAINT_POSITIVE_MATCH_ANY);
+    constraints.addItemConstraint(QSet<ItemName>() << "A", Analytics::CONSTRAINT_POSITIVE);
 
     FPNode<SupportCount>::resetLastNodeID();
     ItemIDNameHash itemIDNameHash;

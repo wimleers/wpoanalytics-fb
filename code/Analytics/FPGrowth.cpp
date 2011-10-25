@@ -337,8 +337,7 @@ namespace Analytics {
         QSet<ItemID> frontItemIDs;
 
         // Determine which items should be at the front.
-        frontItemIDs.unite(this->constraintsForRuleConsequents.getItemIDsForConstraintType(CONSTRAINT_POSITIVE_MATCH_ANY));
-        frontItemIDs.unite(this->constraintsForRuleConsequents.getItemIDsForConstraintType(CONSTRAINT_POSITIVE_MATCH_ALL));
+        frontItemIDs.unite(this->constraintsForRuleConsequents.getAllItemIDsForConstraintType(CONSTRAINT_POSITIVE));
 
         foreach (ItemID itemID, *(this->sortedFrequentItemIDs)) {
             item.id = itemID;
@@ -375,8 +374,7 @@ namespace Analytics {
         QSet<ItemID> frontItemIDs;
 
         // Determine which items should be at the front.
-        frontItemIDs.unite(this->constraintsForRuleConsequents.getItemIDsForConstraintType(CONSTRAINT_POSITIVE_MATCH_ANY));
-        frontItemIDs.unite(this->constraintsForRuleConsequents.getItemIDsForConstraintType(CONSTRAINT_POSITIVE_MATCH_ALL));
+        frontItemIDs.unite(this->constraintsForRuleConsequents.getAllItemIDsForConstraintType(CONSTRAINT_POSITIVE));
 
         foreach (ItemID itemID, *(this->sortedFrequentItemIDs)) {
             if (itemset.contains(itemID)) {

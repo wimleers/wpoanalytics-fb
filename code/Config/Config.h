@@ -107,7 +107,7 @@ namespace Config {
     QDebug attributeHelper(QDebug dbg, const Attribute & attribute, const char * prefix = "");
     QDebug discretizationsHelper(QDebug debg, const QSet<Discretization> & discretizations, const char * prefix = "");
     QDebug constraintHashHelper(QDebug dbg, const Analytics::ItemConstraintsHash & hash);
-    QDebug constraintItemsHelper(QDebug dbg, const QSet<Analytics::ItemName> & set);
+    QDebug constraintItemsHelper(QDebug dbg, const QSet<Analytics::ItemName> & set, Analytics::ItemConstraintType constraintType);
 #endif
 
 }

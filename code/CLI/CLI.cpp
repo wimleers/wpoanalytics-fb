@@ -690,16 +690,16 @@ void CLI::initLogic() {
     Analytics::ItemConstraintType constraintType;
     Analytics::ItemConstraintsHash frequentItemsetItemConstraints, ruleConsequentItemConstraints;
     frequentItemsetItemConstraints = this->config->getPatternItemConstraints();
-    for (int i = Analytics::CONSTRAINT_POSITIVE_MATCH_ALL; i <= Analytics::CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
+    for (int i = Analytics::CONSTRAINT_POSITIVE; i <= Analytics::CONSTRAINT_NEGATIVE; i++) {
         constraintType = (Analytics::ItemConstraintType) i;
-        foreach (const Analytics::ItemName & itemName, frequentItemsetItemConstraints[constraintType])
-            this->analyst->addFrequentItemsetItemConstraint(itemName, constraintType);
+        foreach (const QSet<Analytics::ItemName> & items, frequentItemsetItemConstraints[constraintType])
+            this->analyst->addFrequentItemsetItemConstraint(items, constraintType);
     }
     ruleConsequentItemConstraints = this->config->getRuleConsequentItemConstraints();
-    for (int i = Analytics::CONSTRAINT_POSITIVE_MATCH_ALL; i <= Analytics::CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
+    for (int i = Analytics::CONSTRAINT_POSITIVE; i <= Analytics::CONSTRAINT_NEGATIVE; i++) {
         constraintType = (Analytics::ItemConstraintType) i;
-        foreach (const Analytics::ItemName & itemName, ruleConsequentItemConstraints[constraintType])
-            this->analyst->addRuleConsequentItemConstraint(itemName, constraintType);
+        foreach (const QSet<Analytics::ItemName> & items, ruleConsequentItemConstraints[constraintType])
+            this->analyst->addRuleConsequentItemConstraint(items, constraintType);
     }
 }
 

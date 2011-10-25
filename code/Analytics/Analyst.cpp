@@ -32,13 +32,13 @@ namespace Analytics {
      * frequent itemsets are being generated, only those will be considered
      * that match the constraints defined here.
      *
-     * @param item
-     *   An item name.
+     * @param items
+     *   An set of item names.
      * @param type
      *   The constraint type.
      */
-    void Analyst::addFrequentItemsetItemConstraint(ItemName item, ItemConstraintType type) {
-        this->frequentItemsetItemConstraints.addItemConstraint(item, type);
+    void Analyst::addFrequentItemsetItemConstraint(QSet<ItemName> items, ItemConstraintType type) {
+        this->frequentItemsetItemConstraints.addItemConstraint(items, type);
     }
 
     /**
@@ -46,21 +46,21 @@ namespace Analytics {
      * rules are being mined, only those will be considered that match the
      * constraints defined here.
      *
-     * @param item
-     *   An item name.
+     * @param items
+     *   An set of item names.
      * @param type
      *   The constraint type.
      */
-    void Analyst::addRuleConsequentItemConstraint(ItemName item, ItemConstraintType type) {
+    void Analyst::addRuleConsequentItemConstraint(QSet<ItemName> items, ItemConstraintType type) {
         // If an item is required to be in the rule consequent, it evidently
         // must also be in the frequent itemsets. Therefore, the same item
         // constraints that apply to the rule consequents also apply to
         // frequent itemsets.
         // By also applying these item constraints to frequent itemset
         // generation, we reduce the amount of work to be done to a minimum.
-        this->frequentItemsetItemConstraints.addItemConstraint(item, type);
+        this->frequentItemsetItemConstraints.addItemConstraint(items, type);
 
-        this->ruleConsequentItemConstraints.addItemConstraint(item, type);
+        this->ruleConsequentItemConstraints.addItemConstraint(items, type);
     }
 
     /**

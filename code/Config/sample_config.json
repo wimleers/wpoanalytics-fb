@@ -3,16 +3,18 @@
 		"patterns" : {
 			"minimum support" : 0.05,
 			"minimum potential pattern support" : 0.03,
-			"item constraints" : {
-				"positive" : ["episode:*"],
-			},
+			"item constraints" : [
+			]
 		}
 		"association rules" : {
 			"minimum confidence" : 0.10,
-			"consequent item constraints" : {
-				"positive" : ["duration:*"],
-			},
-		},
+			"antecedent item constraints" : [
+				{ "type" : "==", "items" : ["episode:*"] },
+			],
+			"consequent item constraints" : [
+				{ "type" : "==", "items" : ["duration:*"] },
+			]
+		}
 	},
 	"attributes" : {
 		"categorical" : {

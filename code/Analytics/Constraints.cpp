@@ -2,12 +2,11 @@
 
 namespace Analytics {
 
-    const char * Constraints::ItemConstraintTypeName[4] = {
-        "CONSTRAINT_POSITIVE_MATCH_ALL",
-        "CONSTRAINT_POSITIVE_MATCH_ANY",
-        "CONSTRAINT_NEGATIVE_MATCH_ALL",
-        "CONSTRAINT_NEGATIVE_MATCH_ANY"
+    const char * Constraints::ItemConstraintTypeName[2] = {
+        "CONSTRAINT_POSITIVE",
+        "CONSTRAINT_NEGATIVE",
     };
+
 
 
     //--------------------------------------------------------------------------
@@ -21,36 +20,22 @@ namespace Analytics {
      * Add an item constraint of a given constraint type. When
      * frequent itemsets are being generated, only those will be considered
      * that match the constraints defined here.
+     * Wildcards are allowed, e.g. "episode:*" will match "episode:foo",
+     * "episode:bar", etc.
      *
-     * @param item
-     *   An item name.
+     * @param items
+     *   An set of item names.
      * @param type
      *   The constraint type.
      */
-    void Constraints::addItemConstraint(ItemName item, ItemConstraintType type) {
+    void Constraints::addItemConstraint(const QSet<ItemName> & items, ItemConstraintType type) {
         if (!this->itemConstraints.contains(type))
-            this->itemConstraints.insert(type, QSet<ItemName>());
-        this->itemConstraints[type].insert(item);
+            this->itemConstraints.insert(type, QVector<QSet<ItemName> >());
+        this->itemConstraints[type].append(items);
     }
 
     /**
-     * Set the requirements for frequent itemset. Wildcards are allowed, e.g.
-     * "episode:*" will match "episode:foo", "episode:bar", etc.
-     *
-     * Note: wilcard items will be expanded to their corresponding item ids in
-     *       FPGrowth::scanTransactions().
-     *
-     * @param contraints
-     *   A list of constraints.
-     * @param type
-     *   The item constraint type.
-     */
-    void Constraints::setItemConstraints(const QSet<ItemName> & constraints, ItemConstraintType type) {
-        this->itemConstraints.insert(type, constraints);
-    }
-
-    /**
-     * Get the item IDs for a given item constraint type. Clearly, this only
+     * Get all item IDs for a given item constraint type. Clearly, this only
      * returns item IDs after all item IDs have been preprocessed.
      *
      * @param type
@@ -58,11 +43,11 @@ namespace Analytics {
      * @return
      *   All item IDs for the given item constraint type.
      */
-    QSet<ItemID> Constraints::getItemIDsForConstraintType(ItemConstraintType type) const {
+    QSet<ItemID> Constraints::getAllItemIDsForConstraintType(ItemConstraintType type) const {
         QSet<ItemID> preprocessedItemIDs;
 
-        foreach (ItemName key, this->preprocessedItemConstraints[type].keys())
-            preprocessedItemIDs.unite(this->preprocessedItemConstraints[type][key]);
+        foreach (const QSet<ItemID> & itemIDs, this->preprocessedItemConstraints[type])
+            preprocessedItemIDs.unite(itemIDs);
 
         return preprocessedItemIDs;
     }
@@ -105,23 +90,25 @@ namespace Analytics {
         // Store the item IDs that correspond to the wildcard item
         // constraints.
         ItemConstraintType constraintType;
-        for (int i = CONSTRAINT_POSITIVE_MATCH_ALL; i <= CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
+        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
             constraintType = (ItemConstraintType) i;
 
             if (!this->itemConstraints.contains(constraintType))
                 continue;
 
-            foreach (ItemName constraint, this->itemConstraints[constraintType]) {
-                // Map ItemNames to ItemIDs.
-                if (constraint.compare(name) == 0) {
-                    this->addPreprocessedItemConstraint(constraintType, "non-wildcards", id);
-                }
-                // Map ItemNames with wildcards in them to *all* corresponding
-                // ItemIDs.
-                else if (constraint.contains('*')) {
-                    rx.setPattern(constraint);
-                    if (rx.exactMatch(name))
-                        this->addPreprocessedItemConstraint(constraintType, constraint, id);
+            for (int i = 0; i < this->itemConstraints[constraintType].size(); i++) {
+                foreach (ItemName item, this->itemConstraints[constraintType][i]) {
+                    // Map ItemNames to ItemIDs.
+                    if (item.compare(name) == 0) {
+                        this->addPreprocessedItemConstraint(constraintType, i, id);
+                    }
+                    // Map ItemNames with wildcards in them to *all* corresponding
+                    // ItemIDs.
+                    else if (item.contains('*')) {
+                        rx.setPattern(item);
+                        if (rx.exactMatch(name))
+                            this->addPreprocessedItemConstraint(constraintType, i, id);
+                    }
                 }
             }
         }
@@ -140,14 +127,14 @@ namespace Analytics {
      */
     void Constraints::removeItem(ItemID id) {
         ItemConstraintType type;
-        for (int i = CONSTRAINT_POSITIVE_MATCH_ALL; i <= CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
+        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
             type = (ItemConstraintType) i;
 
             if (!this->preprocessedItemConstraints.contains(type))
                 continue;
 
-            foreach (ItemName constraint, this->preprocessedItemConstraints[type].keys())
-                this->preprocessedItemConstraints[type][constraint].remove(id);
+            for (int i = 0; i < this->itemConstraints[type].size(); i++)
+                this->preprocessedItemConstraints[type][i].remove(id);
         }
     }
 
@@ -166,12 +153,12 @@ namespace Analytics {
         qDebug() << "Matching itemset" << fis << " to constraints " << this->itemConstraints;
 #endif
         bool match;
-        for (int i = CONSTRAINT_POSITIVE_MATCH_ALL; i <= CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
+        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
             ItemConstraintType type = (ItemConstraintType) i;
-            foreach (ItemName category, this->preprocessedItemConstraints[type].keys()) {
-                match = Constraints::matchItemsetHelper(itemset, type, this->preprocessedItemConstraints[type][category]);
+            for (int c = 0; c < this->preprocessedItemConstraints[type].size(); c++) {
+                match = Constraints::matchItemsetHelper(itemset, type, this->preprocessedItemConstraints[type][c]);
 #ifdef CONSTRAINTS_DEBUG
-                qDebug() << "\t" << Constraints::ItemConstraintTypeName[type] << ": " << match;
+                qDebug() << "\t" << Constraints::ItemConstraintTypeName[type][c] << ": " << match;
 #endif
                 if (!match)
                     return false;
@@ -196,10 +183,10 @@ namespace Analytics {
      *   True if the itemset matches the constraints, false otherwise.
      */
     bool Constraints::matchSearchSpace(const ItemIDList & frequentItemset, const QHash<ItemID, SupportCount> & prefixPathsSupportCounts) const {
-        for (int i = CONSTRAINT_POSITIVE_MATCH_ALL; i <= CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
+        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
             ItemConstraintType type = (ItemConstraintType) i;
-            foreach (ItemName category, this->preprocessedItemConstraints[type].keys()) {
-                if (!Constraints::matchSearchSpaceHelper(frequentItemset, prefixPathsSupportCounts, type, this->preprocessedItemConstraints[type][category]))
+            for (int c = 0; c < this->preprocessedItemConstraints[type].size(); c++) {
+                if (!Constraints::matchSearchSpaceHelper(frequentItemset, prefixPathsSupportCounts, type, this->preprocessedItemConstraints[type][c]))
                     return false;
             }
         }
@@ -217,42 +204,27 @@ namespace Analytics {
     bool Constraints::matchItemsetHelper(const ItemIDList & itemset, ItemConstraintType type, const QSet<ItemID> & constraintItems) {
         foreach (ItemID id, constraintItems) {
             switch (type) {
-            case CONSTRAINT_POSITIVE_MATCH_ALL:
-                if (!itemset.contains(id))
-                    return false;
-                break;
 
-            case CONSTRAINT_POSITIVE_MATCH_ANY:
+            case CONSTRAINT_POSITIVE:
                 if (itemset.contains(id))
                     return true;
                 break;
 
-            case CONSTRAINT_NEGATIVE_MATCH_ALL:
+            case CONSTRAINT_NEGATIVE:
                 if (itemset.contains(id))
                     return false;
-                break;
-
-            case CONSTRAINT_NEGATIVE_MATCH_ANY:
-                if (!itemset.contains(id))
-                    return true;
                 break;
             }
         }
 
-        // In case we haven't returned yet: in the case of the "all matches",
-        // this is a good thing, since we haven't had any bad encounters.
-        // Hence we return true for those. For the "any matches", it's the
-        // other way around.
+        // In case we haven't returned yet, meaning that none of the items in
+        // the constraint was actually *in* this itemset.
         switch (type) {
-        case CONSTRAINT_POSITIVE_MATCH_ALL:
-        case CONSTRAINT_NEGATIVE_MATCH_ALL:
+        case CONSTRAINT_NEGATIVE:
             return true;
-            break;
 
-        case CONSTRAINT_POSITIVE_MATCH_ANY:
-        case CONSTRAINT_NEGATIVE_MATCH_ANY:
+        case CONSTRAINT_POSITIVE:
             return false;
-            break;
         }
 
         // Satisfy the compiler.
@@ -265,40 +237,26 @@ namespace Analytics {
     bool Constraints::matchSearchSpaceHelper(const ItemIDList & frequentItemset, const QHash<ItemID, SupportCount> & prefixPathsSupportCounts, ItemConstraintType type, const QSet<ItemID> & constraintItems) {
         foreach (ItemID id, constraintItems) {
             switch (type) {
-            case CONSTRAINT_POSITIVE_MATCH_ALL:
-                if (!frequentItemset.contains(id) && prefixPathsSupportCounts[id] == 0)
-                    return false;
-                break;
-
-            case CONSTRAINT_POSITIVE_MATCH_ANY:
+            case CONSTRAINT_POSITIVE:
                 if (frequentItemset.contains(id) || prefixPathsSupportCounts[id] > 0)
                     return true;
                 break;
 
-            case CONSTRAINT_NEGATIVE_MATCH_ALL:
+            case CONSTRAINT_NEGATIVE:
                 if (prefixPathsSupportCounts[id] > 0)
                     return false;
-                break;
-
-            case CONSTRAINT_NEGATIVE_MATCH_ANY:
-                if (prefixPathsSupportCounts[id] == 0)
-                    return true;
                 break;
             }
         }
 
-        // In case we haven't returned yet: in the case of the "all matches",
-        // this is a good thing, since we haven't had any bad encounters.
-        // Hence we return true or those. For the "any matches", it's the
-        // other way around.
+        // In case we haven't returned yet, meaning that none of the items in
+        // the constraint was actually *in* this itemset.
         switch (type) {
-        case CONSTRAINT_POSITIVE_MATCH_ALL:
-        case CONSTRAINT_NEGATIVE_MATCH_ALL:
+        case CONSTRAINT_NEGATIVE:
             return true;
             break;
 
-        case CONSTRAINT_POSITIVE_MATCH_ANY:
-        case CONSTRAINT_NEGATIVE_MATCH_ANY:
+        case CONSTRAINT_POSITIVE:
             return false;
             break;
         }
@@ -313,18 +271,17 @@ namespace Analytics {
      *
      * @param type
      *   The item constraint type.
-     * @param category
-     *   The category, either "non-wildcards" or a constraint that contains a
-     *   wildcard ('*').
+     * @param constraint
+     *   The how manieth constraint of this item constraint type.
      * @param id
      *   The item id.
      */
-    void Constraints::addPreprocessedItemConstraint(ItemConstraintType type, const ItemName & category, ItemID id) {
+    void Constraints::addPreprocessedItemConstraint(ItemConstraintType type, uint constraint, ItemID id) {
         if (!this->preprocessedItemConstraints.contains(type))
-            this->preprocessedItemConstraints.insert(type, QHash<ItemName, QSet<ItemID> >());
-        if (!this->preprocessedItemConstraints[type].contains(category))
-            this->preprocessedItemConstraints[type].insert(category, QSet<ItemID>());
-        this->preprocessedItemConstraints[type][category].insert(id);
+            this->preprocessedItemConstraints.insert(type, QVector<QSet<ItemID> >());
+        if ((uint) this->preprocessedItemConstraints[type].size() <= constraint)
+            this->preprocessedItemConstraints[type].resize(constraint + 1);
+        this->preprocessedItemConstraints[type][constraint].insert(id);
     }
 
 
@@ -337,17 +294,23 @@ namespace Analytics {
         // Item constraints.
         // Stats.
         unsigned int sum = 0;
-        foreach (ItemConstraintType key, constraints.itemConstraints.keys())
-            sum += constraints.itemConstraints[key].size();
+        foreach (ItemConstraintType type, constraints.itemConstraints.keys())
+            for (int c = 0; c < constraints.itemConstraints[type].size(); c++)
+                sum += constraints.itemConstraints[type][c].size();
         // Display.
         dbg.nospace() << "item constraints (" << sum << "):" << endl;
-        for (int i = CONSTRAINT_POSITIVE_MATCH_ALL; i <= CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
+        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
             ItemConstraintType constraintType = (ItemConstraintType) i;
-            dbg.nospace() << "\t" << Constraints::ItemConstraintTypeName[i] << ":";
-            if (constraints.itemConstraints[constraintType].isEmpty())
-                dbg.space() << "none";
-            else
-                dbg.space() << constraints.itemConstraints[constraintType];
+            dbg.nospace() << "\t" << Constraints::ItemConstraintTypeName[i] << ":" << endl;
+
+            for (int c = 0; c < constraints.itemConstraints[constraintType].size(); c++) {
+                dbg.space() << "\t\t" <<  c << ". ";
+                if (constraints.itemConstraints[constraintType][c].isEmpty())
+                    dbg.space() << "none";
+                else
+                    dbg.space() << constraints.itemConstraints[constraintType][c];
+                dbg.nospace() << endl;
+            }
             dbg.nospace() << endl;
         }
 
@@ -355,31 +318,24 @@ namespace Analytics {
         // Preprocessed item constraints.
         // Stats.
         sum = 0;
-        foreach (ItemConstraintType key, constraints.itemConstraints.keys())
-            foreach (ItemName name, constraints.preprocessedItemConstraints[key].keys())
-                sum += constraints.preprocessedItemConstraints[key][name].size();
+        foreach (ItemConstraintType type, constraints.itemConstraints.keys())
+            for (int c = 0; c < constraints.preprocessedItemConstraints[type].size(); c++)
+                sum += constraints.preprocessedItemConstraints[type][c].size();
         // Display.
         dbg.nospace() << "preprocesseditem constraints (" << sum << "):" << endl;
-        for (int i = CONSTRAINT_POSITIVE_MATCH_ALL; i <= CONSTRAINT_NEGATIVE_MATCH_ANY; i++) {
+        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
             ItemConstraintType constraintType = (ItemConstraintType) i;
-            dbg.nospace() << "\t" << Constraints::ItemConstraintTypeName[i] << ":";
+            dbg.nospace() << "\t" << Constraints::ItemConstraintTypeName[i] << ":" << endl;
 
-            if (constraints.preprocessedItemConstraints[constraintType].isEmpty())
-                dbg.space() << "none" << endl;
-            else
+            for (int c = 0; c < constraints.preprocessedItemConstraints[constraintType].size(); c++) {
+                dbg.space() << "\t\t" << c << ". ";
+                if (constraints.preprocessedItemConstraints[constraintType][c].isEmpty())
+                    dbg.space() << "none";
+                else
+                    dbg.space() << constraints.preprocessedItemConstraints[constraintType][c];
                 dbg.nospace() << endl;
-
-            foreach (ItemName name, constraints.preprocessedItemConstraints[constraintType].keys()) {
-                if (name == "non-wildcards") {
-                    foreach (ItemID itemID, constraints.preprocessedItemConstraints[constraintType][name])
-                        dbg.nospace() << "\t\t" << constraints.itemIDNameHash->value(itemID) << " (" << itemID << ")" << endl;
-                }
-                else {
-                    dbg.nospace() << "\t\t" << name << endl;
-                    foreach (ItemID itemID, constraints.preprocessedItemConstraints[constraintType][name])
-                        dbg.nospace() << "\t\t\t" << constraints.itemIDNameHash->value(itemID) << " (" << itemID << ")" << endl;
-                }
             }
+            dbg.nospace() << endl;
         }
 
         return dbg.maybeSpace();

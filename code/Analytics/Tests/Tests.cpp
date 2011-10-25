@@ -1,4 +1,5 @@
 #include "TestFPTree.h"
+#include "TestConstraints.h"
 #include "TestFPGrowth.h"
 #include "TestRuleMiner.h"
 #include "TestTiltedTimeWindow.h"
@@ -8,6 +9,9 @@
 int main() {
     TestFPTree FPTree;
     QTest::qExec(&FPTree);
+
+    TestConstraints constraints;
+    QTest::qExec(&constraints);
 
     TestFPGrowth FPGrowth;
     QTest::qExec(&FPGrowth);
