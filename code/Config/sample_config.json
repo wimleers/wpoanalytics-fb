@@ -26,47 +26,10 @@
 			"colo" : {},
 			"connection_speed" : {},
 			"page" : {},
+			"page_type" : {},
 			"site_category" : {},
 		},
 		"numerical" : {
-			"cssrules" : {
-				"name" : "css:rules",
-				"discretizations" : [
-					{
-						"thresholds" : { "few" : 200, "acceptable" : 350, "many" : 1000 },
-						"circumstances" : [
-							"page:/timeline.php",
-						]
-					},
-					{
-						"thresholds" : { "few" : 150, "acceptable" : 250, "many" : -1 }
-					}
-				]
-			},
-			"js_filebytes" : {
-				"name" : "js:file:bytes",
-				"discretizations" : [
-					{
-						"thresholds" : { "few" : 10000, "acceptable" : 20000, "many" : -1 }
-					}					
-				]
-			},
-			"js_pkgbytes" : {
-				"name" : "js:pkg:bytes",
-				"discretizations" : [
-					{
-						"thresholds" : { "few" : 40000, "acceptable" : 60000, "many" : -1 }
-					}					
-				]
-			},
-			"jspackages" : {
-				"name" : "js:pkg:count",
-				"discretizations" : [
-					{
-						"thresholds" : { "few" : 4, "acceptable" : 6, "many": 8, "way too many" : -1 }
-					}					
-				]
-			},
 			"e2e" : {
 				"name" : "e2eTime",
 				"isEpisode" : true,
@@ -127,26 +90,57 @@
 				"isEpisode" : true,
 				"discretizations" : [
 					{
-						"thresholds" : { "fast" : 1000, "acceptable" : 2000, "slow" : -1 },
-						"circumstances" : [
-							"connection:broadband",
-						]
+						"label" : "[Events] view event - goal 1300ms (/event.php)",
+						"thresholds" : { "fast" : 1300, "acceptable" : 1500, "slow" : -1 },
+						"circumstances" : [ "page:/event.php" ]
 					},
 					{
-						"thresholds" : { "fast" : 1600, "acceptable" : 2400, "slow" : -1 },
-						"circumstances" : [
-							"connection:mobile",
-						]
+						"label" : "[Events] view events - goal:1300ms (/home.php:events)"
+						"thresholds" : { "fast" : 1300, "acceptable" : 1500, "slow" : -1 },
+						"circumstances" : [ "page:/home.php:events" ]
 					},
 					{
-						"thresholds" : { "fast" : 1500, "acceptable" : 2100, "slow" : -1 },
-						"circumstances" : [
-							"connection:mobile",
-							"country:US"
-						]
+						"label" : "[Events] /ajax/events/invite_dialog.php (/ajax/choose/index.php)",
+						"thresholds" : { "fast" : 1300, "acceptable" : 1500, "slow" : -1 },
+						"circumstances" : [ "page:/home.php:events" ]
 					},
 					{
-						"thresholds" : { "fast" : 1500, "acceptable" : 2200, "slow" : -1 },
+						"label" : "[Feed Team] home TTI: goal:1780ms",
+						"thresholds" : { "fast" : 1780, "acceptable" : 2080, "slow" : -1 },
+						"circumstances" : [ "page:/home.php", "page_type:NORMAL" ]
+					},
+					{
+						"label" : "[Pages] page TTI - goal: 2000ms",
+						"thresholds" : { "fast" : 2000, "acceptable" : 2200, "slow" : -1 },
+						"circumstances" : [ "page:/profile_page_fbx.php" ]
+					},
+					{
+						"label" : "[Photos] photo set - goal:1400ms",
+						"thresholds" : { "fast" : 1400, "acceptable" : 1600, "slow" : -1 },
+						"circumstances" : [ "page:/media/set/index.php" ]
+					},
+					{
+						"label" : "[Platform - Games] canvas_fbml - goal:3000ms",
+						"thresholds" : { "fast" : 3000, "acceptable" : 3400, "slow" : -1 },
+						"circumstances" : [ "page:/canvas/fbml.php", "page_type:NORMAL" ]
+					},
+					{
+						"label" : "[Platform - Games] canvas_iframe - goal:1600ms",
+						"thresholds" : { "fast" : 1600, "acceptable" : 1800, "slow" : -1 },
+						"circumstances" : [ "page:/canvas_iframe.php" ]
+					},
+					{
+						"label" : "[Profile] page TTI goal: 1700 ms",
+						"thresholds" : { "fast" : 1700, "acceptable" : 1900, "slow" : -1 },
+						"circumstances" : [ "page:/profile.php" ]
+					},
+					{
+						"label" : "[Site Speed Team] permalink.php - goal:1000ms",
+						"thresholds" : { "fast" : 1000, "acceptable" : 1150, "slow" : -1 },
+						"circumstances" : [ "page:/permalink.php" ]
+					},
+					{
+						"thresholds" : { "fast" : 1700, "acceptable" : 1900, "slow" : -1 },
 					},
 				]
 			},
