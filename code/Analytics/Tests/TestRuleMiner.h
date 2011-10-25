@@ -23,7 +23,7 @@ private slots:
 //    void init();
 //    void cleanup();
     void basic();
-	void generateCandidateItemsets();
+    void generateCandidateItemsets();
 };
 
 #endif // TESTRULEMINER_H
