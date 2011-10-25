@@ -30,6 +30,7 @@ namespace Analytics {
         Analyst(double minSupport, double maxSupportError, double minConfidence);
         ~Analyst();
         void addFrequentItemsetItemConstraint(QSet<ItemName> items, ItemConstraintType type);
+        void addRuleAntecedentItemConstraint(QSet<ItemName> items, ItemConstraintType type);
         void addRuleConsequentItemConstraint(QSet<ItemName> items, ItemConstraintType type);
 
         // Override moveToThread to also move the FPStream instance.
@@ -86,6 +87,7 @@ namespace Analytics {
         quint32 currentQuarterID;
 
         Constraints frequentItemsetItemConstraints;
+        Constraints ruleAntecedentItemConstraints;
         Constraints ruleConsequentItemConstraints;
 
         ItemIDNameHash itemIDNameHash;

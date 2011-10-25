@@ -16,6 +16,7 @@ namespace Analytics {
 
 #ifdef DEBUG
         this->frequentItemsetItemConstraints.itemIDNameHash = &this->itemIDNameHash;
+        this->ruleAntecedentItemConstraints.itemIDNameHash = &this->itemIDNameHash;
         this->ruleConsequentItemConstraints.itemIDNameHash = &this->itemIDNameHash;
 #endif
 
@@ -39,6 +40,28 @@ namespace Analytics {
      */
     void Analyst::addFrequentItemsetItemConstraint(QSet<ItemName> items, ItemConstraintType type) {
         this->frequentItemsetItemConstraints.addItemConstraint(items, type);
+    }
+
+    /**
+     * Add a rule antecedent item constraint of a given constraint type. When
+     * rules are being mined, only those will be considered that match the
+     * constraints defined here.
+     *
+     * @param items
+     *   An set of item names.
+     * @param type
+     *   The constraint type.
+     */
+    void Analyst::addRuleAntecedentItemConstraint(QSet<ItemName> items, ItemConstraintType type) {
+        // If an item is required to be in the rule antecedent, it evidently
+        // must also be in the frequent itemsets. Therefore, the same item
+        // constraints that apply to the rule consequents also apply to
+        // frequent itemsets.
+        // By also applying these item constraints to frequent itemset
+        // generation, we reduce the amount of work to be done to a minimum.
+        this->frequentItemsetItemConstraints.addItemConstraint(items, type);
+
+        this->ruleAntecedentItemConstraints.addItemConstraint(items, type);
     }
 
     /**
@@ -164,6 +187,7 @@ namespace Analytics {
 
         // First, consider each item for use with constraints.
         this->frequentItemsetItemConstraints.preprocessItemIDNameHash(this->itemIDNameHash);
+        this->ruleAntecedentItemConstraints.preprocessItemIDNameHash(this->itemIDNameHash);
         this->ruleConsequentItemConstraints.preprocessItemIDNameHash(this->itemIDNameHash);
 
         // Now, mine for association rules.
@@ -175,6 +199,7 @@ namespace Analytics {
                         to
                 ),
                 this->minConfidence,
+                this->ruleAntecedentItemConstraints,
                 this->ruleConsequentItemConstraints,
                 this->fpstream->getPatternTree(),
                 from,
@@ -216,6 +241,7 @@ namespace Analytics {
                 ),
                 this->minConfidence,
                 this->ruleConsequentItemConstraints,
+                this->ruleConsequentItemConstraints,
                 this->fpstream->getPatternTree(),
                 fromOlder,
                 toOlder
@@ -230,6 +256,7 @@ namespace Analytics {
                         toNewer
                 ),
                 this->minConfidence,
+                this->ruleConsequentItemConstraints,
                 this->ruleConsequentItemConstraints,
                 this->fpstream->getPatternTree(),
                 fromNewer,

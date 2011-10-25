@@ -61,6 +61,7 @@ namespace Config {
 
         // Getters (query: association rules).
         double getMinRuleConfidence() const { return this->minRuleConfidence; }
+        const Analytics::ItemConstraintsHash & getRuleAntecedentItemConstraints() const { return this->ruleAntecedentItemConstraints; }
         const Analytics::ItemConstraintsHash & getRuleConsequentItemConstraints() const { return this->ruleConsequentItemConstraints; }
 
         // Getters (attributes).
@@ -87,6 +88,7 @@ namespace Config {
 
         // Query: association rules
         double minRuleConfidence;
+        Analytics::ItemConstraintsHash ruleAntecedentItemConstraints;
         Analytics::ItemConstraintsHash ruleConsequentItemConstraints;
 
         // Attributes

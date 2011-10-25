@@ -25,6 +25,7 @@ namespace Config {
             // Query: association rules.
             const QVariantMap & associationRulesJSON = queryJSON["association rules"].toMap();
             this->minRuleConfidence             = Config::parseDouble(associationRulesJSON, "minimum confidence");
+            this->ruleAntecedentItemConstraints = Config::parseConstraints(associationRulesJSON, "antecedent item constraints");
             this->ruleConsequentItemConstraints = Config::parseConstraints(associationRulesJSON, "consequent item constraints");
 
             // Attributes.
@@ -243,6 +244,9 @@ namespace Config {
         dbg.nospace() << "    }," << endl;
         dbg.nospace() << "    \"association rules\" : {" << endl;
         dbg.nospace() << "      \"minimum confidence\" : " << config.minRuleConfidence << "," << endl;
+        dbg.nospace() << "      \"antecedent item constraints\" : {" << endl;
+        constraintHashHelper(dbg, config.ruleAntecedentItemConstraints);
+        dbg.nospace() << "      }," << endl;
         dbg.nospace() << "      \"consequent item constraints\" : {" << endl;
         constraintHashHelper(dbg, config.ruleConsequentItemConstraints);
         dbg.nospace() << "      }," << endl;
