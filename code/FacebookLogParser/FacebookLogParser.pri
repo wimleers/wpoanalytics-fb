@@ -5,7 +5,7 @@ INCLUDEPATH += $${PWD}
 
 DEPENDPATH += $${PWD}
 
-include("../Config/config.pri")
+include("../Config/Config.pri")
 include("../shared/qxtjson.pri")
 
 SOURCES += \
