@@ -9,7 +9,7 @@
 #include <qxtjson.h>
 
 #include "../Config/Config.h"
-#include "../TailerSwiftParser/Parser.h"
+#include "../Parser/JSONLogParser.h"
 #include "../Analytics/Analyst.h"
 
 class CLI : public QObject {
@@ -103,7 +103,7 @@ private:
 
     // Core components.
     Config::Config * config;
-    TailerSwiftParser::Parser * parser;
+    JSONLogParser::Parser * parser;
     Analytics::Analyst * analyst;
 
     // Status.
