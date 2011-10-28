@@ -677,7 +677,7 @@ void CLI::initConfig() {
 
 void CLI::initLogic() {
     // Instantiate the Parser.
-    this->parser = new FacebookLogParser::Parser(*this->config);
+    this->parser = new TailerSwiftParser::Parser(*this->config);
 
     // Instantiate the Analyst.
     double minSupport = this->config->getMinPatternSupport();

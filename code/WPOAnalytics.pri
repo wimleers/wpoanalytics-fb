@@ -1,8 +1,8 @@
 DEPENDPATH += Config \
-              FacebookLogParser \
+              TailerSwiftParser \
               Analytics
 include("Config/Config.pri")
-include("FacebookLogParser/FacebookLogParser.pri")
+include("TailerSwiftParser/TailerSwiftParser.pri")
 include("Analytics/Analytics.pri")
 
 

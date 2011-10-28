@@ -1,6 +1,6 @@
 #include "Parser.h"
 
-namespace FacebookLogParser {
+namespace TailerSwiftParser {
 
     Parser::Parser(Config::Config config)
         : JSONLogParser::Parser::Parser(config)
@@ -11,6 +11,10 @@ namespace FacebookLogParser {
     //---------------------------------------------------------------------------
     // Protected overridden methods.
 
+    /**
+     * This override reacts to TailerSwift's 'swift_event' lines that are added
+     * to the stream to define time windows.
+     */
     void Parser::processParsedChunk(const QStringList & chunk, bool forceProcessing) {
         static quint32 windowID = 0;
         static QList<Config::Sample> batch;
@@ -20,7 +24,7 @@ namespace FacebookLogParser {
         Config::Sample sample;
         foreach (rawSample, chunk) {
             // ptail checkpoint: 15 minutes have passed!
-            if (rawSample.at(0) == '#') {
+            if (rawSample.startsWith("swift_event")) {
                 // There are often multiple checkpoints after each other. Don't
                 // trigger a new time window for each.
                 if (!lastSampleWasCheckpoint) {

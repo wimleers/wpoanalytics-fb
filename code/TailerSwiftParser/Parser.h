@@ -1,11 +1,9 @@
-#ifndef FACEBOOKLOGPARSER_H
-#define FACEBOOKLOGPARSER_H
-
-#include <QDebug>
+#ifndef TAILERSWIFTPARSER_H
+#define TAILERSWIFTPARSER_H
 
 #include "../Parser/JSONLogParser.h"
 
-namespace FacebookLogParser {
+namespace TailerSwiftParser {
 
     class Parser : public JSONLogParser::Parser {
         Q_OBJECT
@@ -19,4 +17,4 @@ namespace FacebookLogParser {
 
 }
 
-#endif // FACEBOOKLOGPARSER_H
+#endif // TAILERSWIFTPARSER_H
