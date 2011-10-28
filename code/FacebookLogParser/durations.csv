@@ -1,6 +1,0 @@
-gen_time,400,acceptable,1000,slow
-flush_time_early,fast,50,acceptable,100,slow
-network,fast,600,acceptable,1200,slow
-tti,fast,1000,acceptable,2000,slow
-e2e,fast,1000,acceptable,2000,slow
-load_time,fast,400,acceptable,800,slow
