@@ -466,7 +466,12 @@ bool CLI::parseCommandOptions() {
     // Validate & parse general usage.
     bool validUsage = true;
     validUsage = (options.count("config"));
-    validUsage = (options.count("input") || options.count("input-stdin") || options.count("load"));
+    validUsage = validUsage && (
+                options.count("verify-config")
+                || options.count("input")
+                || options.count("input-stdin")
+                || options.count("load")
+    );
     if (!validUsage) {
         this->showHelpText();
         options.showUsage();
@@ -546,7 +551,7 @@ void CLI::run() {
             return;
         }
         else
-            exit(0);
+            this->exit(0);
     }
     // run() will be called again by verifyConfig()
 
@@ -600,6 +605,10 @@ void CLI::run() {
 }
 
 void CLI::verifyConfig() {
+    this->configVerificationCompleted = true;
+
+    // TODO: make this a slot in the Config class, so we can just emit a signal
+    // to make it happen.
     // TODO: make this work with QTextStream.
 #ifndef DEBUG
     this->out("CLI", "This unfortunately only works in debug mode right now. Sorry about that.", 0);
