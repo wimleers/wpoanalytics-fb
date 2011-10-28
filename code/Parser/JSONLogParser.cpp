@@ -37,16 +37,49 @@ namespace JSONLogParser {
 
         // 1) Process normals.
         const QVariantMap & normals = json["normal"].toMap();
+        QString value;
         foreach (const QString & key, normals.keys()) {
             if (categoricalAttributes.contains(key)) {
                 attribute = categoricalAttributes[key];
 
-                if (attribute.parentAttribute.isNull())
-                    sample.circumstances.insert(attribute.name + ':' + normals[key].toString());
-                else if (!normals.contains(attribute.parentAttribute)) {
-                    qWarning("A sample did NOT contain the parent attribute '%s' for the attribute '%s'!", qPrintable(attribute.parentAttribute), qPrintable(attribute.name));
-                    sample.circumstances.insert(attribute.name + ':' + normals[attribute.parentAttribute].toString() + ':' + normals[key].toString());
+                value = normals[key].toString();
+
+                // parentAttribute: only insert a circumstance if the parent
+                // attribute also exists.
+                if (!attribute.parentAttribute.isNull()) {
+                    if (normals.contains(attribute.parentAttribute)) {
+                        sample.circumstances.insert(
+                            attribute.name +
+                            ':' +
+                            normals[attribute.parentAttribute].toString() +
+                            ':' +
+                            value
+                        );
+                    }
+                    else {
+                        qWarning(
+                            "A sample did NOT contain the parent attribute '%s' for the attribute '%s'!",
+                            qPrintable(attribute.parentAttribute),
+                            qPrintable(attribute.name)
+                        );
+                    }
                 }
+                // hierarchySeparator: insert multiple items if the hierarchy
+                // separator does exist, otherwise just insert the circumstance
+                // itself.
+                else if (!attribute.hierarchySeparator.isNull() && value.contains(attribute.hierarchySeparator)) {
+                    // Insert all sections.
+                    for (int i = 0; i < value.count(attribute.hierarchySeparator, Qt::CaseSensitive); i++) {
+                        sample.circumstances.insert(
+                            attribute.name +
+                            value.section(attribute.hierarchySeparator, 0, i)
+                        );
+                    }
+                    // Insert the whole thing, too.
+                    sample.circumstances.insert(attribute.name + ':' + value);
+                }
+                else
+                    sample.circumstances.insert(attribute.name + ':' + value);
             }
         }
 

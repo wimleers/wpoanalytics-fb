@@ -185,6 +185,9 @@ namespace Config {
         if (relevantJSON.keys().contains("parentAttribute"))
             a.parentAttribute = relevantJSON["parentAttribute"].toString();
 
+        if (relevantJSON.keys().contains("hierarchySeparator"))
+            a.hierarchySeparator = relevantJSON["hierarchySeparator"].toString();
+
         if (relevantJSON.keys().contains("discretizations"))
             a.discretizations = Config::parseDiscretizations(relevantJSON["discretizations"], field);
 
@@ -314,25 +317,31 @@ namespace Config {
         dbg.nospace() << prefix << attribute.field << " : {\n";
 
         // name
-        dbg.nospace() << prefix << "  name            : " << attribute.name << ",";
+        dbg.nospace() << prefix << "  name              : " << attribute.name << ",";
         if (attribute.field == attribute.name)
             dbg.nospace() << " // default";
         dbg.nospace() << endl;
 
         // isEpisode
-        dbg.nospace() << prefix << "  isEpisode       : " << attribute.isEpisode << ",";
+        dbg.nospace() << prefix << "  isEpisode         : " << attribute.isEpisode << ",";
         if (!attribute.isEpisode)
             dbg.nospace() << QString(attribute.name.size() + 2 - 5, ' ').toStdString().c_str() << " // default";
         dbg.nospace() << endl;
 
         // parentAttribute
-        dbg.nospace() << prefix << "  parentAttribute : " << attribute.parentAttribute << ",";
+        dbg.nospace() << prefix << "  parentAttribute   : " << attribute.parentAttribute << ",";
         if (attribute.parentAttribute.isNull())
             dbg.nospace() << QString(attribute.name.size() + 2 - 2, ' ').toStdString().c_str() << " // default";
         dbg.nospace() << endl;
 
+        // hierarchySeparator
+        dbg.nospace() << prefix << "  hierarchySeparator: " << attribute.hierarchySeparator << ",";
+        if (attribute.hierarchySeparator.isNull())
+            dbg.nospace() << QString(attribute.name.size() + 2 - 2, ' ').toStdString().c_str() << " // default";
+        dbg.nospace() << endl;
+
         // discretizations
-        dbg.nospace() << prefix << "  discretizations : ";
+        dbg.nospace() << prefix << "  discretizations   : ";
         discretizationsHelper(dbg, attribute.discretizations, QString(QString(prefix) + "  ").toStdString().c_str());
         dbg.nospace() << ',';
         if (attribute.discretizations.isEmpty())

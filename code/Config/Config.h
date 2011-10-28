@@ -30,13 +30,23 @@ namespace Config {
         Attribute(const QString & field ="",
                   const QString & name  = QString::null,
                   bool isEpisode        = false,
+                  QString parentAttribute = QString::null,
+                  QString hierarchySeparator = QString::null,
                   QSet<Discretization> discretizations = QSet<Discretization>())
-            : field(field), name(name), isEpisode(isEpisode), discretizations(discretizations) {}
+        {
+            this->field              = field;
+            this->name               = name;
+            this->isEpisode          = isEpisode;
+            this->parentAttribute    = parentAttribute;
+            this->hierarchySeparator = hierarchySeparator;
+            this->discretizations    = discretizations;
+        }
 
         QString field;  // required
         QString name;   // optional, defaults to QString::null
         bool isEpisode; // optional, defaults to false
         QString parentAttribute; // optional, defaults to QString::null
+        QString hierarchySeparator; // optional, defaults to QString::null, you cannot set this if you also set the parentAttribute!
         QSet<Discretization> discretizations; // optional, default to empty hash
                                                // if not empty, then at least one discretization must have *no* circumstances, this will be the default
     };

@@ -27,7 +27,9 @@
 			"platform" : {},
 			"colo" : {},
 			"connection_speed" : {},
-			"page" : {},
+			"page" : {
+				"hierarchySeparator" : ":",
+			},
 			"page_type" : {},
 			"site_category" : {},
 		},
