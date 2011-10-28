@@ -5,13 +5,14 @@ INCLUDEPATH += $${PWD}
 
 DEPENDPATH += $${PWD}
 
-include("../Parser/JSONLogParser.pri")
+include("../Config/Config.pri")
+include("../shared/qxtjson.pri")
 
 SOURCES += \
-    $${PWD}/Parser.cpp
+    $${PWD}/JSONLogParser.cpp
 
 HEADERS += \
-    $${PWD}/Parser.h
+    $${PWD}/JSONLogParser.h
 
 # Disable qDebug() output when in release mode.
 CONFIG(release, debug|release):DEFINES += QT_NO_DEBUG_OUTPUT
