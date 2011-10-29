@@ -26,6 +26,8 @@ private slots:
     void basic_data();
     void alternate();
     void alternate_data();
+    void alternateWildcard();
+    void alternateWildcard_data();
 };
 
 

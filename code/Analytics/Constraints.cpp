@@ -274,6 +274,23 @@ namespace Analytics {
         QSet<ItemName> itemsetCopy = itemset;
         bool emptyIntersection = itemsetCopy.intersect(constraintItems).isEmpty();
 
+        // Match wildcard item constraints, if any.
+        QRegExp rx;
+        rx.setPatternSyntax(QRegExp::Wildcard);
+        foreach (const ItemName & constraintItem, constraintItems) {
+            if (constraintItem.contains('*')) {
+                rx.setPattern(constraintItem);
+                foreach (const QString & item, itemset) {
+                    if (rx.exactMatch(item)) {
+                        if (type == CONSTRAINT_POSITIVE)
+                            return true;
+                        else if (type == CONSTRAINT_NEGATIVE)
+                            return false;
+                    }
+                }
+            }
+        }
+
         if (type == CONSTRAINT_POSITIVE)
             return !emptyIntersection;
         else if (type == CONSTRAINT_NEGATIVE)

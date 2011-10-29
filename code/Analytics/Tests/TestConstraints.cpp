@@ -91,6 +91,52 @@ void TestConstraints::alternate_data() {
     return this->basic_data();
 }
 
+void TestConstraints::alternateWildcard_data() {
+    QTest::addColumn<QSet<ItemName> >("positive_constraint_1");
+    QTest::addColumn<QSet<ItemName> >("negative_constraint_1");
+    QTest::addColumn<bool>("result_1");
+    QTest::addColumn<bool>("result_2");
+    QTest::addColumn<bool>("result_3");
+
+    // Positive.
+    QTest::newRow("positive foo*")
+            << (QSet<ItemName>() << "foo*")
+            << QSet<ItemName>()
+            << true << true << false;
+
+    QTest::newRow("positive foo:*")
+            << (QSet<ItemName>() << "foo:*")
+            << QSet<ItemName>()
+            << false << true << false;
+
+    QTest::newRow("positive *foo:*")
+            << (QSet<ItemName>() << "*foo:*")
+            << QSet<ItemName>()
+            << false << true << true;
+
+    // Negative.
+    QTest::newRow("negative foo*")
+            << QSet<ItemName>()
+            << (QSet<ItemName>() << "foo*")
+            << false << false << true;
+
+    QTest::newRow("negative foo:*")
+            << QSet<ItemName>()
+            << (QSet<ItemName>() << "foo:*")
+            << true << false << true;
+
+    QTest::newRow("negative *foo:*")
+            << QSet<ItemName>()
+            << (QSet<ItemName>() << "*foo:*")
+            << true << false << false;
+
+    // Both.
+    QTest::newRow("positive *o:*, negative *:*:*")
+            << (QSet<ItemName>() << "*o:*")
+            << (QSet<ItemName>() << "*:*:*")
+            << false << true << false;
+}
+
 void TestConstraints::basic() {
     // Build ItemIDNameHash.
     ItemIDNameHash itemIDNameHash;
@@ -168,4 +214,28 @@ void TestConstraints::alternate() {
     QCOMPARE(c.matchItemset(f3), result_3);
     QCOMPARE(c.matchItemset(f4), result_4);
     QCOMPARE(c.matchItemset(f5), result_5);
+}
+
+void TestConstraints::alternateWildcard() {
+    // Create a few frequent itemsets.
+    QSet<ItemName> f1, f2, f3, f4;
+    f1 << "foo";
+    f2 << "foo:bar";
+    f3 << "baz:foo:bar";
+
+    // Retrieve expected values.
+    QFETCH(QSet<ItemName>, positive_constraint_1);
+    QFETCH(QSet<ItemName>, negative_constraint_1);
+    QFETCH(bool, result_1);
+    QFETCH(bool, result_2);
+    QFETCH(bool, result_3);
+
+    // Compare the results with the expected values.
+    Constraints c;
+    c.addItemConstraint(positive_constraint_1, CONSTRAINT_POSITIVE);
+    c.addItemConstraint(negative_constraint_1, CONSTRAINT_NEGATIVE);
+    //qDebug() << c;
+    QCOMPARE(c.matchItemset(f1), result_1);
+    QCOMPARE(c.matchItemset(f2), result_2);
+    QCOMPARE(c.matchItemset(f3), result_3);
 }
