@@ -1,5 +1,10 @@
 #include "Constraints.h"
 
+// TODO: Make the distinction between "standard usage" of Constraints (with
+// preprocessing, so that we can match ItemIDLists very fast) versus the
+// "alternative usage" of Constraints (without preprocessing, but it can work
+// directly with strings; with QSet<ItemName>s).
+
 namespace Analytics {
 
     const char * Constraints::ItemConstraintTypeName[2] = {
@@ -172,6 +177,34 @@ namespace Analytics {
     }
 
     /**
+     * Check if the given itemset matches the defined constraints.
+     *
+     * @param itemset
+     *   An itemset to check the constraints for.
+     * @return
+     *   True if the itemset matches the constraints, false otherwise.
+     */
+    bool Constraints::matchItemset(const QSet<ItemName> & itemset) const {
+#ifdef CONSTRAINTS_DEBUG
+        qDebug() << "Matching itemset" << itemset << " to constraints " << this->itemConstraints;
+#endif
+        bool match;
+        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
+            ItemConstraintType type = (ItemConstraintType) i;
+            for (int c = 0; c < this->itemConstraints[type].size(); c++) {
+                match = Constraints::matchItemsetHelper(itemset, type, this->itemConstraints[type][c]);
+#ifdef CONSTRAINTS_DEBUG
+                qDebug() << "\t" << Constraints::ItemConstraintTypeName[type] << c << ": " << match;
+#endif
+                if (!match)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Check if a particular frequent itemset search space will be able to
      * match the defined constraints. We can do this by matching all
      * constraints over the itemset *and* prefix paths support counts
@@ -202,7 +235,7 @@ namespace Analytics {
     // Protected methods.
 
     /**
-     * Helper function for Constraints::matchItemSet().
+     * Helper function for Constraints::matchItemSet(ItemIDList).
      */
     bool Constraints::matchItemsetHelper(const ItemIDList & itemset, ItemConstraintType type, const QSet<ItemID> & constraintItems) {
         foreach (ItemID id, constraintItems) {
@@ -229,6 +262,22 @@ namespace Analytics {
         case CONSTRAINT_POSITIVE:
             return false;
         }
+
+        // Satisfy the compiler.
+        return false;
+    }  
+
+    /**
+     * Helper function for Constraints::matchItemSet(QSet<ItemName>).
+     */
+    bool Constraints::matchItemsetHelper(const QSet<ItemName> & itemset, ItemConstraintType type, const QSet<ItemName> & constraintItems) {
+        QSet<ItemName> itemsetCopy = itemset;
+        bool emptyIntersection = itemsetCopy.intersect(constraintItems).isEmpty();
+
+        if (type == CONSTRAINT_POSITIVE)
+            return !emptyIntersection;
+        else if (type == CONSTRAINT_NEGATIVE)
+            return emptyIntersection;
 
         // Satisfy the compiler.
         return false;

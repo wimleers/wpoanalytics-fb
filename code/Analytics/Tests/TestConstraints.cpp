@@ -87,6 +87,10 @@ void TestConstraints::basic_data() {
             << false << true << false << false << false;
 }
 
+void TestConstraints::alternate_data() {
+    return this->basic_data();
+}
+
 void TestConstraints::basic() {
     // Build ItemIDNameHash.
     ItemIDNameHash itemIDNameHash;
@@ -124,6 +128,40 @@ void TestConstraints::basic() {
     c.addItemConstraint(negative_constraint_1, CONSTRAINT_NEGATIVE);
     c.addItemConstraint(negative_constraint_2, CONSTRAINT_NEGATIVE);
     c.preprocessItemIDNameHash(itemIDNameHash);
+    //qDebug() << c;
+    QCOMPARE(c.matchItemset(f1), result_1);
+    QCOMPARE(c.matchItemset(f2), result_2);
+    QCOMPARE(c.matchItemset(f3), result_3);
+    QCOMPARE(c.matchItemset(f4), result_4);
+    QCOMPARE(c.matchItemset(f5), result_5);
+}
+
+void TestConstraints::alternate() {
+    // Create a few frequent itemsets.
+    QSet<ItemName> f1, f2, f3, f4, f5;
+    f1 << "A";
+    f2 << "A" << "B";
+    f3 << "B" << "D";
+    f4 << "A" << "C" << "D";
+    f5 << "D" << "A";
+
+    // Retrieve expected values.
+    QFETCH(QSet<ItemName>, positive_constraint_1);
+    QFETCH(QSet<ItemName>, positive_constraint_2);
+    QFETCH(QSet<ItemName>, negative_constraint_1);
+    QFETCH(QSet<ItemName>, negative_constraint_2);
+    QFETCH(bool, result_1);
+    QFETCH(bool, result_2);
+    QFETCH(bool, result_3);
+    QFETCH(bool, result_4);
+    QFETCH(bool, result_5);
+
+    // Compare the results with the expected values.
+    Constraints c;
+    c.addItemConstraint(positive_constraint_1, CONSTRAINT_POSITIVE);
+    c.addItemConstraint(positive_constraint_2, CONSTRAINT_POSITIVE);
+    c.addItemConstraint(negative_constraint_1, CONSTRAINT_NEGATIVE);
+    c.addItemConstraint(negative_constraint_2, CONSTRAINT_NEGATIVE);
     //qDebug() << c;
     QCOMPARE(c.matchItemset(f1), result_1);
     QCOMPARE(c.matchItemset(f2), result_2);

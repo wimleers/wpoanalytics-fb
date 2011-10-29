@@ -50,6 +50,7 @@ namespace Analytics {
         void clearPreprocessedItems() { this->preprocessedItemConstraints.clear(); this->highestPreprocessedItemID = ROOT_ITEMID; }
 
         bool matchItemset(const ItemIDList & itemset) const;
+        bool matchItemset(const QSet<ItemName> & itemset) const;
         bool matchSearchSpace(const ItemIDList & frequentItemset, const QHash<ItemID, SupportCount> & prefixPathsSupportCounts) const;
 
 #ifdef DEBUG
@@ -60,6 +61,7 @@ namespace Analytics {
 
     protected:
         static bool matchItemsetHelper(const ItemIDList & itemset, ItemConstraintType type, const QSet<ItemID> & constraintItems);
+        static bool matchItemsetHelper(const QSet<ItemName> & itemset, ItemConstraintType type, const QSet<ItemName> & constraintItems);
         static bool matchSearchSpaceHelper(const ItemIDList & frequentItemset, const QHash<ItemID, SupportCount> & prefixPathsSupportCounts, ItemConstraintType type, const QSet<ItemID> & constraintItems);
 
         void addPreprocessedItemConstraint(ItemConstraintType type, uint constraint, ItemID id);

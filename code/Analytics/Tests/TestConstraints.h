@@ -24,6 +24,8 @@ private slots:
 //    void cleanup();
     void basic();
     void basic_data();
+    void alternate();
+    void alternate_data();
 };
 
 
