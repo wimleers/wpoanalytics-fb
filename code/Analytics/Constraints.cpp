@@ -29,6 +29,9 @@ namespace Analytics {
      *   The constraint type.
      */
     void Constraints::addItemConstraint(const QSet<ItemName> & items, ItemConstraintType type) {
+        if (items.isEmpty())
+            return;
+
         if (!this->itemConstraints.contains(type))
             this->itemConstraints.insert(type, QVector<QSet<ItemName> >());
         this->itemConstraints[type].append(items);
