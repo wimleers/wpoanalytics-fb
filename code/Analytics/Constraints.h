@@ -39,6 +39,7 @@ namespace Analytics {
         bool empty() const { return this->itemConstraints.empty(); }
 
         void addItemConstraint(const QSet<ItemName> & items, ItemConstraintType type);
+        void setItemConstraints(const ItemConstraintsHash & itemConstraints) { this->itemConstraints = itemConstraints; }
 
         QSet<ItemID> getAllItemIDsForConstraintType(ItemConstraintType type) const;
 
