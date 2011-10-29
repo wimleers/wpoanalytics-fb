@@ -161,7 +161,7 @@ namespace Analytics {
             for (int c = 0; c < this->preprocessedItemConstraints[type].size(); c++) {
                 match = Constraints::matchItemsetHelper(itemset, type, this->preprocessedItemConstraints[type][c]);
 #ifdef CONSTRAINTS_DEBUG
-                qDebug() << "\t" << Constraints::ItemConstraintTypeName[type][c] << ": " << match;
+                qDebug() << "\t" << Constraints::ItemConstraintTypeName[type] << c << ": " << match;
 #endif
                 if (!match)
                     return false;
