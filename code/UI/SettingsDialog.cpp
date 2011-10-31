@@ -110,7 +110,7 @@ QWidget * SettingsDialog::createAnalystTab() {
 
     QWidget * tab = new QWidget();
 
-    QLabel * descriptionLabel = new QLabel(tr("Find causes for all problems that:"));
+    QLabel * descriptionLabel = new QLabel(tr("Find rules that:"));
 
     // Minimum frequent itemset support.
     QHBoxLayout * minSupLayout = new QHBoxLayout();

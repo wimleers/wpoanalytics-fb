@@ -154,7 +154,7 @@ void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule
     this->statusMutex.lock();
     this->totalPatternsExaminedWhileMining += this->patternTreeSize;
     this->causesDescription->setText(
-                QString(tr("%1 causes mined from %2 log lines (from %3 until %4)"))
+                QString(tr("%1 rules mined from %2 log lines (from %3 until %4)"))
                 .arg(associationRules.size())
                 .arg(eventsInTimeRange)
                 .arg(QDateTime::fromTime_t(startTime).toString("yyyy-MM-dd hh:mm:ss"))
@@ -243,7 +243,7 @@ void MainWindow::comparedMinedRules(uint fromOlder, uint toOlder,
     this->statusMutex.lock();
     this->totalPatternsExaminedWhileMining += this->patternTreeSize * 2;
     this->causesDescription->setText(
-                QString(tr("Mined %1 and %2 causes, of which %3 occurred in both time granularities, thus totalling %4 unique causes"))
+                QString(tr("Mined %1 and %2 rules, of which %3 occurred in both time granularities, thus totalling %4 unique rules"))
                 .arg(olderRules.size())
                 .arg(newerRules.size())
                 .arg(intersectedRules.size())
@@ -258,7 +258,7 @@ void MainWindow::comparedMinedRules(uint fromOlder, uint toOlder,
     QStandardItemModel * model = new QStandardItemModel(comparedRules.size(), 6, this);
 
     QStringList headerLabels;
-    headerLabels << tr("Episode") << tr("Circumstances") << tr("% slow") << tr("% slow change") << tr("# slow") << tr("# slow change");
+    headerLabels << tr("Episode") << tr("Circumstances") << tr("%") << tr("% change") << tr("#") << tr("# change");
     model->setHorizontalHeaderLabels(headerLabels);
 
     uint row = 0;
@@ -742,7 +742,7 @@ void MainWindow::createStatsGroupbox() {
 }
 
 void MainWindow::createCausesGroupbox() {
-    this->causesGroupbox = new QGroupBox(tr("Causes"));
+    this->causesGroupbox = new QGroupBox(tr("Circumstances"));
     QVBoxLayout * layout = new QVBoxLayout();
     QHBoxLayout * mineLayout = new QHBoxLayout();
     QHBoxLayout * filterLayout = new QHBoxLayout();
@@ -775,7 +775,7 @@ void MainWindow::createCausesGroupbox() {
     this->causesActionChoice = new QComboBox(this);
     this->causesActionChoice->addItem(tr("Mine"));
     this->causesActionChoice->addItem(tr("Compare"));
-    QLabel * cm1 = new QLabel(tr("causes in the"));
+    QLabel * cm1 = new QLabel(tr("rules in the"));
     this->causesMineTimerangeChoice = new QComboBox(this);
     this->causesMineTimerangeChoice->addItems(timeRanges);
     this->causesCompareLabel = new QLabel(tr("with those in the"));
@@ -805,7 +805,7 @@ void MainWindow::createCausesGroupbox() {
     filterLayout->addWidget(this->causesFilter);
 
     // Add children to "description" layout.
-    this->causesDescription = new QLabel(tr("No causes have been mined yet."));
+    this->causesDescription = new QLabel(tr("No rules have been mined yet."));
     descriptionLayout->addWidget(this->causesDescription);
     descriptionLayout->addStretch();
 
