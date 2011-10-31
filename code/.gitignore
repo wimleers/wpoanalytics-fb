@@ -1,2 +1,5 @@
-EpisodesParser-build-desktop
+*.o
+moc_*
+Makefile
+*-build-*
 *.pro.user
