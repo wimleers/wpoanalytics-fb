@@ -198,7 +198,11 @@ namespace JSONLogParser {
     //---------------------------------------------------------------------------
     // Protected slots.
 
-    void Parser::processBatch(const QList<Config::Sample> batch, quint32 quarterID, bool lastChunkOfBatch) {
+    void Parser::processBatch(const QList<Config::Sample> batch,
+                              quint32 quarterID,
+                              bool lastChunkOfBatch,
+                              quint32 discardedSamples)
+    {
         double transactionsPerEvent;
         uint items = 0;
         double averageTransactionLength;
@@ -231,8 +235,20 @@ namespace JSONLogParser {
 
         transactionsPerEvent = ((double) transactions.size()) / batch.size();
         averageTransactionLength = 1.0 * items / transactions.size();
-        emit stats(timer.elapsed(), transactions.size(), transactionsPerEvent, averageTransactionLength, lastChunkOfBatch, batch.first().time, batch.last().time);
-        emit parsedBatch(transactions, transactionsPerEvent, batch.first().time, batch.last().time, quarterID, lastChunkOfBatch);
+        emit stats(timer.elapsed(),
+                   transactions.size(),
+                   transactionsPerEvent,
+                   averageTransactionLength,
+                   lastChunkOfBatch,
+                   batch.first().time,
+                   batch.last().time,
+                   discardedSamples);
+        emit parsedBatch(transactions,
+                         transactionsPerEvent,
+                         batch.first().time,
+                         batch.last().time,
+                         quarterID,
+                         lastChunkOfBatch);
 
 
         // Pause the parsing until these transactions have been processed!
@@ -250,6 +266,7 @@ namespace JSONLogParser {
         static quint32 currentQuarterID = 0;
         static QList<Config::Sample> batch;
         quint16 sampleNumber = 0;
+        quint32 discardedSamples = 0;
 
         // Perform the mapping from strings to EpisodesLogLine concurrently.
 //        QList<EpisodesLogLine> mappedChunk = QtConcurrent::blockingMapped(chunk, Parser::mapLineToEpisodesLogLine);
@@ -261,6 +278,12 @@ namespace JSONLogParser {
                 continue;
 
             sample = Parser::parseSample(rawSample, &this->config);
+
+            // Discard samples without circumstances.
+            if (sample.circumstances.isEmpty()) {
+                discardedSamples++;
+                continue;
+            }
 
             // Calculate the initial currentQuarterID.
             if (currentQuarterID == 0)
@@ -276,7 +299,8 @@ namespace JSONLogParser {
                     currentQuarterID = quarterID;
 
                     // The batch we just finished is the previous quarter ID!
-                    this->processBatch(batch, quarterID - 1, true);
+                    this->processBatch(batch, quarterID - 1, true, discardedSamples);
+                    discardedSamples = 0;
                     batch.clear();
                 }
             }
@@ -285,7 +309,8 @@ namespace JSONLogParser {
             // too much memory): let it be processed when it has grown to
             // PROCESS_CHUNK_SIZE lines.
             if (batch.size() == PROCESS_CHUNK_SIZE) {
-                this->processBatch(batch, currentQuarterID, false); // The batch doesn't end here!
+                this->processBatch(batch, currentQuarterID, false, discardedSamples); // The batch doesn't end here!
+                discardedSamples = 0;
                 batch.clear();
             }
 
@@ -293,7 +318,8 @@ namespace JSONLogParser {
         }
 
         if (forceProcessing && !batch.isEmpty()) {
-            this->processBatch(batch, currentQuarterID, true);
+            this->processBatch(batch, currentQuarterID, true, discardedSamples);
+            discardedSamples = 0;
             batch.clear();
         }
     }

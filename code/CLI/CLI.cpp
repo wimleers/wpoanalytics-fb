@@ -23,6 +23,7 @@ CLI::CLI() {
     // Stats: Parser.
     this->statsParserDuration             = 0;
     this->statsParserLines                = 0;
+    this->statsParserLinesDropped         = 0;
     this->statsParserTransactions         = 0;
     this->statsParserAvgTransactionLength = 0.0;
 
@@ -96,27 +97,39 @@ void CLI::updateParsingStatus(bool parsing) {
     }
 }
 
-void CLI::updateParserStats(int duration, quint64 transactions, double transactionsPerEvent, double averageTransactionLength, bool lastChunkOfBatch, Time start, Time end) {
+void CLI::updateParserStats(int duration,
+                            quint64 transactions,
+                            double transactionsPerEvent,
+                            double averageTransactionLength,
+                            bool lastChunkOfBatch,
+                            Time start,
+                            Time end,
+                            quint32 discardedSamples) {
     this->statsMutex.lock();
     this->statsParserDuration             += duration;
     this->statsParserTransactions         += transactions;
     this->statsParserLines                += transactions / transactionsPerEvent;
+    this->statsParserLinesDropped         += discardedSamples;
     double weightedUpToNow = this->statsParserAvgTransactionLength * ((double) (this->statsParserTransactions - transactions) / this->statsParserTransactions);
     double weightedNew = averageTransactionLength * ((double) transactions / this->statsParserTransactions);
     this->statsParserAvgTransactionLength  = weightedUpToNow + weightedNew;
     this->statsMutex.unlock();
 
+    quint64 actualLines = transactions / transactionsPerEvent;
+    quint64 totalLines = actualLines + discardedSamples;
+
     this->out("Parser", "Chunk parsed.", 0);
     this->out(
                 "Parser",
-                QString(" |- %1 lines/s (%2 s)")
-                .arg(QString::number((transactions / transactionsPerEvent) / (duration / 1000.0), 'f', 2))
-                .arg(QString::number(duration / 1000.0, 'f', 2)),
+                QString(" |- %1 lines/s (%2 s, %3 dropped)")
+                .arg(QString::number(totalLines / (duration / 1000.0), 'f', 2))
+                .arg(QString::number(duration / 1000.0, 'f', 2))
+                .arg(QString::number(1.0 * discardedSamples / totalLines * 100.0, 'f', 2) + '%'),
                 1
     );
     this->out(
                 "Parser",
-                QString(" |- %1 lines -> %2 transactions (%3 transactions/line)")
+                QString(" |- %1 (net) lines -> %2 transactions (%3 transactions/line)")
                 .arg(transactions / transactionsPerEvent)
                 .arg(transactions)
                 .arg(transactionsPerEvent),
@@ -133,8 +146,9 @@ void CLI::updateParserStats(int duration, quint64 transactions, double transacti
     );
     this->out(
                 "Parser",
-                QString(" \\- Total: %1s, %2 lines, %3 transactions. %4 items/transaction.")
+                QString(" \\- Total: %1s, %2 lines (%3 net), %4 transactions. %5 items/transaction.")
                 .arg(QString::number(this->statsParserDuration / 1000.0, 'f', 2))
+                .arg(QString::number((this->statsParserLines + this->statsParserLinesDropped) / 1000.0, 'f', 2) + 'K')
                 .arg(QString::number(this->statsParserLines / 1000.0, 'f', 2) + 'K')
                 .arg(QString::number(this->statsParserTransactions / 1000.0, 'f', 2) + 'K')
                 .arg(QString::number(this->statsParserAvgTransactionLength, 'f', 2)),
@@ -349,17 +363,28 @@ void CLI::patterMiningFinished() {
     QString stopBold = "\033[0m";
 
     // Final stats.
+    quint64 totalLines = this->statsParserLines + this->statsParserLinesDropped;
     this->out("Stats", startBold + "Parser" + stopBold, 0);
     this->out(
                 "Stats",
-                QString(" |- %1 lines/s (%2 s)")
+                QString(" |- %1 net lines/s (%2 s, %3 dropped, %4 total lines/s)")
                 .arg(QString::number(this->statsParserLines / (this->statsParserDuration / 1000.0), 'f', 2))
-                .arg(QString::number(this->statsParserDuration / 1000.0, 'f', 2)),
+                .arg(QString::number(this->statsParserDuration / 1000.0, 'f', 2))
+                .arg(QString::number(1.0 * this->statsParserLinesDropped / totalLines * 100.0, 'f', 2) + '%')
+                .arg(QString::number(totalLines / (this->statsParserDuration / 1000.0), 'f', 2)),
                 0
     );
     this->out(
                 "Stats",
-                QString(" |- %1 lines -> %2 transactions (%3 transactions/line)")
+                QString(" |- %1 of %2 lines accepted (%3 of the data set)")
+                .arg(QString::number(this->statsParserLines))
+                .arg(QString::number(totalLines))
+                .arg(QString::number(1.0 * this->statsParserLines / totalLines * 100.0, 'f', 2) + '%'),
+                0
+    );
+    this->out(
+                "Stats",
+                QString(" |- %1 (net) lines -> %2 transactions (%3 transactions/line)")
                 .arg(this->statsParserLines)
                 .arg(this->statsParserTransactions)
                 .arg(1.0 * this->statsParserTransactions / this->statsParserLines),
@@ -730,7 +755,7 @@ void CLI::connectLogic() {
 
     // Logic -> UI.
     connect(this->parser, SIGNAL(parsing(bool)), SLOT(updateParsingStatus(bool)));
-    connect(this->parser, SIGNAL(stats(int,quint64,double,double,bool,Time,Time)), SLOT(updateParserStats(int,quint64,double,double,bool,Time,Time)));
+    connect(this->parser, SIGNAL(stats(int,quint64,double,double,bool,Time,Time,quint32)), SLOT(updateParserStats(int,quint64,double,double,bool,Time,Time,quint32)));
     connect(this->analyst, SIGNAL(analyzing(bool,Time,Time,quint64,quint64)), SLOT(updatePatternMiningStatus(bool,Time,Time,quint64,quint64)));
     connect(this->analyst, SIGNAL(stats(int,Time,Time,quint64,quint64,quint64,quint64,quint64)), SLOT(updatePatternMiningStats(int,Time,Time,quint64,quint64,quint64,quint64,quint64)));
     connect(this->analyst, SIGNAL(mining(bool)), SLOT(updateRuleMiningStatus(bool)));

@@ -40,7 +40,14 @@ namespace JSONLogParser {
 
     signals:
         void parsing(bool);
-        void stats(int duration, quint64 transactions, double transactionsPerEvent, double averageTransactionLength, bool lastChunkOfBatch, Time start, Time end);
+        void stats(int duration,
+                   quint64 transactions,
+                   double transactionsPerEvent,
+                   double averageTransactionLength,
+                   bool lastChunkOfBatch,
+                   Time start,
+                   Time end,
+                   quint32 discardedSamples);
         void parsedBatch(QList<QStringList> transactions, double transactionsPerEvent, Time start, Time end, quint32 quarterID, bool lastChunkOfBatch);
 
     public slots:
@@ -48,7 +55,10 @@ namespace JSONLogParser {
         void continueParsing();
 
     protected slots:
-        void processBatch(const QList<Config::Sample> batch, quint32 quarterID, bool lastChunkOfBatch);
+        void processBatch(const QList<Config::Sample> batch,
+                          quint32 quarterID,
+                          bool lastChunkOfBatch,
+                          quint32 discardedSamples);
 
     protected:
         virtual void processParsedChunk(const QStringList & chunk, bool forceProcessing = false);

@@ -34,7 +34,14 @@ public slots:
     // Parser.
     void wakeParser();
     void updateParsingStatus(bool parsing);
-    void updateParserStats(int duration, quint64 transactions, double transactionsPerEvent, double averageTransactionLength, bool lastChunkOfBatch, Time start, Time end);
+    void updateParserStats(int duration,
+                           quint64 transactions,
+                           double transactionsPerEvent,
+                           double averageTransactionLength,
+                           bool lastChunkOfBatch,
+                           Time start,
+                           Time end,
+                           quint32 discardedSamples);
 
     // Analyst: mining patterns.
     void updatePatternMiningStatus(bool miningPatterns, Time start, Time end, quint64 lines, quint64 transactions);
@@ -127,6 +134,7 @@ private:
     // Parser.
     quint64 statsParserDuration;
     quint64 statsParserLines;
+    quint64 statsParserLinesDropped;
     quint64 statsParserTransactions;
     double statsParserAvgTransactionLength;
     // Analyst: pattern mining.
