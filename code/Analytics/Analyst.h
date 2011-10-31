@@ -29,6 +29,8 @@ namespace Analytics {
     public:
         Analyst(double minSupport, double maxSupportError, double minConfidence);
         ~Analyst();
+        void setParameters(double minSupport, double maxSupportError, double minConfidence);
+        void resetConstraints();
         void addFrequentItemsetItemConstraint(QSet<ItemName> items, ItemConstraintType type);
         void addRuleAntecedentItemConstraint(QSet<ItemName> items, ItemConstraintType type);
         void addRuleConsequentItemConstraint(QSet<ItemName> items, ItemConstraintType type);

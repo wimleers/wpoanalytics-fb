@@ -3,9 +3,7 @@
 namespace Analytics {
 
     Analyst::Analyst(double minSupport, double maxSupportError, double minConfidence) {
-        this->minSupport      = minSupport;
-        this->maxSupportError = maxSupportError;
-        this->minConfidence   = minConfidence;
+        this->setParameters(minSupport, maxSupportError, minConfidence);
 
         this->currentQuarterID = 0;
 
@@ -26,6 +24,18 @@ namespace Analytics {
 
     Analyst::~Analyst() {
         delete this->fpstream;
+    }
+
+    void Analyst::setParameters(double minSupport, double maxSupportError, double minConfidence) {
+        this->minSupport      = minSupport;
+        this->maxSupportError = maxSupportError;
+        this->minConfidence   = minConfidence;
+    }
+
+    void Analyst::resetConstraints() {
+        this->frequentItemsetItemConstraints.reset();
+        this->ruleAntecedentItemConstraints.reset();
+        this->ruleConsequentItemConstraints.reset();
     }
 
     /**
@@ -375,6 +385,7 @@ namespace Analytics {
                 this->fpstream->getF_list()->size(),
                 this->fpstream->getPatternTreeSize()
             );
+            emit newItemsEncountered(this->itemIDNameHash);
         }
     }
 
