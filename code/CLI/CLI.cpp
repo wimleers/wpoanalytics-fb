@@ -554,6 +554,10 @@ bool CLI::parseCommandOptions() {
     else
         this->optionVerbosity = options.count("verbose");
 
+    // Warn the user for silly, time-costly mistakes.
+    if (this->optionInput && !this->optionSave)
+        this->out("WARNING", "You're mining patterns from a file without storing the results in a state file! It's recommended to use the --save option.", 0);
+
     return true;
 }
 
@@ -675,13 +679,21 @@ void CLI::out(const QString & module, const QString & output, int verbosity) {
     static QTextStream out(stdout);
     static QString startBold = "\033[7m";
     static QString stopBold = "\033[0m";
+    static QString startBlink = "\033[5m";
+    static QString stopBlink = "\033[0m";
 
 
     // Ignore too verbose messages.
     if (verbosity > this->optionVerbosity)
         return;
 
-    out << QString(startBold + "[%1]" + stopBold + " ").arg(module, -7) << output << endl;
+    // Blink the output if it's a warning!
+    QString message = output;
+    if (module == "WARNING") {
+        message = startBlink + output + stopBlink;
+    }
+
+    out << QString(startBold + "[%1]" + stopBold + " ").arg(module, -7) << message << endl;
 }
 
 void CLI::exit(int returnCode) {
