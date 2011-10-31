@@ -18,6 +18,12 @@ namespace Analytics {
     // Public methods.
 
     Constraints::Constraints() {
+        this->reset();
+    }
+
+    void Constraints::reset() {
+        this->itemConstraints.clear();
+        this->preprocessedItemConstraints.clear();
         this->highestPreprocessedItemID = ROOT_ITEMID;
     }
 

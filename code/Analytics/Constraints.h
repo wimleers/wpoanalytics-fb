@@ -36,6 +36,7 @@ namespace Analytics {
     public:
         Constraints();
 
+        void reset();
         bool empty() const { return this->itemConstraints.empty(); }
 
         void addItemConstraint(const QSet<ItemName> & items, ItemConstraintType type);
