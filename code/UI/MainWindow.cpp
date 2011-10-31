@@ -18,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 MainWindow::~MainWindow() {
+    delete this->config;
     delete this->parser;
     delete this->analyst;
 }
@@ -34,6 +35,7 @@ void MainWindow::updateParsingStatus(bool parsing) {
     this->parsing = parsing;
     this->updateStatus();
     this->menuFileImport->setEnabled(!parsing);
+    this->menuFileLoadConfig->setEnabled(!parsing);
     this->menuFileLoad->setEnabled(!parsing);
     this->menuFileSave->setEnabled(!parsing);
     if (!parsing)
@@ -72,6 +74,7 @@ void MainWindow::updateMiningDuration(int duration) {
 
 void MainWindow::updateAnalyzingStatus(bool analyzing, Time start, Time end, quint64 numPageViews, quint64 numTransactions) {
     this->menuFileImport->setEnabled(!analyzing);
+    this->menuFileLoadConfig->setEnabled(!analyzing);
     this->menuFileLoad->setEnabled(!analyzing);
     this->menuFileSave->setEnabled(!analyzing);
 
@@ -92,6 +95,7 @@ void MainWindow::updateAnalyzingStatus(bool analyzing, Time start, Time end, qui
 
 void MainWindow::updateMiningStatus(bool mining) {
     this->menuFileImport->setEnabled(!mining);
+    this->menuFileLoadConfig->setEnabled(!mining);
     this->menuFileLoad->setEnabled(!mining);
     this->menuFileSave->setEnabled(!mining);
 
@@ -361,15 +365,64 @@ void MainWindow::importFile() {
     }
 }
 
+void MainWindow::applyConfigToAnalyst() {
+    this->analyst->setParameters(
+                this->config->getMinPatternSupport(),
+                this->config->getMinPotentialPatternSupport(),
+                this->config->getMinRuleConfidence()
+    );
+    this->analyst->resetConstraints();
+    // Set pattern & rule consequent constraints. This defines which
+    // associations will be found by the Analyst.
+    Analytics::ItemConstraintType constraintType;
+    Analytics::ItemConstraintsHash frequentItemsetItemConstraints,
+                                   ruleAntecedentItemConstraints,
+                                   ruleConsequentItemConstraints;
+    frequentItemsetItemConstraints = this->config->getPatternItemConstraints();
+    for (int i = Analytics::CONSTRAINT_POSITIVE; i <= Analytics::CONSTRAINT_NEGATIVE; i++) {
+        constraintType = (Analytics::ItemConstraintType) i;
+        foreach (const QSet<Analytics::ItemName> & items, frequentItemsetItemConstraints[constraintType])
+            this->analyst->addFrequentItemsetItemConstraint(items, constraintType);
+    }
+    ruleAntecedentItemConstraints = this->config->getRuleAntecedentItemConstraints();
+    for (int i = Analytics::CONSTRAINT_POSITIVE; i <= Analytics::CONSTRAINT_NEGATIVE; i++) {
+        constraintType = (Analytics::ItemConstraintType) i;
+        foreach (const QSet<Analytics::ItemName> & items, ruleAntecedentItemConstraints[constraintType])
+            this->analyst->addRuleAntecedentItemConstraint(items, constraintType);
+    }
+    ruleConsequentItemConstraints = this->config->getRuleConsequentItemConstraints();
+    for (int i = Analytics::CONSTRAINT_POSITIVE; i <= Analytics::CONSTRAINT_NEGATIVE; i++) {
+        constraintType = (Analytics::ItemConstraintType) i;
+        foreach (const QSet<Analytics::ItemName> & items, ruleConsequentItemConstraints[constraintType])
+            this->analyst->addRuleConsequentItemConstraint(items, constraintType);
+    }
+}
+
+void MainWindow::loadConfigFile() {
+    QSettings settings;
+    QString lastDirectory = settings.value("UI/lastConfigDirectory", QDesktopServices::storageLocation(QDesktopServices::DesktopLocation)).toString();
+
+    QString configFile = QFileDialog::getOpenFileName(this, tr("Load PatternMiner config file"), lastDirectory);
+
+    if (!configFile.isEmpty()) {
+        settings.setValue("UI/lastConfigDirectory", QFileInfo(configFile).path());
+        if (!this->config->parse(configFile))
+            qCritical("Failed to parse the config file '%s'.", qPrintable(configFile));
+
+        this->applyConfigToAnalyst();
+    }
+}
+
 void MainWindow::loadFile() {
     // TODO: delete parser & analyst, init & connect new ones.
     QSettings settings;
     QString lastDirectory = settings.value("UI/lastLoadSaveDirectory", QDesktopServices::storageLocation(QDesktopServices::DesktopLocation)).toString();
 
-    QString patternFinderFile = QFileDialog::getOpenFileName(this, tr("Load PatternFinder file"), lastDirectory, tr("PatternFinder file (*.pf)"), NULL, QFileDialog::ReadOnly);
+    QString patternFinderFile = QFileDialog::getOpenFileName(this, tr("Load PatternMiner file"), lastDirectory);
 
     if (!patternFinderFile.isEmpty()) {
         settings.setValue("UI/lastLoadSaveDirectory", QFileInfo(patternFinderFile).path());
+        this->conceptHierarchyModel->reset();
         emit load(patternFinderFile);
     }
 }
@@ -378,7 +431,7 @@ void MainWindow::saveFile() {
     QSettings settings;
     QString lastDirectory = settings.value("UI/lastLoadSaveDirectory", QDesktopServices::storageLocation(QDesktopServices::DesktopLocation)).toString();
 
-    QString patternFinderFile = QFileDialog::getSaveFileName(this, tr("Save PatternFinder file"), lastDirectory, tr("PatternFinder file (*.pf)"));
+    QString patternFinderFile = QFileDialog::getSaveFileName(this, tr("Save PatternMiner state file"), lastDirectory, tr("PatternMiner state file"));
 
     if (!patternFinderFile.isEmpty()) {
         settings.setValue("UI/lastLoadSaveDirectory", QFileInfo(patternFinderFile).path());
@@ -393,7 +446,7 @@ void MainWindow::settingsDialog() {
     settingsDialog->activateWindow();
 }
 
-void MainWindow::loadedFile(bool success) {
+void MainWindow::loadedFile(bool success, Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize) {
     if (!success) {
         QMessageBox messageBox;
         messageBox.setText("Loading calculations");
@@ -402,6 +455,9 @@ void MainWindow::loadedFile(bool success) {
         messageBox.setStandardButtons(QMessageBox::Ok);
         messageBox.setDefaultButton(QMessageBox::Ok);
         messageBox.exec();
+    }
+    else {
+        this->updateAnalyzingStats(start, end, pageViews, transactions, uniqueItems, frequentItems, patternTreeSize);
     }
 }
 
@@ -428,26 +484,46 @@ void MainWindow::initLogic() {
     Analytics::registerBasicMetaTypes();
 
     QSettings settings;
-    QString basePath = QCoreApplication::applicationDirPath();
-    QString defaultValue = basePath + "/config/EpisodesSpeeds.csv";
-    QString episodeDiscretizerCSV = settings.value("parser/episodeDiscretizerCSVFile", defaultValue).toString();
+    QString configFile = settings.value("configFile").toString();
 
-    FacebookLogParser::Parser::initParserHelpers(episodeDiscretizerCSV);
+    // Instantiate config.
+    // TRICKY: this is just an empty shell, you still need to call its parse()
+    // method with a valid config file!
+    this->config = new Config::Config();
 
-    // Instantiate the FacebookLogParser and the Analytics. Then connect them.
-    this->parser = new FacebookLogParser::Parser();
+    // Instantiate the Parser.
+    this->parser = new JSONLogParser::Parser(*this->config);
 
+    // Instantiate the Analyst.
     double minSupport = settings.value("analyst/minimumSupport", 0.05).toDouble();
     double minPatternTreeSupport = settings.value("analyst/minimumPatternTreeSupport", 0.04).toDouble();
     double minConfidence = settings.value("analyst/minimumConfidence", 0.2).toDouble();
     this->analyst = new Analytics::Analyst(minSupport, minPatternTreeSupport, minConfidence);
 
-    // Set constraints. This defines which associations will be found. By
-    // default, only causes for slow episodes will be searched.
-    this->analyst->addFrequentItemsetItemConstraint("episode:*", Analytics::CONSTRAINT_POSITIVE_MATCH_ANY);
-    this->analyst->addRuleConsequentItemConstraint("duration:slow", Analytics::CONSTRAINT_POSITIVE_MATCH_ANY);
-    //analyst->addRuleConsequentItemConstraint("duration:acceptable", Analytics::CONSTRAINT_POSITIVE_MATCH_ANY);
-    //analyst->addRuleConsequentItemConstraint("duration:fast", Analytics::CONSTRAINT_POSITIVE_MATCH_ANY);
+    // Set pattern & rule consequent constraints. This defines which
+    // associations will be found by the Analyst.
+    Analytics::ItemConstraintType constraintType;
+    Analytics::ItemConstraintsHash frequentItemsetItemConstraints,
+                                   ruleAntecedentItemConstraints,
+                                   ruleConsequentItemConstraints;
+    frequentItemsetItemConstraints = this->config->getPatternItemConstraints();
+    for (int i = Analytics::CONSTRAINT_POSITIVE; i <= Analytics::CONSTRAINT_NEGATIVE; i++) {
+        constraintType = (Analytics::ItemConstraintType) i;
+        foreach (const QSet<Analytics::ItemName> & items, frequentItemsetItemConstraints[constraintType])
+            this->analyst->addFrequentItemsetItemConstraint(items, constraintType);
+    }
+    ruleAntecedentItemConstraints = this->config->getRuleAntecedentItemConstraints();
+    for (int i = Analytics::CONSTRAINT_POSITIVE; i <= Analytics::CONSTRAINT_NEGATIVE; i++) {
+        constraintType = (Analytics::ItemConstraintType) i;
+        foreach (const QSet<Analytics::ItemName> & items, ruleAntecedentItemConstraints[constraintType])
+            this->analyst->addRuleAntecedentItemConstraint(items, constraintType);
+    }
+    ruleConsequentItemConstraints = this->config->getRuleConsequentItemConstraints();
+    for (int i = Analytics::CONSTRAINT_POSITIVE; i <= Analytics::CONSTRAINT_NEGATIVE; i++) {
+        constraintType = (Analytics::ItemConstraintType) i;
+        foreach (const QSet<Analytics::ItemName> & items, ruleConsequentItemConstraints[constraintType])
+            this->analyst->addRuleConsequentItemConstraint(items, constraintType);
+    }
 }
 
 void MainWindow::connectLogic() {
@@ -459,19 +535,19 @@ void MainWindow::connectLogic() {
 
     // Logic -> UI.
     connect(this->parser, SIGNAL(parsing(bool)), SLOT(updateParsingStatus(bool)));
-    connect(this->parser, SIGNAL(parsedDuration(int)), SLOT(updateParsingDuration(int)));
+//    connect(this->parser, SIGNAL(stats(int,quint64,double,double,bool,Time,Time,quint32)))
     connect(this->analyst, SIGNAL(analyzing(bool,Time,Time,quint64,quint64)), SLOT(updateAnalyzingStatus(bool,Time,Time,quint64,quint64)));
-    connect(this->analyst, SIGNAL(analyzedDuration(int)), SLOT(updateAnalyzingDuration(int)));
+//    connect(this->analyst, SIGNAL(analyzedDuration(int)), SLOT(updateAnalyzingDuration(int)));
     connect(this->analyst, SIGNAL(mining(bool)), SLOT(updateMiningStatus(bool)));
-    connect(this->analyst, SIGNAL(minedDuration(int)), SLOT(updateMiningDuration(int)));
-    connect(this->analyst, SIGNAL(stats(Time,Time,quint64,quint64,quint64,quint64,quint64)), SLOT(updateAnalyzingStats(Time,Time,quint64,quint64,quint64,quint64,quint64)));
+//    connect(this->analyst, SIGNAL(minedDuration(int)), SLOT(updateMiningDuration(int)));
+//    connect(this->analyst, SIGNAL(stats(Time,Time,quint64,quint64,quint64,quint64,quint64)), SLOT(updateAnalyzingStats(Time,Time,quint64,quint64,quint64,quint64,quint64)));
     connect(this->analyst, SIGNAL(minedRules(uint,uint,QList<Analytics::AssociationRule>,Analytics::SupportCount)), SLOT(minedRules(uint,uint,QList<Analytics::AssociationRule>,Analytics::SupportCount)));
     connect(
                 this->analyst,
                 SIGNAL(comparedMinedRules(uint,uint,uint,uint,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::Confidence>,QList<float>,Analytics::SupportCount,Analytics::SupportCount,Analytics::SupportCount)),
                 SLOT(comparedMinedRules(uint,uint,uint,uint,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::Confidence>,QList<float>,Analytics::SupportCount,Analytics::SupportCount,Analytics::SupportCount))
     );
-    connect(this->analyst, SIGNAL(loaded(bool)), this, SLOT(loadedFile(bool)));
+    connect(this->analyst, SIGNAL(loaded(bool,Time,Time,quint64,quint64,quint64,quint64,quint64)), this, SLOT(loadedFile(bool,Time,Time,quint64,quint64,quint64,quint64,quint64)));
     connect(this->analyst, SIGNAL(saved(bool)), this, SLOT(savedFile(bool)));
     connect(this->analyst, SIGNAL(newItemsEncountered(Analytics::ItemIDNameHash)), this->conceptHierarchyModel, SLOT(update(Analytics::ItemIDNameHash)));
 
@@ -519,6 +595,8 @@ void MainWindow::updateCausesComparisonAbility(bool able) {
 }
 
 void MainWindow::mineOrCompare() {
+    this->config->reload();
+    this->applyConfigToAnalyst();
     if (this->causesActionChoice->currentIndex() == 0) {
         QPair<uint, uint> buckets = MainWindow::mapTimerangeChoiceToBucket(this->causesMineTimerangeChoice->currentIndex());
         emit mine(buckets.first, buckets.second);
@@ -703,12 +781,15 @@ void MainWindow::createCausesGroupbox() {
     this->causesCompareLabel = new QLabel(tr("with those in the"));
     this->causesCompareTimerangeChoice = new QComboBox(this);
     this->causesCompareTimerangeChoice->addItems(timeRanges);
+    this->causesReloadButton = new QPushButton(tr("Reload"), this);
+    this->causesReloadButton->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_R));
     mineLayout->addWidget(this->causesActionChoice);
     mineLayout->addWidget(cm1);
     mineLayout->addWidget(this->causesMineTimerangeChoice);
     mineLayout->addWidget(this->causesCompareLabel);
     mineLayout->addWidget(this->causesCompareTimerangeChoice);
     mineLayout->addStretch();
+    mineLayout->addWidget(this->causesReloadButton);
     this->updateCausesComparisonAbility(false);
 
     // Add children to "filter" layout.
@@ -822,6 +903,10 @@ void MainWindow::createMenuBar() {
     this->menuFileImport->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_I));
     this->menuFile->addAction(this->menuFileImport);
 
+    this->menuFileLoadConfig = new QAction(tr("Load config file"), this->menuFile);
+    this->menuFileLoadConfig->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_C));
+    this->menuFile->addAction(this->menuFileLoadConfig);
+
     this->menuFileLoad = new QAction(tr("Load"), this->menuFile);
     this->menuFileLoad->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_L));
     this->menuFile->addAction(this->menuFileLoad);
@@ -840,10 +925,12 @@ void MainWindow::connectUI() {
     connect(this->causesActionChoice, SIGNAL(currentIndexChanged(int)), SLOT(causesActionChanged(int)));
     connect(this->causesMineTimerangeChoice, SIGNAL(currentIndexChanged(int)), SLOT(causesTimerangeChanged()));
     connect(this->causesCompareTimerangeChoice, SIGNAL(currentIndexChanged(int)), SLOT(causesTimerangeChanged()));
+    connect(this->causesReloadButton, SIGNAL(pressed()), SLOT(causesTimerangeChanged()));
     connect(this->causesFilter, SIGNAL(textChanged(QString)), SLOT(causesFilterChanged(QString)));
 
     // Menus.
     connect(this->menuFileImport, SIGNAL(triggered()), SLOT(importFile()));
+    connect(this->menuFileLoadConfig, SIGNAL(triggered()), SLOT(loadConfigFile()));
     connect(this->menuFileLoad, SIGNAL(triggered()), SLOT(loadFile()));
     connect(this->menuFileSave, SIGNAL(triggered()), SLOT(saveFile()));
     connect(this->menuFileSettings, SIGNAL(triggered()), SLOT(settingsDialog()));

@@ -46,7 +46,8 @@
 #include "CausesTableFilterProxyModel.h"
 #include "SettingsDialog.h"
 
-#include "../FacebookLogParser//Parser.h"
+#include "../Config/Config.h"
+#include "../Parser/JSONLogParser.h"
 #include "../Analytics/Analyst.h"
 #include "../Analytics/TiltedTimeWindow.h"
 
@@ -108,9 +109,10 @@ protected slots:
     void importFile();
     void loadFile();
     void saveFile();
+    void loadConfigFile();
     void settingsDialog();
 
-    void loadedFile(bool);
+    void loadedFile(bool success, Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize);
     void savedFile(bool);
 
 private:
@@ -118,6 +120,7 @@ private:
     void initLogic();
     void connectLogic();
     void assignLogicToThreads();
+    void applyConfigToAnalyst();
 
     // UI set-up.
     void initUI();
@@ -135,7 +138,8 @@ private:
     static QPair<uint, uint> mapTimerangeChoiceToBucket(int choice);
 
     // Logic.
-    FacebookLogParser::Parser * parser;
+    Config::Config * config;
+    JSONLogParser::Parser * parser;
     Analytics::Analyst * analyst;
     QThread parserThread;
     QThread analystThread;
@@ -171,6 +175,7 @@ private:
     QComboBox * causesMineTimerangeChoice;
     QLabel * causesCompareLabel;
     QComboBox * causesCompareTimerangeChoice;
+    QPushButton * causesReloadButton;
     QLineEdit * causesFilter;
     ConceptHierarchyCompleter * causesFilterCompleter;
     ConceptHierarchyModel * conceptHierarchyModel;
@@ -195,6 +200,7 @@ private:
 
     // Menu bar.
     QMenu * menuFile;
+    QAction * menuFileLoadConfig;
     QAction * menuFileLoad;
     QAction * menuFileSave;
     QAction * menuFileImport;
