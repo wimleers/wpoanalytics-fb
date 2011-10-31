@@ -5,6 +5,8 @@ namespace Config {
     }
 
     bool Config::parse(const QString & fileName) {
+        this->fileName = fileName;
+
         QFile file;
 
         file.setFileName(fileName);

@@ -63,6 +63,7 @@ namespace Config {
     public:
         Config();
         bool parse(const QString & fileName);
+        bool reload() { return this->parse(this->fileName); }
 
         // Getters (parser).
         const Analytics::ItemConstraintsHash & getParserItemConstraints() const { return this->parserItemConstraints; }
@@ -110,6 +111,8 @@ namespace Config {
         // Attributes
         QHash<EpisodeName, Attribute> categoricalAttributes;
         QHash<EpisodeName, Attribute> numericalAttributes;
+
+        QString fileName;
 
 #ifdef DEBUG
     friend QDebug operator<<(QDebug dbg, const Config & config);
