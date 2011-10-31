@@ -26,8 +26,10 @@ namespace JSONLogParser {
      */
     Config::Sample Parser::parseSample(const QString & rawSample, const Config::Config * const config) {
         Config::Sample sample;
+        Analytics::Constraints constraints;
 
         // Get config.
+        constraints.setItemConstraints(config->getParserItemConstraints());
         QHash<Config::EpisodeName, Config::Attribute> numericalAttributes = config->getNumericalAttributes();
         QHash<Config::EpisodeName, Config::Attribute> categoricalAttributes = config->getCategoricalAttributes();
         Config::Attribute attribute;
@@ -90,6 +92,14 @@ namespace JSONLogParser {
                 attribute = categoricalAttributes[key];
                 sample.circumstances.insert(attribute.name + ":" + denorms[key].toString());
             }
+        }
+
+        // If the sample doesn't match the constraints, clear the circumstances
+        // and return that right away. (Samples without circumstances are
+        // discarded.)
+        if (!constraints.matchItemset(sample.circumstances)) {
+            sample.circumstances.clear();
+            return sample;
         }
 
         Config::Circumstances categoricalCircumstances = sample.circumstances;

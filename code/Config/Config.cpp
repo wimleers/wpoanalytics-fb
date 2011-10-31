@@ -15,6 +15,10 @@ namespace Config {
             QString rawJSON = file.readAll();
             QVariantMap json = QxtJSON::parse(rawJSON).toMap();
 
+            // Parser.
+            const QVariantMap & parserJSON = json["parser"].toMap();
+            this->parserItemConstraints = Config::parseConstraints(parserJSON, "categorical item constraints");
+
             // Query.
             const QVariantMap & queryJSON = json["query"].toMap();
             // Query: patterns.
@@ -237,6 +241,10 @@ namespace Config {
 #ifdef DEBUG
     QDebug operator<<(QDebug dbg, const Config & config) {
         dbg.nospace() << "{" << endl;
+        dbg.nospace() << "  parser : {" << endl;
+        dbg.nospace() << "    \"categorical item constraints\" : {" << endl;
+        constraintHashHelper(dbg, config.parserItemConstraints);
+        dbg.nospace() << "    }," << endl;
         dbg.nospace() << "  query : {" << endl;
         dbg.nospace() << "    \"patterns\" : {" << endl;
         dbg.nospace() << "      \"minimum support\" : " << config.minPatternSupport << "," << endl;
