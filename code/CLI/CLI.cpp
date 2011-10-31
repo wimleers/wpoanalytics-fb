@@ -463,7 +463,7 @@ bool CLI::parseCommandOptions() {
     options.add("input-stdin", "Use stdin as input (overrides --input).", QxtCommandOptions::NoValue, inputGroup);
     options.alias("input-stdin", "is");
     // Rules.
-    options.add("rules", "Mine rules (defaults to the entire data set", QxtCommandOptions::NoValue);
+    options.add("rules", "Mine rules (defaults to the entire data set)", QxtCommandOptions::NoValue);
     int outputGroup = 1;
     options.add("output", "Define output file for storing the mined rules (required if --rules is set).", QxtCommandOptions::ValueRequired, outputGroup);
     options.alias("output", "o");
