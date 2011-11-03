@@ -19,7 +19,8 @@ namespace Config {
 
             // Parser.
             const QVariantMap & parserJSON = json["parser"].toMap();
-            this->parserItemConstraints = Config::parseConstraints(parserJSON, "categorical item constraints");
+            this->parserCategoricalItemConstraints = Config::parseConstraints(parserJSON, "categorical item constraints");
+            this->parserNumericalItemConstraints = Config::parseConstraints(parserJSON, "numerical item constraints");
 
             // Query.
             const QVariantMap & queryJSON = json["query"].toMap();
@@ -244,9 +245,13 @@ namespace Config {
     QDebug operator<<(QDebug dbg, const Config & config) {
         dbg.nospace() << "{" << endl;
         dbg.nospace() << "  parser : {" << endl;
-        dbg.nospace() << "    \"categorical item constraints\" : {" << endl;
-        constraintHashHelper(dbg, config.parserItemConstraints);
-        dbg.nospace() << "    }," << endl;
+        dbg.nospace() << "    \"categorical item constraints\" : [" << endl;
+        constraintHashHelper(dbg, config.parserCategoricalItemConstraints);
+        dbg.nospace() << "    ]," << endl;
+        dbg.nospace() << "    \"numerical item constraints\" : [" << endl;
+        constraintHashHelper(dbg, config.parserNumericalItemConstraints);
+        dbg.nospace() << "    ]," << endl;
+        dbg.nospace() << "  }," << endl;
         dbg.nospace() << "  query : {" << endl;
         dbg.nospace() << "    \"patterns\" : {" << endl;
         dbg.nospace() << "      \"minimum support\" : " << config.minPatternSupport << "," << endl;

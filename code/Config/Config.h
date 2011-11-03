@@ -66,7 +66,8 @@ namespace Config {
         bool reload() { return this->parse(this->fileName); }
 
         // Getters (parser).
-        const Analytics::ItemConstraintsHash & getParserItemConstraints() const { return this->parserItemConstraints; }
+        const Analytics::ItemConstraintsHash & getParserCategoricalItemConstraints() const { return this->parserCategoricalItemConstraints; }
+        const Analytics::ItemConstraintsHash & getParserNumericalItemConstraints() const { return this->parserNumericalItemConstraints; }
 
         // Getters (query: patterns).
         double getMinPatternSupport() const { return this->minPatternSupport; }
@@ -96,7 +97,8 @@ namespace Config {
         static QSet<Discretization> parseDiscretizations(const QVariant & json, const QString & field);
 
         // Parser.
-        Analytics::ItemConstraintsHash parserItemConstraints;
+        Analytics::ItemConstraintsHash parserCategoricalItemConstraints;
+        Analytics::ItemConstraintsHash parserNumericalItemConstraints;
 
         // Query: patterns
         double minPatternSupport;

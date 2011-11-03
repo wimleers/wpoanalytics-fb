@@ -26,10 +26,12 @@ namespace JSONLogParser {
      */
     Config::Sample Parser::parseSample(const QString & rawSample, const Config::Config * const config) {
         Config::Sample sample;
-        Analytics::Constraints constraints;
+        Analytics::Constraints categoricalItemConstraints;
+        Analytics::Constraints numericalItemConstraints;
 
         // Get config.
-        constraints.setItemConstraints(config->getParserItemConstraints());
+        categoricalItemConstraints.setItemConstraints(config->getParserCategoricalItemConstraints());
+        numericalItemConstraints.setItemConstraints(config->getParserNumericalItemConstraints());
         QHash<Config::EpisodeName, Config::Attribute> numericalAttributes = config->getNumericalAttributes();
         QHash<Config::EpisodeName, Config::Attribute> categoricalAttributes = config->getCategoricalAttributes();
         Config::Attribute attribute;
@@ -97,7 +99,7 @@ namespace JSONLogParser {
         // If the sample doesn't match the constraints, clear the circumstances
         // and return that right away. (Samples without circumstances are
         // discarded.)
-        if (!constraints.matchItemset(sample.circumstances)) {
+        if (!categoricalItemConstraints.matchItemset(sample.circumstances)) {
             sample.circumstances.clear();
             return sample;
         }
@@ -132,6 +134,15 @@ namespace JSONLogParser {
                 }
             }
         }
+
+        // If the sample doesn't match the constraints, clear the circumstances
+        // and return that right away. (Samples without circumstances are
+        // discarded.)
+        if (!numericalItemConstraints.matchItemset(sample.circumstances)) {
+            sample.circumstances.clear();
+            return sample;
+        }
+
         // One special case: time.
         sample.time = integers["time"].toInt();
 
