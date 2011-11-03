@@ -12,6 +12,11 @@ namespace Analytics {
         "CONSTRAINT_NEGATIVE",
     };
 
+    const ConstraintClassification Constraints::ItemConstraintTypeClassification[2] = {
+        CONSTRAINT_MONOTONE,
+        CONSTRAINT_ANTIMONOTONE,
+    };
+
 
 
     //--------------------------------------------------------------------------
@@ -160,7 +165,9 @@ namespace Analytics {
      * @return
      *   True if the itemset matches the constraints, false otherwise.
      */
-    bool Constraints::matchItemset(const ItemIDList & itemset) const {
+    bool Constraints::matchItemset(const ItemIDList & itemset,
+                                   const QSet<ConstraintClassification> & constraintsSubset) const
+    {
 #ifdef CONSTRAINTS_DEBUG
         FrequentItemset fis(itemset, 0);
         fis.IDNameHash = this->itemIDNameHash;
@@ -168,6 +175,9 @@ namespace Analytics {
 #endif
         bool match;
         for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
+            if (!constraintsSubset.isEmpty() && !constraintsSubset.contains(Constraints::ItemConstraintTypeClassification[i]))
+                continue;
+
             ItemConstraintType type = (ItemConstraintType) i;
             for (int c = 0; c < this->preprocessedItemConstraints[type].size(); c++) {
                 match = Constraints::matchItemsetHelper(itemset, type, this->preprocessedItemConstraints[type][c]);
@@ -190,12 +200,17 @@ namespace Analytics {
      * @return
      *   True if the itemset matches the constraints, false otherwise.
      */
-    bool Constraints::matchItemset(const QSet<ItemName> & itemset) const {
+    bool Constraints::matchItemset(const QSet<ItemName> & itemset,
+                                   const QSet<ConstraintClassification> & constraintsSubset) const
+    {
 #ifdef CONSTRAINTS_DEBUG
         qDebug() << "Matching itemset" << itemset << " to constraints " << this->itemConstraints;
 #endif
         bool match;
         for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
+            if (!constraintsSubset.isEmpty() && !constraintsSubset.contains(Constraints::ItemConstraintTypeClassification[i]))
+                continue;
+
             ItemConstraintType type = (ItemConstraintType) i;
             for (int c = 0; c < this->itemConstraints[type].size(); c++) {
                 match = Constraints::matchItemsetHelper(itemset, type, this->itemConstraints[type][c]);
@@ -212,10 +227,12 @@ namespace Analytics {
 
     /**
      * Check if a particular frequent itemset search space will be able to
-     * match the defined constraints. We can do this by matching all
+     * match the defined constraints. We can do this by matching all *monotone*
      * constraints over the itemset *and* prefix paths support counts
      * simultaneously (since this itemset will be extended with portions of
      * the prefix paths).
+     * Note that if we'd simply match *all* constraints, not just the monotone
+     * ones, then it's possible relevant subsets are dropped.
      *
      * @param itemset
      *   An itemset to check the constraints for.
@@ -226,6 +243,9 @@ namespace Analytics {
      */
     bool Constraints::matchSearchSpace(const ItemIDList & frequentItemset, const QHash<ItemID, SupportCount> & prefixPathsSupportCounts) const {
         for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
+            if (Constraints::ItemConstraintTypeClassification[i] != CONSTRAINT_MONOTONE)
+                continue;
+
             ItemConstraintType type = (ItemConstraintType) i;
             for (int c = 0; c < this->preprocessedItemConstraints[type].size(); c++) {
                 if (!Constraints::matchSearchSpaceHelper(frequentItemset, prefixPathsSupportCounts, type, this->preprocessedItemConstraints[type][c]))

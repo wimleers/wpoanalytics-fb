@@ -20,6 +20,13 @@ namespace Analytics {
         CONSTRAINT_NEGATIVE
     };
 
+    enum ConstraintClassification {
+        CONSTRAINT_ANTIMONOTONE,
+        CONSTRAINT_MONOTONE,
+        CONSTRAINT_SUCCINT,
+        CONSTRAINT_CONVERTIBLE
+    };
+
     // For each constraint type (ItemConstraintType, key of QHash), we allow
     // multiple entries (QVector), each of which is a set of items (QSet<ItemName>)
     // that are OR'd together (positive: (a == x1 OR b == x1 OR ... OR n == x1);
@@ -51,8 +58,12 @@ namespace Analytics {
         ItemID getHighestPreprocessedItemID() const { return this->highestPreprocessedItemID; }
         void clearPreprocessedItems() { this->preprocessedItemConstraints.clear(); this->highestPreprocessedItemID = ROOT_ITEMID; }
 
-        bool matchItemset(const ItemIDList & itemset) const;
-        bool matchItemset(const QSet<ItemName> & itemset) const;
+        bool matchItemset(const ItemIDList & itemset,
+                          const QSet<ConstraintClassification> & constraintsSubset = QSet<ConstraintClassification>()
+                          ) const;
+        bool matchItemset(const QSet<ItemName> & itemset,
+                          const QSet<ConstraintClassification> & constraintsSubset = QSet<ConstraintClassification>()
+                          ) const;
         bool matchSearchSpace(const ItemIDList & frequentItemset, const QHash<ItemID, SupportCount> & prefixPathsSupportCounts) const;
 
 #ifdef DEBUG
@@ -60,6 +71,7 @@ namespace Analytics {
 #endif
 
         static const char * ItemConstraintTypeName[2];
+        static const ConstraintClassification ItemConstraintTypeClassification[2];
 
     protected:
         static bool matchItemsetHelper(const ItemIDList & itemset, ItemConstraintType type, const QSet<ItemID> & constraintItems);
