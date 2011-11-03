@@ -11,7 +11,7 @@ namespace Analytics {
     QList<AssociationRule> RuleMiner::mineAssociationRules(QList<FrequentItemset> frequentItemsets, Confidence minimumConfidence, const Constraints & ruleConsequentConstraints, const FPGrowth * fpgrowth) {
         QList<AssociationRule> associationRules;
         QList<ItemIDList> consequents;
-        bool hasConstraints = !ruleConsequentConstraints.empty();
+        bool hasConsequentConstraints = !ruleConsequentConstraints.empty();
 
         // Iterate over all frequent itemsets.
         foreach (FrequentItemset frequentItemset, frequentItemsets) {
@@ -27,7 +27,7 @@ namespace Analytics {
                     // Store this consequent whenever no constraints are
                     // defined, or when constraints are defined and the
                     // consequent matches the constraints.
-                    if (!hasConstraints || ruleConsequentConstraints.matchItemset(consequent))
+                    if (!hasConsequentConstraints || ruleConsequentConstraints.matchItemset(consequent))
                         consequents.append(consequent);
                 }
 
