@@ -441,6 +441,11 @@ namespace Analytics {
         bool frequentItemsetMatchesConstraints;
         QList<FrequentItemset> frequentItemsets;
         ItemIDList itemIDsInTree = ctree->getItemIDs();
+        static QSet<ConstraintClassification> constraintsSubset;
+
+        if (constraintsSubset.isEmpty()) {
+            constraintsSubset.insert(CONSTRAINT_MONOTONE);
+        }
 
         // Now iterate over each of the ordered suffix items and generate
         // candidate frequent itemsets!
@@ -465,7 +470,7 @@ namespace Analytics {
                 // Only store the current frequent itemset if it matches the
                 // constraints *OR* when its superset has the potential to match
                 // the constraints.
-                frequentItemsetMatchesConstraints = this->constraints.matchItemset(frequentItemset.itemset);
+                frequentItemsetMatchesConstraints = this->constraints.matchItemset(frequentItemset.itemset, constraintsSubset);
                 if (!asynchronous && (frequentItemsetMatchesConstraints || cfptree != NULL)) {
                     frequentItemsets.append(frequentItemset);
 #ifdef FPGROWTH_DEBUG
