@@ -29,6 +29,10 @@ namespace JSONLogParser {
         Analytics::Constraints categoricalItemConstraints;
         Analytics::Constraints numericalItemConstraints;
 
+        // Don't waste time parsing checkpointing lines.
+        if (rawSample.at(0) == '#')
+            return sample; // Samples without circumstances aren't accepted.
+
         // Get config.
         categoricalItemConstraints.setItemConstraints(config->getParserCategoricalItemConstraints());
         numericalItemConstraints.setItemConstraints(config->getParserNumericalItemConstraints());
@@ -280,16 +284,10 @@ namespace JSONLogParser {
         quint32 discardedSamples = 0;
 
         // Perform the mapping from strings to EpisodesLogLine concurrently.
-//        QList<EpisodesLogLine> mappedChunk = QtConcurrent::blockingMapped(chunk, Parser::mapLineToEpisodesLogLine);
-        QString rawSample;
+        QList<Config::Sample> samples = QtConcurrent::blockingMapped(chunk, ParseSampleMapper(&this->config));
+
         Config::Sample sample;
-        foreach (rawSample, chunk) {
-            // Don't waste time parsing checkpointing lines.
-            if (rawSample.at(0) == '#')
-                continue;
-
-            sample = Parser::parseSample(rawSample, &this->config);
-
+        foreach (sample, samples) {
             // Discard samples without circumstances.
             if (sample.circumstances.isEmpty()) {
                 discardedSamples++;

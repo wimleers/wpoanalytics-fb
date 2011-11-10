@@ -81,5 +81,16 @@ namespace JSONLogParser {
         static QHash<Config::EpisodeName, QString> episodeNameFieldNameHash;
     };
 
+    struct ParseSampleMapper {
+        ParseSampleMapper(const Config::Config * const config) : config(config) {}
+
+        typedef Config::Sample result_type;
+
+        Config::Sample operator()(const QString & rawSample) {
+            return Parser::parseSample(rawSample, config);
+        }
+
+        const Config::Config * const config;
+    };
 }
 #endif // JSONLOGPARSER_H
