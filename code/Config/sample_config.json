@@ -106,7 +106,7 @@
 					{
 						"label" : "[Events] /ajax/events/invite_dialog.php (/ajax/choose/index.php)",
 						"thresholds" : { "fast" : 1300, "acceptable" : 1500, "slow" : -1 },
-						"circumstances" : [ "page:/home.php:events" ]
+						"circumstances" : [ "page:/ajax/choose/index.php" ]
 					},
 					{
 						"label" : "[Feed Team] home TTI: goal:1780ms",
