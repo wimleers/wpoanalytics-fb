@@ -37,6 +37,7 @@ namespace JSONLogParser {
 
         // Processing logic.
         static Config::Sample parseSample(const QString & rawSample, const Config::Config * const config);
+        static QList<QStringList> mapSampleToTransactions(const Config::Sample & sample, const Config::Config * const config);
 
     signals:
         void parsing(bool);
@@ -63,7 +64,6 @@ namespace JSONLogParser {
     protected:
         virtual void processParsedChunk(const QStringList & chunk, bool forceProcessing = false);
 
-        static QList<QStringList> mapSampleToTransactions(const Config::Sample & sample, const Config::Config * const config);
         static Config::EpisodeID mapEpisodeNameToID(const Config::EpisodeName & name, const QString & fieldName);
         static quint32 calculateQuarterID(Time t);
 
@@ -88,6 +88,18 @@ namespace JSONLogParser {
 
         Config::Sample operator()(const QString & rawSample) {
             return Parser::parseSample(rawSample, config);
+        }
+
+        const Config::Config * const config;
+    };
+
+    struct SampleToTransactionMapper {
+        SampleToTransactionMapper(const Config::Config * const config) : config(config) {}
+
+        typedef QList<QStringList> result_type;
+
+        QList<QStringList> operator()(const Config::Sample & sample) {
+            return Parser::mapSampleToTransactions(sample, config);
         }
 
         const Config::Config * const config;

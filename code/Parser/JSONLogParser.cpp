@@ -222,22 +222,10 @@ namespace JSONLogParser {
         uint items = 0;
         double averageTransactionLength;
 
-        // This 100% concurrent approach fails, because QGeoIP still has
-        // thread-safety issues. Hence, we only do the mapping from a QString
-        // to an EpisodesLogLine concurrently for now.
-        // QtConcurrent::blockingMapped(chunk, Parser::mapAndExpandToEpisodesLogLine);
+        // Map: samples to groups of transactions.
+        QList< QList<QStringList> > groupedTransactions = QtConcurrent::blockingMapped(batch, SampleToTransactionMapper(&this->config));
 
-        // Perform the mapping from ExpandedEpisodesLogLines to groups of
-        // transactions concurrently
-//        QList< QList<QStringList> > groupedTransactions = QtConcurrent::blockingMapped(expandedChunk, Parser::mapExpandedEpisodesLogLineToTransactions);
-        QList< QList<QStringList> > groupedTransactions;
-        Config::Sample sample;
-        foreach (sample, batch) {
-            groupedTransactions << Parser::mapSampleToTransactions(sample, &this->config);
-        }
-
-        // Perform the merging of transaction groups into a single list of
-        // transactions sequentially (impossible to do concurrently).
+        // Reduce: merge transaction groups into a single list of transactions.
         QList<QStringList> transactions;
         QList<QStringList> transactionGroup;
         foreach (transactionGroup, groupedTransactions) {
