@@ -169,10 +169,10 @@ void TestConstraints::basic() {
 
     // Compare the results with the expected values.
     Constraints c;
-    c.addItemConstraint(positive_constraint_1, CONSTRAINT_POSITIVE);
-    c.addItemConstraint(positive_constraint_2, CONSTRAINT_POSITIVE);
-    c.addItemConstraint(negative_constraint_1, CONSTRAINT_NEGATIVE);
-    c.addItemConstraint(negative_constraint_2, CONSTRAINT_NEGATIVE);
+    c.addItemConstraint(positive_constraint_1, ItemConstraintPositive);
+    c.addItemConstraint(positive_constraint_2, ItemConstraintPositive);
+    c.addItemConstraint(negative_constraint_1, ItemConstraintNegative);
+    c.addItemConstraint(negative_constraint_2, ItemConstraintNegative);
     c.preprocessItemIDNameHash(itemIDNameHash);
     //qDebug() << c;
     QCOMPARE(c.matchItemset(f1), result_1);
@@ -204,10 +204,10 @@ void TestConstraints::alternate() {
 
     // Compare the results with the expected values.
     Constraints c;
-    c.addItemConstraint(positive_constraint_1, CONSTRAINT_POSITIVE);
-    c.addItemConstraint(positive_constraint_2, CONSTRAINT_POSITIVE);
-    c.addItemConstraint(negative_constraint_1, CONSTRAINT_NEGATIVE);
-    c.addItemConstraint(negative_constraint_2, CONSTRAINT_NEGATIVE);
+    c.addItemConstraint(positive_constraint_1, ItemConstraintPositive);
+    c.addItemConstraint(positive_constraint_2, ItemConstraintPositive);
+    c.addItemConstraint(negative_constraint_1, ItemConstraintNegative);
+    c.addItemConstraint(negative_constraint_2, ItemConstraintNegative);
     //qDebug() << c;
     QCOMPARE(c.matchItemset(f1), result_1);
     QCOMPARE(c.matchItemset(f2), result_2);
@@ -232,8 +232,8 @@ void TestConstraints::alternateWildcard() {
 
     // Compare the results with the expected values.
     Constraints c;
-    c.addItemConstraint(positive_constraint_1, CONSTRAINT_POSITIVE);
-    c.addItemConstraint(negative_constraint_1, CONSTRAINT_NEGATIVE);
+    c.addItemConstraint(positive_constraint_1, ItemConstraintPositive);
+    c.addItemConstraint(negative_constraint_1, ItemConstraintNegative);
     //qDebug() << c;
     QCOMPARE(c.matchItemset(f1), result_1);
     QCOMPARE(c.matchItemset(f2), result_2);

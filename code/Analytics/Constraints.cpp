@@ -8,15 +8,26 @@
 namespace Analytics {
 
     const char * Constraints::ItemConstraintTypeName[2] = {
-        "CONSTRAINT_POSITIVE",
-        "CONSTRAINT_NEGATIVE",
+        "ItemConstraintPositive",
+        "ItemConstraintNegative",
+    };
+
+    const char * Constraints::LengthConstraintTypeName[3] = {
+        "LengthConstraintEquals",
+        "LengthConstraintLessThan",
+        "LengthConstraintGreaterThan",
     };
 
     const ConstraintClassification Constraints::ItemConstraintTypeClassification[2] = {
-        CONSTRAINT_MONOTONE,
-        CONSTRAINT_ANTIMONOTONE,
+        ConstraintClassificationMonotone,
+        ConstraintClassificationAntimonotone,
     };
 
+    const ConstraintClassification Constraints::LengthConstraintTypeClassification[3] = {
+        ConstraintClassificationSuccint,
+        ConstraintClassificationSuccint,
+        ConstraintClassificationSuccint,
+    };
 
 
     //--------------------------------------------------------------------------
@@ -51,6 +62,10 @@ namespace Analytics {
         if (!this->itemConstraints.contains(type))
             this->itemConstraints.insert(type, QVector<QSet<ItemName> >());
         this->itemConstraints[type].append(items);
+    }
+
+    void Constraints::setItemConstraints(const ItemConstraintsHash & itemConstraints) {
+        this->itemConstraints = itemConstraints;
     }
 
     /**
@@ -109,7 +124,7 @@ namespace Analytics {
         // Store the item IDs that correspond to the wildcard item
         // constraints.
         ItemConstraintType constraintType;
-        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
+        for (int i = ItemConstraintPositive; i <= ItemConstraintNegative; i++) {
             constraintType = (ItemConstraintType) i;
 
             if (!this->itemConstraints.contains(constraintType))
@@ -146,7 +161,7 @@ namespace Analytics {
      */
     void Constraints::removeItem(ItemID id) {
         ItemConstraintType type;
-        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
+        for (int i = ItemConstraintPositive; i <= ItemConstraintNegative; i++) {
             type = (ItemConstraintType) i;
 
             if (!this->preprocessedItemConstraints.contains(type))
@@ -174,7 +189,7 @@ namespace Analytics {
         qDebug() << "Matching itemset" << fis << " to constraints " << this->itemConstraints;
 #endif
         bool match;
-        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
+        for (int i = ItemConstraintPositive; i <= ItemConstraintNegative; i++) {
             if (!constraintsSubset.isEmpty() && !constraintsSubset.contains(Constraints::ItemConstraintTypeClassification[i]))
                 continue;
 
@@ -207,7 +222,7 @@ namespace Analytics {
         qDebug() << "Matching itemset" << itemset << " to constraints " << this->itemConstraints;
 #endif
         bool match;
-        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
+        for (int i = ItemConstraintPositive; i <= ItemConstraintNegative; i++) {
             if (!constraintsSubset.isEmpty() && !constraintsSubset.contains(Constraints::ItemConstraintTypeClassification[i]))
                 continue;
 
@@ -242,8 +257,8 @@ namespace Analytics {
      *   True if the itemset matches the constraints, false otherwise.
      */
     bool Constraints::matchSearchSpace(const ItemIDList & frequentItemset, const QHash<ItemID, SupportCount> & prefixPathsSupportCounts) const {
-        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
-            if (Constraints::ItemConstraintTypeClassification[i] != CONSTRAINT_MONOTONE)
+        for (int i = ItemConstraintPositive; i <= ItemConstraintNegative; i++) {
+            if (Constraints::ItemConstraintTypeClassification[i] != ConstraintClassificationMonotone)
                 continue;
 
             ItemConstraintType type = (ItemConstraintType) i;
@@ -267,12 +282,12 @@ namespace Analytics {
         foreach (ItemID id, constraintItems) {
             switch (type) {
 
-            case CONSTRAINT_POSITIVE:
+            case ItemConstraintPositive:
                 if (itemset.contains(id))
                     return true;
                 break;
 
-            case CONSTRAINT_NEGATIVE:
+            case ItemConstraintNegative:
                 if (itemset.contains(id))
                     return false;
                 break;
@@ -282,10 +297,10 @@ namespace Analytics {
         // In case we haven't returned yet, meaning that none of the items in
         // the constraint was actually *in* this itemset.
         switch (type) {
-        case CONSTRAINT_NEGATIVE:
+        case ItemConstraintNegative:
             return true;
 
-        case CONSTRAINT_POSITIVE:
+        case ItemConstraintPositive:
             return false;
         }
 
@@ -308,18 +323,18 @@ namespace Analytics {
                 rx.setPattern(constraintItem);
                 foreach (const QString & item, itemset) {
                     if (rx.exactMatch(item)) {
-                        if (type == CONSTRAINT_POSITIVE)
+                        if (type == ItemConstraintPositive)
                             return true;
-                        else if (type == CONSTRAINT_NEGATIVE)
+                        else if (type == ItemConstraintNegative)
                             return false;
                     }
                 }
             }
         }
 
-        if (type == CONSTRAINT_POSITIVE)
+        if (type == ItemConstraintPositive)
             return !emptyIntersection;
-        else if (type == CONSTRAINT_NEGATIVE)
+        else if (type == ItemConstraintNegative)
             return emptyIntersection;
 
         // Satisfy the compiler.
@@ -332,12 +347,12 @@ namespace Analytics {
     bool Constraints::matchSearchSpaceHelper(const ItemIDList & frequentItemset, const QHash<ItemID, SupportCount> & prefixPathsSupportCounts, ItemConstraintType type, const QSet<ItemID> & constraintItems) {
         foreach (ItemID id, constraintItems) {
             switch (type) {
-            case CONSTRAINT_POSITIVE:
+            case ItemConstraintPositive:
                 if (frequentItemset.contains(id) || prefixPathsSupportCounts[id] > 0)
                     return true;
                 break;
 
-            case CONSTRAINT_NEGATIVE:
+            case ItemConstraintNegative:
                 if (prefixPathsSupportCounts[id] > 0)
                     return false;
                 break;
@@ -347,11 +362,11 @@ namespace Analytics {
         // In case we haven't returned yet, meaning that none of the items in
         // the constraint was actually *in* this itemset.
         switch (type) {
-        case CONSTRAINT_NEGATIVE:
+        case ItemConstraintNegative:
             return true;
             break;
 
-        case CONSTRAINT_POSITIVE:
+        case ItemConstraintPositive:
             return false;
             break;
         }
@@ -394,7 +409,7 @@ namespace Analytics {
                 sum += constraints.itemConstraints[type][c].size();
         // Display.
         dbg.nospace() << "item constraints (" << sum << "):" << endl;
-        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
+        for (int i = ItemConstraintPositive; i <= ItemConstraintNegative; i++) {
             ItemConstraintType constraintType = (ItemConstraintType) i;
             dbg.nospace() << "\t" << Constraints::ItemConstraintTypeName[i] << ":" << endl;
 
@@ -418,7 +433,7 @@ namespace Analytics {
                 sum += constraints.preprocessedItemConstraints[type][c].size();
         // Display.
         dbg.nospace() << "preprocesseditem constraints (" << sum << "):" << endl;
-        for (int i = CONSTRAINT_POSITIVE; i <= CONSTRAINT_NEGATIVE; i++) {
+        for (int i = ItemConstraintPositive; i <= ItemConstraintNegative; i++) {
             ItemConstraintType constraintType = (ItemConstraintType) i;
             dbg.nospace() << "\t" << Constraints::ItemConstraintTypeName[i] << ":" << endl;
 

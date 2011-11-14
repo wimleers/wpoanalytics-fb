@@ -141,8 +141,8 @@ namespace Config {
         // Fill the key mapping.
         // (This only needs to happen once, since keyMapping is static.)
         if (keyMapping.isEmpty()) {
-            keyMapping.insert("==", Analytics::CONSTRAINT_POSITIVE);
-            keyMapping.insert("!=", Analytics::CONSTRAINT_NEGATIVE);
+            keyMapping.insert("==", Analytics::ItemConstraintPositive);
+            keyMapping.insert("!=", Analytics::ItemConstraintNegative);
         }
 
         Analytics::ItemConstraintsHash patternConstraints;
@@ -390,13 +390,13 @@ namespace Config {
     }
 
     QDebug constraintHashHelper(QDebug dbg, const QHash<Analytics::ItemConstraintType, QVector<QSet<Analytics::ItemName> > > & hash) {
-        if (!hash[Analytics::CONSTRAINT_POSITIVE].isEmpty()) {
-            for (int c = 0; c < hash[Analytics::CONSTRAINT_POSITIVE].size(); c++)
-                constraintItemsHelper(dbg, hash[Analytics::CONSTRAINT_POSITIVE][c], Analytics::CONSTRAINT_POSITIVE);
+        if (!hash[Analytics::ItemConstraintPositive].isEmpty()) {
+            for (int c = 0; c < hash[Analytics::ItemConstraintPositive].size(); c++)
+                constraintItemsHelper(dbg, hash[Analytics::ItemConstraintPositive][c], Analytics::ItemConstraintPositive);
         }
-        if (!hash[Analytics::CONSTRAINT_NEGATIVE].isEmpty()) {
-            for (int c = 0; c < hash[Analytics::CONSTRAINT_NEGATIVE].size(); c++)
-                constraintItemsHelper(dbg, hash[Analytics::CONSTRAINT_NEGATIVE][c], Analytics::CONSTRAINT_NEGATIVE);
+        if (!hash[Analytics::ItemConstraintNegative].isEmpty()) {
+            for (int c = 0; c < hash[Analytics::ItemConstraintNegative].size(); c++)
+                constraintItemsHelper(dbg, hash[Analytics::ItemConstraintNegative][c], Analytics::ItemConstraintNegative);
         }
         return dbg.nospace();
     }
@@ -406,7 +406,7 @@ namespace Config {
 
         dbg.nospace() << "          {";
         // Type.
-        dbg.nospace() << " \"type\" : \"" << (constraintType == Analytics::CONSTRAINT_POSITIVE ? "==" : "!=") << "\", ";
+        dbg.nospace() << " \"type\" : \"" << (constraintType == Analytics::ItemConstraintPositive ? "==" : "!=") << "\", ";
         // Items.
         dbg.nospace() << " \"items\" : [";
         foreach (const Analytics::ItemName & item, set) {

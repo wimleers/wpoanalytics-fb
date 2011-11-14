@@ -337,7 +337,7 @@ namespace Analytics {
         QSet<ItemID> frontItemIDs;
 
         // Determine which items should be at the front.
-        frontItemIDs.unite(this->constraintsForRuleConsequents.getAllItemIDsForConstraintType(CONSTRAINT_POSITIVE));
+        frontItemIDs.unite(this->constraintsForRuleConsequents.getAllItemIDsForConstraintType(ItemConstraintPositive));
 
         foreach (ItemID itemID, *(this->sortedFrequentItemIDs)) {
             item.id = itemID;
@@ -374,7 +374,7 @@ namespace Analytics {
         QSet<ItemID> frontItemIDs;
 
         // Determine which items should be at the front.
-        frontItemIDs.unite(this->constraintsForRuleConsequents.getAllItemIDsForConstraintType(CONSTRAINT_POSITIVE));
+        frontItemIDs.unite(this->constraintsForRuleConsequents.getAllItemIDsForConstraintType(ItemConstraintPositive));
 
         foreach (ItemID itemID, *(this->sortedFrequentItemIDs)) {
             if (itemset.contains(itemID)) {
@@ -444,7 +444,7 @@ namespace Analytics {
         static QSet<ConstraintClassification> constraintsSubset;
 
         if (constraintsSubset.isEmpty()) {
-            constraintsSubset.insert(CONSTRAINT_MONOTONE);
+            constraintsSubset.insert(ConstraintClassificationMonotone);
         }
 
         // Now iterate over each of the ordered suffix items and generate

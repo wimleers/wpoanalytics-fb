@@ -16,15 +16,22 @@ namespace Analytics {
 #endif
 
     enum ItemConstraintType {
-        CONSTRAINT_POSITIVE,
-        CONSTRAINT_NEGATIVE
+        ItemConstraintPositive,
+        ItemConstraintNegative
+    };
+
+    // TODO: not yet implemented.
+    enum LengthConstraintType {
+        LengthConstraintEquals,
+        LengthConstraintLessThan,
+        LengthConstraingGreaterThan
     };
 
     enum ConstraintClassification {
-        CONSTRAINT_ANTIMONOTONE,
-        CONSTRAINT_MONOTONE,
-        CONSTRAINT_SUCCINT,
-        CONSTRAINT_CONVERTIBLE
+        ConstraintClassificationAntimonotone,
+        ConstraintClassificationMonotone,
+        ConstraintClassificationSuccint,
+        ConcstraintClassificationConvertible
     };
 
     // For each constraint type (ItemConstraintType, key of QHash), we allow
@@ -47,7 +54,7 @@ namespace Analytics {
         bool empty() const { return this->itemConstraints.empty(); }
 
         void addItemConstraint(const QSet<ItemName> & items, ItemConstraintType type);
-        void setItemConstraints(const ItemConstraintsHash & itemConstraints) { this->itemConstraints = itemConstraints; }
+        void setItemConstraints(const ItemConstraintsHash & itemConstraints);
 
         QSet<ItemID> getAllItemIDsForConstraintType(ItemConstraintType type) const;
 
@@ -71,7 +78,9 @@ namespace Analytics {
 #endif
 
         static const char * ItemConstraintTypeName[2];
+        static const char * LengthConstraintTypeName[3];
         static const ConstraintClassification ItemConstraintTypeClassification[2];
+        static const ConstraintClassification LengthConstraintTypeClassification[3];
 
     protected:
         static bool matchItemsetHelper(const ItemIDList & itemset, ItemConstraintType type, const QSet<ItemID> & constraintItems);
