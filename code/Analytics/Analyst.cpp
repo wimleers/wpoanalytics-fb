@@ -2,7 +2,8 @@
 
 namespace Analytics {
 
-    Analyst::Analyst(double minSupport, double maxSupportError, double minConfidence) {
+    Analyst::Analyst(const TTWDefinition & ttwDef, double minSupport, double maxSupportError, double minConfidence) {
+        this->ttwDef = ttwDef;
         this->setParameters(minSupport, maxSupportError, minConfidence);
 
         this->currentQuarterID = 0;
@@ -18,7 +19,7 @@ namespace Analytics {
         this->ruleConsequentItemConstraints.itemIDNameHash = &this->itemIDNameHash;
 #endif
 
-        this->fpstream = new FPStream(this->minSupport, this->maxSupportError, &this->itemIDNameHash, &this->itemNameIDHash, &this->sortedFrequentItemIDs);
+        this->fpstream = new FPStream(this->ttwDef, this->minSupport, this->maxSupportError, &this->itemIDNameHash, &this->itemNameIDHash, &this->sortedFrequentItemIDs);
         connect(this->fpstream, SIGNAL(batchProcessed()), this, SLOT(fpstreamProcessedBatch()));
     }
 
@@ -379,8 +380,8 @@ namespace Analytics {
                 success,
                 0,
                 0,
-                this->fpstream->getEventsPerBatch()->getSupportForRange(0, TTW_NUM_BUCKETS-1),
-                this->fpstream->getTransactionsPerBatch()->getSupportForRange(0, TTW_NUM_BUCKETS-1),
+                this->fpstream->getEventsPerBatch()->getSupportForRange(0, this->ttwDef.numBuckets-1),
+                this->fpstream->getTransactionsPerBatch()->getSupportForRange(0, this->ttwDef.numBuckets-1),
                 this->fpstream->getItemIDNameHash()->size(),
                 this->fpstream->getF_list()->size(),
                 this->fpstream->getPatternTreeSize()

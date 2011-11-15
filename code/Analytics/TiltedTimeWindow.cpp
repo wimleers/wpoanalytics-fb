@@ -2,21 +2,38 @@
 
 namespace Analytics {
 
-    uint TiltedTimeWindow::GranularityBucketCount[TTW_NUM_GRANULARITIES]      = {  4, 24, 31, 12,  1 };
-    uint TiltedTimeWindow::GranularityBucketOffset[TTW_NUM_GRANULARITIES]     = {  0,  4, 28, 59, 71 };
-    char TiltedTimeWindow::GranularityChar[TTW_NUM_GRANULARITIES]             = {'Q','H','D','M','Y' };
-
-
     //--------------------------------------------------------------------------
     // Public methods.
 
     TiltedTimeWindow::TiltedTimeWindow() {
-        this->oldestBucketFilled = -1;
+        this->oldestBucketFilled = TTW_EMPTY;
         this->lastUpdate = 0;
-        for (int b = 0; b < TTW_NUM_BUCKETS; b++)
-            this->buckets[b] = TTW_BUCKET_UNUSED;
-        for (int g = 0; g < TTW_NUM_GRANULARITIES; g++)
-            this->capacityUsed[g] = 0;
+        this->built = false;
+
+        // Arrays that still need to be allocated. @see build().
+        this->buckets = NULL;
+        this->capacityUsed = NULL;
+    }
+
+    TiltedTimeWindow::~TiltedTimeWindow() {
+        if (this->built) {
+            delete [] this->buckets;
+            delete [] this->capacityUsed;
+        }
+    }
+
+    void TiltedTimeWindow::build(const TTWDefinition & def) {
+        this->def = def;
+
+        // Allocate the arrays.
+        this->buckets = new SupportCount[this->def.numBuckets];
+        this->capacityUsed = new Bucket[this->def.numGranularities];
+
+        // Fill with default values.
+        memset(this->buckets, TTW_BUCKET_UNUSED, this->def.numBuckets * sizeof(SupportCount));
+        memset(this->capacityUsed, 0, this->def.numGranularities * sizeof(Bucket));
+
+        this->built = true;
     }
 
     /**
@@ -32,11 +49,13 @@ namespace Analytics {
      *   equals 0, a new quarter is always created (this can be used to sync
      *   TiltedTimeWindows).
      */
-    void TiltedTimeWindow::appendQuarter(SupportCount supportCount, quint32 updateID) {
+    void TiltedTimeWindow::append(SupportCount supportCount, quint32 updateID) {
+        Q_ASSERT(this->built);
+
         if (updateID != this->lastUpdate || updateID == 0) {
             if (updateID != 0)
                 this->lastUpdate = updateID;
-            this->store(GRANULARITY_QUARTER, supportCount);
+            this->store((Granularity) 0, supportCount);
         }
         else {
             // Allow adding to the last bucket that was created. This is always
@@ -56,10 +75,12 @@ namespace Analytics {
      *   The granularity starting from which all buckets should be dropped.
      */
     void TiltedTimeWindow::dropTail(Granularity start) {
+        Q_ASSERT(this->built);
+
         // Find the granularity to which it belongs and reset every
         // granularity along the way.
         Granularity g;
-        for (g = (Granularity) (TTW_NUM_GRANULARITIES - 1); g >= start; g = (Granularity) ((int) g - 1))
+        for (g = this->def.numGranularities - 1; g >= start; g--)
             this->reset(g);
     }
 
@@ -73,33 +94,44 @@ namespace Analytics {
      * @return
      *   The total support in the buckets in the given range.
      */
-    SupportCount TiltedTimeWindow::getSupportForRange(uint from, uint to) const {
+    SupportCount TiltedTimeWindow::getSupportForRange(Bucket from, Bucket to) const {
+        Q_ASSERT(this->built);
+        Q_ASSERT(from > 0);
+        Q_ASSERT(to > 0);
         Q_ASSERT(from <= to);
-        Q_ASSERT(from < TTW_NUM_BUCKETS);
-        Q_ASSERT(to   < TTW_NUM_BUCKETS);
-        // "from" and "to" are unsigned integers, hence they're always >= 0.
+        Q_ASSERT(from < this->def.numBuckets);
+        Q_ASSERT(to   < this->def.numBuckets);
 
         // Return 0 if this TiltedTimeWindow is empty.
-        if (this->oldestBucketFilled == -1)
+        if (this->isEmpty())
             return 0;
 
         // Otherwise, count the sum.
         SupportCount sum = 0;
-        for (uint i = from; i <= to && i <= (uint) this->oldestBucketFilled; i++) {
-            if (this->buckets[i] != (uint) TTW_BUCKET_UNUSED)
+        for (Bucket i = from; i <= to && i <= this->oldestBucketFilled; i++) {
+            if (this->buckets[i] != TTW_BUCKET_UNUSED)
                 sum += this->buckets[i];
         }
 
         return sum;
     }
 
+    Granularity TiltedTimeWindow::getNextWholeGranularity(Bucket bucket) const {
+        for (Granularity g = 0; g < this->def.numGranularities; g++)
+            if (bucket <= this->def.bucketOffset[g] && bucket < this->def.bucketOffset[g + 1])
+                return g;
+        return -1;
+    }
+
     QVariantMap TiltedTimeWindow::toVariantMap() const {
+        Q_ASSERT(this->built);
+
         QVariantMap variantRepresentation;
 
         QList<QVariant> bucketsVariant;
-        if (this->oldestBucketFilled != -1)
-            for (int i = 0; i <= this->oldestBucketFilled; i++)
-                bucketsVariant << QVariant((int) this->buckets[i]); // TRICKY: typecast to int, uint results in nothing being printed. Probably a bug in QxtJSON.
+        if (!this->isEmpty())
+            for (Bucket b = 0; b <= this->oldestBucketFilled; b++)
+                bucketsVariant << QVariant((int) this->buckets[b]); // TRICKY: typecast to int, uint results in nothing being printed. Probably a bug in QxtJSON.
 
         variantRepresentation.insert("v", 1); // Version.
         variantRepresentation.insert("buckets", bucketsVariant);
@@ -111,26 +143,31 @@ namespace Analytics {
     }
 
     bool TiltedTimeWindow::fromVariantMap(const QVariantMap & json) {
+        Q_ASSERT(this->built);
+
         int version = json["v"].toInt();
 
         if (version == 1) {
             QList<QVariant> bucketValues = json["buckets"].toList();
 
             // this->oldestBucketFilled
-            this->oldestBucketFilled = bucketValues.size() - 1;
+            if (bucketValues.isEmpty())
+                this->oldestBucketFilled = TTW_EMPTY;
+            else
+                this->oldestBucketFilled = bucketValues.size() - 1;
             // this->buckets
             for (int i = 0; i < bucketValues.size(); i++)
-                this->buckets[i] = (uint) bucketValues[i].toInt();
+                this->buckets[i] = (SupportCount) bucketValues[i].toInt();
             // this->capacityUsed
-            uint bucketsRemainingToBeFilled = bucketValues.size();
-            for (int g = 0; g < TTW_NUM_GRANULARITIES; g++) {
-                if (bucketsRemainingToBeFilled < TiltedTimeWindow::GranularityBucketCount[g]) {
+            Bucket bucketsRemainingToBeFilled = bucketValues.size();
+            for (Granularity g = 0; g < (Granularity) this->def.numGranularities; g++) {
+                if (bucketsRemainingToBeFilled < this->def.bucketCount[g]) {
                     this->capacityUsed[g] = bucketsRemainingToBeFilled;
                     bucketsRemainingToBeFilled = 0;
                 }
                 else {
-                    this->capacityUsed[g] = TiltedTimeWindow::GranularityBucketCount[g];
-                    bucketsRemainingToBeFilled -= TiltedTimeWindow::GranularityBucketCount[g];
+                    this->capacityUsed[g] = this->def.bucketCount[g];
+                    bucketsRemainingToBeFilled -= this->def.bucketCount[g];
                 }
             }
             // this->lastUpdate
@@ -143,7 +180,8 @@ namespace Analytics {
     }
 
     QVector<SupportCount> TiltedTimeWindow::getBuckets(int numBuckets) const {
-        Q_ASSERT(numBuckets <= TTW_NUM_BUCKETS);
+        Q_ASSERT(this->built);
+        Q_ASSERT(numBuckets >= 0 && numBuckets <= this->def.numBuckets);
 
         QVector<SupportCount> v;
         for (int i = 0; i < numBuckets; i++)
@@ -155,24 +193,25 @@ namespace Analytics {
     //--------------------------------------------------------------------------
     // Public static methods.
 
-    uint TiltedTimeWindow::quarterDistanceToBucket(uint bucket, bool includeBucketItself) {
-        uint quarters = 0;
+    /**
+     * Measure the distance from bucket 0 to the given bucket.
+     */
+    Bucket TiltedTimeWindow::quarterDistanceToBucket(const TTWDefinition & ttwDef, Bucket bucket, bool includeBucketItself) {
+        Bucket distance = 0;
 
-        Granularity g = (Granularity) 1;
-        uint nextOffset = GranularityBucketOffset[g];
-        uint quartersIncrement = 1;
-        for (uint i = 0; i < bucket || (includeBucketItself && i == bucket); i++) {
+        Granularity nextGranularity = 1;
+        uint quartersInGranularity = 1;
+        for (Bucket b = 0; b < bucket || (includeBucketItself && b == bucket); b++) {
             // Ensure we're working with the right quarters increment.
-            while (i >= nextOffset) {
-                quartersIncrement *= GranularityBucketCount[(Granularity) (g - 1)];
-                g = (Granularity) (g + 1);
-                nextOffset = GranularityBucketOffset[g];
+            while (b >= ttwDef.bucketOffset[nextGranularity]) {
+                quartersInGranularity *= ttwDef.bucketCount[nextGranularity - 1];
+                nextGranularity++;
             }
 
-            quarters += quartersIncrement;
+            distance += quartersInGranularity;
         }
 
-        return quarters;
+        return distance;
     }
 
 
@@ -186,21 +225,23 @@ namespace Analytics {
      *   The granularity that should be reset.
      */
     void TiltedTimeWindow::reset(Granularity granularity) {
-        int offset = GranularityBucketOffset[granularity];
-        int count = GranularityBucketCount[granularity];
+        Q_ASSERT(this->built);
+
+        Bucket offset = this->def.bucketOffset[granularity];
+        Bucket count = this->def.bucketCount[granularity];
 
         // Reset this granularity's buckets.
-        memset(this->buckets + offset, TTW_BUCKET_UNUSED, count * sizeof(int));
+        memset(this->buckets + offset, TTW_BUCKET_UNUSED, count * sizeof(SupportCount));
 
-        // Update this granularity's used capacity..
+        // Update this granularity's used capacity.
         this->capacityUsed[granularity] = 0;
 
         // Update oldestBucketFilled by resetting it to the beginning of this
         // granularity, but only if it is in fact currently pointing to a
         // position *within* this granularity (i.e. if it is in the range
         // [offset, offset + count - 1]).
-        if (this->oldestBucketFilled > offset - 1 && this->oldestBucketFilled < offset + count)
-            this->oldestBucketFilled = offset - 1;
+        if (this->oldestBucketFilled >= offset && this->oldestBucketFilled < offset + count)
+            this->oldestBucketFilled = (offset == 0) ? TTW_EMPTY : offset - 1;
     }
 
     /**
@@ -210,17 +251,19 @@ namespace Analytics {
      *   The granularity that should be shifted.
      */
     void TiltedTimeWindow::shift(Granularity granularity) {
+        Q_ASSERT(this->built);
+
         // If the next granularity does not exist, reset this granularity.
-        if (granularity + 1 > TTW_NUM_GRANULARITIES - 1)
+        if (granularity + 1 > this->def.numGranularities - 1)
             this->reset(granularity);
 
-        int offset = GranularityBucketOffset[granularity];
-        int count  = GranularityBucketCount[granularity];
+        Bucket offset = this->def.bucketOffset[granularity];
+        Bucket count  = this->def.bucketCount[granularity];
 
         // Calculate the sum of this granularity's buckets.
         SupportCount sum = 0;
-        for (int bucket = 0; bucket < count; bucket++)
-            sum += buckets[offset + bucket];
+        for (Bucket b = 0; b < count; b++)
+            sum += buckets[offset + b];
 
         // Reset this granularity.
         this->reset(granularity);
@@ -238,9 +281,11 @@ namespace Analytics {
      *   The supportCount that should be appended.
      */
     void TiltedTimeWindow::store(Granularity granularity, SupportCount supportCount) {
-        int offset       = GranularityBucketOffset[granularity];
-        int count        = GranularityBucketCount[granularity];
-        int capacityUsed = this->capacityUsed[granularity];
+        Q_ASSERT(this->built);
+
+        Bucket offset       = this->def.bucketOffset[granularity];
+        Bucket count        = this->def.bucketCount[granularity];
+        Bucket capacityUsed = this->capacityUsed[granularity];
 
         // If the current granularity's maximum capacity has been reached,
         // then shift it to the next (less granular) granularity.
@@ -253,32 +298,63 @@ namespace Analytics {
         // means we'll have to move the data in previously filled in buckets
         // in this granularity) and update this granularity's capacity.
         if (capacityUsed > 0)
-            memmove(buckets + offset + 1, buckets + offset, capacityUsed * sizeof(int));
+            memmove(buckets + offset + 1, buckets + offset, capacityUsed * sizeof(SupportCount));
         buckets[offset + 0] = supportCount;
         this->capacityUsed[granularity]++;
 
         // Update oldestbucketFilled.
-        if (this->oldestBucketFilled < (int) (offset + this->capacityUsed[granularity] - 1))
+        if (this->isEmpty() || this->oldestBucketFilled < ((int)offset + this->capacityUsed[granularity] - 1))
             this->oldestBucketFilled = offset + this->capacityUsed[granularity] - 1;
     }
 
 #ifdef DEBUG
+    QDebug operator<<(QDebug dbg, const TTWDefinition & def) {
+        static const char * prefix = "  ";
+        dbg.nospace() << "{" << endl;
+        // Line 1: how many buckets in each granularity.
+        dbg.nospace() << prefix;
+        for (int i = 0; i < def.numGranularities; i++) {
+            QString s;
+            s.sprintf("[ %5d*%-5c ]", def.bucketCount[i], def.granularityChar[i]);
+            dbg.nospace() << s.toStdString().c_str();
+        }
+        dbg.nospace() << endl;
+        // Line 2: visualize the buckets.
+        dbg.nospace() << prefix;
+        for (int i = 0; i < def.numGranularities; i++) {
+            QString s;
+            s.sprintf("[ %c ][ … ][ %c ]", def.granularityChar[i], def.granularityChar[i]);
+            dbg.nospace() << s.toStdString().c_str();
+        }
+        dbg.nospace() << endl;
+        // Line 3: show the indices of the first and last bucket of each granularity.
+        dbg.nospace() << prefix;
+        for (int i = 0; i < def.numGranularities; i++) {
+            QString s;
+            s.sprintf("[ %-2d   …    %-2d]", def.bucketOffset[i], def.bucketOffset[i] + def.bucketCount[i] - 1);
+            dbg.nospace() << s.toStdString().c_str();
+        }
+        dbg.nospace() << endl;
+        dbg.nospace() << "}" << endl;
+        return dbg.nospace();
+    }
+
     QDebug operator<<(QDebug dbg, const TiltedTimeWindow & ttw) {
+        const TTWDefinition & def = ttw.getDefinition();
         int capacityUsed, offset;
-        QVector<SupportCount> buckets = ttw.getBuckets();
+        QVector<SupportCount> buckets = ttw.getBuckets(def.numBuckets);
 
         dbg.nospace() << "{";
 
-        Granularity g;
-        for (g = (Granularity) 0; g < TTW_NUM_GRANULARITIES; g = (Granularity) ((int) g + 1)) {
+        for (Granularity g = 0; g < def.numGranularities; g++) {
             capacityUsed = ttw.getCapacityUsed(g);
             if (capacityUsed == 0)
                 break;
 
-            dbg.nospace() << TiltedTimeWindow::GranularityChar[g] << "={";
+            dbg.nospace() << def.granularityChar[g] << "={";
 
             // Print the contents of this granularity.
-            offset = TiltedTimeWindow::GranularityBucketOffset[g];
+            offset = def.bucketOffset[g];
             for (int b = 0; b < capacityUsed; b++) {
                 if (b > 0)
                     dbg.nospace() << ", ";
@@ -287,7 +363,7 @@ namespace Analytics {
             }
 
             dbg.nospace() << "}";
-            if (g < TTW_NUM_GRANULARITIES - 1 && ttw.getCapacityUsed((Granularity) (g + 1)) > 0)
+            if (g < def.numGranularities - 1 && ttw.getCapacityUsed(g + 1) > 0)
                 dbg.nospace() << ", ";
         }
 

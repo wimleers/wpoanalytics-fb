@@ -12,48 +12,83 @@
 
 namespace Analytics {
 
-    enum Granularity {
-      GRANULARITY_QUARTER,
-      GRANULARITY_HOUR,
-      GRANULARITY_DAY,
-      GRANULARITY_MONTH,
-      GRANULARITY_YEAR
+    typedef int Granularity;
+    typedef int Bucket;
+
+    class TTWDefinition {
+    public:
+        TTWDefinition() {}
+        TTWDefinition(QMap<char, uint> granularities, QList<char> order) {
+            this->numGranularities = granularities.size();
+            this->numBuckets = 0;
+            foreach (char c, order) {
+                uint s = granularities[c];
+                this->bucketCount.append(s);
+                this->bucketOffset.append(this->numBuckets);
+                this->granularityChar.append(c);
+                this->numBuckets += s;
+            }
+        }
+
+        int numGranularities;
+        int numBuckets;
+        QVector<int> bucketCount;
+        QVector<int> bucketOffset;
+        QVector<char> granularityChar;
     };
 
-    #define TTW_NUM_GRANULARITIES 5
-    #define TTW_NUM_BUCKETS 72
-    #define TTW_BUCKET_UNUSED -1
+    /*
+    QMap<char, uint> granularitiesDefault;
+    granularitiesDefault.insert('Q', 4);
+    granularitiesDefault.insert('H', 24);
+    granularitiesDefault.insert('D', 31);
+    granularitiesDefault.insert('M', 12);
+    granularitiesDefault.insert('Y', 1);
+    TTWDefinition defaultTTWDefinition(granularitiesDefault,
+                                       QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
+
+    QMap<char, uint> granularitiesThirtyDay;
+    granularitiesThirtyDay.insert('H', 24);
+    granularitiesThirtyDay.insert('D', 30);
+    TTWDefinition thirtyDayDefinition(granularitiesThirtyDay,
+                                       QList<char>() << 'H' << 'D');
+                                       */
+
+    #define TTW_BUCKET_UNUSED MAX_SUPPORT
+    #define TTW_EMPTY -1
 
 
     class TiltedTimeWindow {
     public:
         TiltedTimeWindow();
-        void appendQuarter(SupportCount s, quint32 updateID);
-        bool isEmpty() const { return this->oldestBucketFilled == -1; }
-        quint32 getLastUpdate() const { return this->lastUpdate; }
-        void dropTail(Granularity start);
-        int getOldestBucketFilled() const { return this->oldestBucketFilled; }
+        ~TiltedTimeWindow();
+        void build(const TTWDefinition & def);
+
+        // Getters.
         uint getCapacityUsed(Granularity g) const { return this->capacityUsed[g]; }
-        SupportCount getSupportForRange(uint from, uint to) const;
+        const TTWDefinition & getDefinition() const { return this->def; }
+        quint32 getLastUpdate() const { return this->lastUpdate; }
+        Bucket getOldestBucketFilled() const { return this->oldestBucketFilled; }
+        Granularity getNextWholeGranularity(Bucket bucket) const;
+        SupportCount getSupportForRange(Bucket from, Bucket to) const;
+        bool isEmpty() const { return this->oldestBucketFilled == TTW_EMPTY; }
+
+        // Setters.
+        void append(SupportCount s, quint32 updateID);
+        void dropTail(Granularity start);
 
         // (De)serialization helper methods.
         QVariantMap toVariantMap() const;
         bool fromVariantMap(const QVariantMap & json);
 
         // Unit testing helper method.
-        QVector<SupportCount> getBuckets(int numBuckets = TTW_NUM_BUCKETS) const;
+        QVector<SupportCount> getBuckets(int numBuckets) const;
 
         // Properties.
-        SupportCount buckets[TTW_NUM_BUCKETS];
-        int oldestBucketFilled;
+        SupportCount * buckets;
 
         // Static methods.
-        static uint quarterDistanceToBucket(uint bucket, bool includeBucketItself);
-
-        // Static properties
-        static uint GranularityBucketCount[TTW_NUM_GRANULARITIES];
-        static uint GranularityBucketOffset[TTW_NUM_GRANULARITIES];
-        static char GranularityChar[TTW_NUM_GRANULARITIES];
+        static Bucket quarterDistanceToBucket(const TTWDefinition & ttwDef, Bucket bucket, bool includeBucketItself);
 
     protected:
         // Methods.
@@ -62,11 +97,15 @@ namespace Analytics {
         void store(Granularity granularity, SupportCount supportCount);
 
         // Properties.
-        uint capacityUsed[TTW_NUM_GRANULARITIES];
+        TTWDefinition def;
+        bool built;
+        Bucket * capacityUsed;
         quint32 lastUpdate;
+        Bucket oldestBucketFilled;
     };
 
 #ifdef DEBUG
+    QDebug operator<<(QDebug dbg, const TTWDefinition & def);
     QDebug operator<<(QDebug dbg, const TiltedTimeWindow & ttw);
 #endif
 }

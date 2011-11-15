@@ -146,8 +146,8 @@ void MainWindow::updateAnalyzingStats(Time start, Time end, quint64 pageViews, q
 
 void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange) {
     Time latestAnalyzedTime = this->endTime - (this->endTime % 900) + 900;
-    Time endTime = latestAnalyzedTime - (Analytics::TiltedTimeWindow::quarterDistanceToBucket(from, false) * 900);
-    Time startTime = latestAnalyzedTime - (Analytics::TiltedTimeWindow::quarterDistanceToBucket(to, true) * 900);
+    Time endTime = latestAnalyzedTime - (Analytics::TiltedTimeWindow::quarterDistanceToBucket(*this->ttwDef, from, false) * 900);
+    Time startTime = latestAnalyzedTime - (Analytics::TiltedTimeWindow::quarterDistanceToBucket(*this->ttwDef, to, true) * 900);
     if (startTime < this->startTime)
         startTime = this->startTime;
 
@@ -486,6 +486,13 @@ void MainWindow::initLogic() {
     QSettings settings;
     QString configFile = settings.value("configFile").toString();
 
+    // For now: hardcoded TiltedTimeWindow definition: 24 hours, 30 days.
+    QMap<char, uint> granularities;
+    granularities.insert('H', 24);
+    granularities.insert('D', 30);
+    this->ttwDef = new Analytics::TTWDefinition(granularities,
+                                                QList<char>() << 'H' << 'D');
+
     // Instantiate config.
     // TRICKY: this is just an empty shell, you still need to call its parse()
     // method with a valid config file!
@@ -498,7 +505,7 @@ void MainWindow::initLogic() {
     double minSupport = settings.value("analyst/minimumSupport", 0.05).toDouble();
     double minPatternTreeSupport = settings.value("analyst/minimumPatternTreeSupport", 0.04).toDouble();
     double minConfidence = settings.value("analyst/minimumConfidence", 0.2).toDouble();
-    this->analyst = new Analytics::Analyst(minSupport, minPatternTreeSupport, minConfidence);
+    this->analyst = new Analytics::Analyst(*this->ttwDef, minSupport, minPatternTreeSupport, minConfidence);
 
     // Set pattern & rule consequent constraints. This defines which
     // associations will be found by the Analyst.

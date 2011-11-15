@@ -28,7 +28,8 @@ namespace Analytics {
         Q_OBJECT
 
     public:
-        FPStream(double minSupport,
+        FPStream(const TTWDefinition & ttwDef,
+                 double minSupport,
                  double maxSupportError,
                  ItemIDNameHash * itemIDNameHash,
                  ItemNameIDHash * itemNameIDHash,
@@ -58,7 +59,7 @@ namespace Analytics {
         const ItemIDNameHash * getItemIDNameHash() const { return this->itemIDNameHash; }
 
         // Static methods (public to allow for unit testing).
-        static Granularity calculateDroppableTail(const TiltedTimeWindow & window,
+        static int calculateDroppableTail(const TiltedTimeWindow & window,
                                                   double minSupport,
                                                   double maxSupportError,
                                                   const TiltedTimeWindow & eventsPerBatch);
@@ -79,6 +80,7 @@ namespace Analytics {
         void updateUnaffectedNodes(FPNode<TiltedTimeWindow> * node);
 
         // Properties related to the entire state over time.
+        TTWDefinition ttwDef;
         PatternTree patternTree;
         TiltedTimeWindow transactionsPerBatch;
         TiltedTimeWindow eventsPerBatch;

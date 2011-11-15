@@ -19,6 +19,12 @@ namespace Analytics {
     public:
         PatternTree();
         ~PatternTree();
+        void setTTWDefinition(const TTWDefinition & ttwDef) {
+            this->ttwDef = ttwDef;
+
+            // Update the root node with the TTW definition.
+            this->root->getPointerToValue()->build(this->ttwDef);
+        }
 
         bool serialize(QTextStream & output,
                                    const ItemIDNameHash & itemIDNameHash) const;
@@ -54,6 +60,7 @@ namespace Analytics {
                                         QTextStream & output,
                                         QList<ItemName> pattern);
 
+        TTWDefinition ttwDef;
         FPNode<TiltedTimeWindow> * root;
         uint currentQuarter;
         unsigned int nodeCount;

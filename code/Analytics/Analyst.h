@@ -8,12 +8,12 @@
 #include <QSet>
 #include <QStringList>
 #include <QPair>
-
 #include <QThread>
 #include <QWaitCondition>
 #include <QMutex>
 
 #include "Item.h"
+#include "TiltedTimeWindow.h"
 #include "Constraints.h"
 #include "FPGrowth.h"
 #include "FPStream.h"
@@ -27,7 +27,7 @@ namespace Analytics {
         Q_OBJECT
 
     public:
-        Analyst(double minSupport, double maxSupportError, double minConfidence);
+        Analyst(const TTWDefinition & ttwDef, double minSupport, double maxSupportError, double minConfidence);
         ~Analyst();
         void setParameters(double minSupport, double maxSupportError, double minConfidence);
         void resetConstraints();
@@ -82,6 +82,7 @@ namespace Analytics {
     protected:
         void performMining(const QList<QStringList> & transactions, double transactionsPerEvent, quint32 quarterID, bool lastChunkOfBatch);
 
+        TTWDefinition ttwDef;
         FPStream * fpstream;
         double minSupport;
         double maxSupportError;

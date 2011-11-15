@@ -5,13 +5,24 @@ namespace Analytics {
     //----------------------------------------------------------------------
     // Public methods.
 
-    FPStream::FPStream(double minSupport, double maxSupportError, ItemIDNameHash * itemIDNameHash, ItemNameIDHash * itemNameIDHash, ItemIDList * sortedFrequentItemIDs) {
+    FPStream::FPStream(const TTWDefinition & ttwDef,
+                       double minSupport,
+                       double maxSupportError,
+                       ItemIDNameHash * itemIDNameHash,
+                       ItemNameIDHash * itemNameIDHash,
+                       ItemIDList * sortedFrequentItemIDs)
+    {
+        this->ttwDef                = ttwDef;
         this->minSupport            = minSupport;
         this->maxSupportError       = maxSupportError;
         this->itemIDNameHash        = itemIDNameHash;
         this->itemNameIDHash        = itemNameIDHash;
         this->f_list                = sortedFrequentItemIDs;
         this->initialBatchProcessed = false;
+
+        this->transactionsPerBatch.build(this->ttwDef);
+        this->eventsPerBatch.build(this->ttwDef);
+        this->patternTree.setTTWDefinition(this->ttwDef);
 
         this->statusMutex.lock();
         this->processingBatch = false;
@@ -153,8 +164,8 @@ namespace Analytics {
         // Store the batch sizes. By storing it in a tilted time window, they
         // will automatically be summed in the same way as any other tilted
         // time window's support counts.
-        this->transactionsPerBatch.appendQuarter(transactions.size(), this->currentBatchID);
-        this->eventsPerBatch.appendQuarter(transactions.size() / transactionsPerEvent, this->currentBatchID);
+        this->transactionsPerBatch.append(transactions.size(), this->currentBatchID);
+        this->eventsPerBatch.append(transactions.size() / transactionsPerEvent, this->currentBatchID);
 
         // Mine the frequent itemsets in this batch.
         this->currentFPGrowth = new FPGrowth(transactions, (SupportCount) (this->maxSupportError * transactions.size() / transactionsPerEvent), this->itemIDNameHash, this->itemNameIDHash, this->f_list);
@@ -411,16 +422,16 @@ namespace Analytics {
      *   -1 if nothing is droppable, a position in the [0, TTW_NUM_BUCKETS-1]
      *   range if a tail can be dropped.
      */
-    Granularity FPStream::calculateDroppableTail(const TiltedTimeWindow & window, double minSupport, double maxSupportError, const TiltedTimeWindow & batchSizes) {
-        Q_ASSERT(window.oldestBucketFilled <= batchSizes.oldestBucketFilled);
+    int FPStream::calculateDroppableTail(const TiltedTimeWindow & window, double minSupport, double maxSupportError, const TiltedTimeWindow & batchSizes) {
+        Q_ASSERT(window.getOldestBucketFilled() <= batchSizes.getOldestBucketFilled());
 
         // If it's empty, there can't be anything worth calculating.
-        if (window.oldestBucketFilled == -1)
-            return (Granularity) -1;
+        if (window.isEmpty())
+            return -1;
 
         // Iterate over all buckets in the tilted time window, starting at the
         // tail (i.e. the last/oldest bucket).
-        int n = window.oldestBucketFilled;
+        int n = window.getOldestBucketFilled();
         int l = -1, m = -1;
         SupportCount cumulativeSupport = 0, cumulativeBatchSize = 0;
         for (int i = n; i >= 0; i--) {
@@ -443,7 +454,7 @@ namespace Analytics {
 
         // If no such l is found, then there is no tail that can be dropped.
         if (l == -1)
-            return (Granularity) -1;
+            return -1;
 
         // Iterate again over all buckets in the tilted time window, starting
         // at the tail (i.e. the last/oldest bucket).
@@ -479,14 +490,11 @@ namespace Analytics {
         // m that can be dropped in its entirety (when m corresponds to the
         // first bucket of a granularity, it is of course *that* granularity
         // that can be dropped).
-        Granularity g;
         if (m > -1) {
-            for (g = (Granularity) 0; g < (Granularity) TTW_NUM_GRANULARITIES; g = (Granularity) ((int) g + 1))
-                if ((uint) m <= TiltedTimeWindow::GranularityBucketOffset[g] && (uint) m < TiltedTimeWindow::GranularityBucketOffset[(Granularity) g + 1])
-                    return g;
+            return window.getNextWholeGranularity(m);
         }
 
-        return (Granularity) -1;
+        return -1;
     }
 
 
@@ -530,7 +538,7 @@ namespace Analytics {
         // not updated during the current batch, then update it now.
         TiltedTimeWindow * tiltedTimeWindow = node->getPointerToValue();
         if (tiltedTimeWindow->getLastUpdate() != this->currentBatchID) {
-            tiltedTimeWindow->appendQuarter(0, this->currentBatchID);
+            tiltedTimeWindow->append(0, this->currentBatchID);
 
             // Conduct tail pruning.
             Granularity dropTailStartGranularity = FPStream::calculateDroppableTail(*tiltedTimeWindow, this->minSupport, this->maxSupportError, this->eventsPerBatch);

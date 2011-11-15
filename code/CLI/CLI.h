@@ -111,6 +111,7 @@ private:
     // Core components.
     Config::Config * config;
     JSONLogParser::Parser * parser;
+    Analytics::TTWDefinition * ttwDef;
     Analytics::Analyst * analyst;
 
     // Status.

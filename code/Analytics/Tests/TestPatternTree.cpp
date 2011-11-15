@@ -3,6 +3,7 @@
 void TestPatternTree::basic() {
     FPNode<TiltedTimeWindow>::resetLastNodeID();
     PatternTree * patternTree = new PatternTree();
+    patternTree->setTTWDefinition(TestPatternTree::getTTWDefinition());
 
     // Pattern 1: {1, 2, 3}, support: 1.
     ItemIDList p1;
@@ -94,6 +95,7 @@ void TestPatternTree::basic() {
 void TestPatternTree::additionsRemainInSync() {
     FPNode<TiltedTimeWindow>::resetLastNodeID();
     PatternTree * patternTree = new PatternTree();
+    patternTree->setTTWDefinition(TestPatternTree::getTTWDefinition());
     uint updateID;
 
 

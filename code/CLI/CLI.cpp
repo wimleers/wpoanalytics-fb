@@ -7,7 +7,18 @@
 CLI::CLI() {
     this->config = NULL;
     this->parser = NULL;
+    this->ttwDef = NULL;
     this->analyst = NULL;
+
+    QMap<char, uint> granularitiesDefault;
+    granularitiesDefault.insert('Q', 4);
+    granularitiesDefault.insert('H', 24);
+    granularitiesDefault.insert('D', 31);
+    granularitiesDefault.insert('M', 12);
+    granularitiesDefault.insert('Y', 1);
+    this->ttwDef = new Analytics::TTWDefinition(granularitiesDefault,
+                                       QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
+
 
     // Status.
     this->parsing = false;
@@ -54,9 +65,11 @@ CLI::CLI() {
 
 CLI::~CLI() {
     if (this->config != NULL)
-        delete config;
+        delete this->config;
     if (this->parser != NULL)
         delete this->parser;
+    if (this->ttwDef != NULL)
+        delete this->ttwDef;
     if (this->analyst != NULL)
         delete this->analyst;
 }
@@ -624,7 +637,7 @@ void CLI::run() {
             this->out("CLI", QString("There are zero patterns, hence there is nothing to be found but 42."), 0);
         else {
             this->out("CLI", QString("Mining for association rules over %1 patterns...").arg(this->analyst->getPatternTreeSize()), 0);
-            emit mine(0, TTW_NUM_BUCKETS-1);
+            emit mine(0, this->ttwDef->numBuckets - 1);
             return;
         }
     }
@@ -729,7 +742,7 @@ void CLI::initLogic() {
     double minSupport = this->config->getMinPatternSupport();
     double minPatternTreeSupport = this->config->getMinPotentialPatternSupport();
     double minConfidence = this->config->getMinRuleConfidence();
-    this->analyst = new Analytics::Analyst(minSupport, minPatternTreeSupport, minConfidence);
+    this->analyst = new Analytics::Analyst(*this->ttwDef, minSupport, minPatternTreeSupport, minConfidence);
 
     // Set pattern & rule consequent constraints. This defines which
     // associations will be found by the Analyst.

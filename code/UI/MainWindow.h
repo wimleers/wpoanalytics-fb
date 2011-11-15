@@ -141,6 +141,7 @@ private:
     Config::Config * config;
     JSONLogParser::Parser * parser;
     Analytics::Analyst * analyst;
+    Analytics::TTWDefinition * ttwDef;
     QThread parserThread;
     QThread analystThread;
 

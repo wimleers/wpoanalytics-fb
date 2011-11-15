@@ -12,6 +12,19 @@ class TestPatternTree : public QObject {
 private slots:
     void basic();
     void additionsRemainInSync();
+
+private:
+    static const TTWDefinition getTTWDefinition() {
+        QMap<char, uint> granularitiesDefault;
+        granularitiesDefault.insert('Q', 4);
+        granularitiesDefault.insert('H', 24);
+        granularitiesDefault.insert('D', 31);
+        granularitiesDefault.insert('M', 12);
+        granularitiesDefault.insert('Y', 1);
+        TTWDefinition defaultTTWDefinition(granularitiesDefault,
+                                           QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
+        return defaultTTWDefinition;
+    }
 };
 
 #endif // TESTPATTERNTREE_H

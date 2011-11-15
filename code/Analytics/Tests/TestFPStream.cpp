@@ -2,15 +2,17 @@
 
 void TestFPStream::calculateDroppableTail() {
     TiltedTimeWindow ttw;
-    ttw.appendQuarter(1, 0);
-    ttw.appendQuarter(0, 1);
-    ttw.appendQuarter(0, 2);
-    ttw.appendQuarter(0, 3);
-    ttw.appendQuarter(0, 4);
+    ttw.build(TestFPStream::getTTWDefinition());
+    ttw.append(1, 0);
+    ttw.append(0, 1);
+    ttw.append(0, 2);
+    ttw.append(0, 3);
+    ttw.append(0, 4);
 
     TiltedTimeWindow batchSizes;
+    batchSizes.build(TestFPStream::getTTWDefinition());
     for (int i = 0; i < 5; i++)
-        batchSizes.appendQuarter(TTW_BUCKET_UNUSED, i);
+        batchSizes.append(TTW_BUCKET_UNUSED, i);
 
     // Helpful for debugging/expanding this test.
     // Currently, this should match:
@@ -49,7 +51,12 @@ void TestFPStream::basic() {
     ItemNameIDHash itemNameIDHash;
     ItemIDList sortedFrequentItemIDs;
     FPNode<TiltedTimeWindow>::resetLastNodeID();
-    FPStream * fpstream = new FPStream(0.4, 0.05, &itemIDNameHash, &itemNameIDHash, &sortedFrequentItemIDs);
+    FPStream * fpstream = new FPStream(TestFPStream::getTTWDefinition(),
+                                       0.4,
+                                       0.05,
+                                       &itemIDNameHash,
+                                       &itemNameIDHash,
+                                       &sortedFrequentItemIDs);
 
     // First batch of transactions.
     QList<QStringList> transactions;
@@ -277,7 +284,12 @@ void TestFPStream::serialization() {
     ItemNameIDHash itemNameIDHash;
     ItemIDList sortedFrequentItemIDs;
     FPNode<TiltedTimeWindow>::resetLastNodeID();
-    FPStream * fpstream = new FPStream(0.4, 0.05, &itemIDNameHash, &itemNameIDHash, &sortedFrequentItemIDs);
+    FPStream * fpstream = new FPStream(TestFPStream::getTTWDefinition(),
+                                       0.4,
+                                       0.05,
+                                       &itemIDNameHash,
+                                       &itemNameIDHash,
+                                       &sortedFrequentItemIDs);
 
     // First batch of transactions.
     QList<QStringList> transactions;
@@ -319,7 +331,7 @@ void TestFPStream::serialization() {
     itemNameIDHash.clear();
     sortedFrequentItemIDs.clear();
     FPNode<TiltedTimeWindow>::resetLastNodeID();
-    fpstream = new FPStream(0.4, 0.05, &itemIDNameHash, &itemNameIDHash, &sortedFrequentItemIDs);
+    fpstream = new FPStream(TestFPStream::getTTWDefinition(), 0.4, 0.05, &itemIDNameHash, &itemNameIDHash, &sortedFrequentItemIDs);
     // Deserialize.
     io.seek(0);
     fpstream->deserialize(io);
@@ -329,11 +341,11 @@ void TestFPStream::serialization() {
     QCOMPARE(fpstream->getCurrentBatchID(), (quint32) 1);
     const TiltedTimeWindow * transactionsPerBatch = fpstream->getTransactionsPerBatch();
     QCOMPARE(transactionsPerBatch->getBuckets(1), QVector<SupportCount>() << 10);
-    QCOMPARE(transactionsPerBatch->oldestBucketFilled, 0);
+    QCOMPARE(transactionsPerBatch->getOldestBucketFilled(), (Bucket) 0);
     QCOMPARE(transactionsPerBatch->getLastUpdate(), (uint) 1);
     const TiltedTimeWindow * eventsPerBatch = fpstream->getEventsPerBatch();
     QCOMPARE(eventsPerBatch->getBuckets(1), QVector<SupportCount>() << 10);
-    QCOMPARE(eventsPerBatch->oldestBucketFilled, 0);
+    QCOMPARE(eventsPerBatch->getOldestBucketFilled(), (Bucket) 0);
     QCOMPARE(eventsPerBatch->getLastUpdate(), (uint) 1);
     QCOMPARE(*fpstream->getF_list(), ItemIDList() << (ItemID) 2 << (ItemID) 0 << (ItemID) 1 << (ItemID) 3 << (ItemID) 4);
     ItemIDNameHash ref;

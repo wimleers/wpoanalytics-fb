@@ -168,6 +168,7 @@ namespace Analytics {
             else {
                 // Create a new node and add it as a child of the current node.
                 nextNode = new FPNode<TiltedTimeWindow>(itemID);
+                nextNode->getPointerToValue()->build(this->ttwDef);
                 this->nodeCount++;
                 nextNode->setParent(currentNode);
 #ifdef DEBUG
@@ -184,11 +185,11 @@ namespace Analytics {
         TiltedTimeWindow * ttw = currentNode->getPointerToValue();
 
         // Make sure the quarters are in sync.
-        for (uint i = ttw->getCapacityUsed(GRANULARITY_QUARTER); i < this->currentQuarter; i++)
-            ttw->appendQuarter(0, 0);
+        for (uint i = ttw->getCapacityUsed((Granularity) 0); i < this->currentQuarter; i++)
+            ttw->append(0, 0);
 
         // Now that the quarters are in sync, finally append the quarter.
-        ttw->appendQuarter(pattern.support, updateID);
+        ttw->append(pattern.support, updateID);
     }
 
     void PatternTree::removePattern(FPNode<TiltedTimeWindow> * const node) {
