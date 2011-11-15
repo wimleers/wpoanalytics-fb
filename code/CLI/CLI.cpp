@@ -10,15 +10,12 @@ CLI::CLI() {
     this->ttwDef = NULL;
     this->analyst = NULL;
 
-    QMap<char, uint> granularitiesDefault;
-    granularitiesDefault.insert('Q', 4);
-    granularitiesDefault.insert('H', 24);
-    granularitiesDefault.insert('D', 31);
-    granularitiesDefault.insert('M', 12);
-    granularitiesDefault.insert('Y', 1);
-    this->ttwDef = new Analytics::TTWDefinition(granularitiesDefault,
-                                       QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
-
+    // For now: hardcoded TiltedTimeWindow definition: 24 hours, 30 days.
+    QMap<char, uint> granularities;
+    granularities.insert('H', 24);
+    granularities.insert('D', 30);
+    this->ttwDef = new Analytics::TTWDefinition(granularities,
+                                                QList<char>() << 'H' << 'D');
 
     // Status.
     this->parsing = false;

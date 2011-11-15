@@ -50,22 +50,6 @@ namespace Analytics {
         QVector<char> granularityChar;
     };
 
-    /*
-    QMap<char, uint> granularitiesDefault;
-    granularitiesDefault.insert('Q', 4);
-    granularitiesDefault.insert('H', 24);
-    granularitiesDefault.insert('D', 31);
-    granularitiesDefault.insert('M', 12);
-    granularitiesDefault.insert('Y', 1);
-    TTWDefinition defaultTTWDefinition(granularitiesDefault,
-                                       QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
-
-    QMap<char, uint> granularitiesThirtyDay;
-    granularitiesThirtyDay.insert('H', 24);
-    granularitiesThirtyDay.insert('D', 30);
-    TTWDefinition thirtyDayDefinition(granularitiesThirtyDay,
-                                       QList<char>() << 'H' << 'D');
-                                       */
 
     #define TTW_BUCKET_UNUSED MAX_SUPPORT
     #define TTW_EMPTY -1
