@@ -12,6 +12,7 @@ HEADERS += TestFPTree.h \
            TestConstraints.h \
            TestFPGrowth.h \
            TestRuleMiner.h \
+           TestTTWDefinition.h \
            TestTiltedTimeWindow.h \
            TestPatternTree.h \
            TestFPStream.h
@@ -20,6 +21,7 @@ SOURCES += Tests.cpp \
            TestFPTree.cpp \
            TestFPGrowth.cpp \
            TestRuleMiner.cpp \
+           TestTTWDefinition.cpp \
            TestTiltedTimeWindow.cpp \
            TestPatternTree.cpp \
            TestFPStream.cpp

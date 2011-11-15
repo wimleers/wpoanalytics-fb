@@ -16,6 +16,7 @@ SOURCES += \
     $${PWD}/Constraints.cpp \
     $${PWD}/FPStream.cpp \
     $${PWD}/PatternTree.cpp \
+    $${PWD}/TTWDefinition.cpp \
     $${PWD}/TiltedTimeWindow.cpp
 HEADERS += \
     $${PWD}/Item.h \
@@ -27,6 +28,7 @@ HEADERS += \
     $${PWD}/Constraints.h \
     $${PWD}/FPStream.h \
     $${PWD}/PatternTree.h \
+    $${PWD}/TTWDefinition.h \
     $${PWD}/TiltedTimeWindow.h
 
 # Disable qDebug() output when in release mode.

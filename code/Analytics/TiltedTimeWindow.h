@@ -8,48 +8,10 @@
 #include <QDebug>
 
 #include "Item.h"
+#include "TTWDefinition.h"
 
 
 namespace Analytics {
-
-    typedef int Granularity;
-    typedef int Bucket;
-
-    class TTWDefinition {
-    public:
-        TTWDefinition() {}
-        TTWDefinition(QMap<char, uint> granularities, QList<char> order) {
-            this->numGranularities = granularities.size();
-            this->numBuckets = 0;
-            foreach (char c, order) {
-                uint s = granularities[c];
-                this->bucketCount.append(s);
-                this->bucketOffset.append(this->numBuckets);
-                this->granularityChar.append(c);
-                this->numBuckets += s;
-            }
-        }
-
-        bool bucketIsBeforeGranularity(Bucket b, Granularity g) const {
-            Bucket offset = this->bucketOffset[g];
-            Bucket count  = this->bucketCount[g];
-            return (b <= offset && b <= offset + count);
-        }
-
-        Granularity findLowestGranularityAfterBucket(Bucket b) const {
-            for (Granularity g = 0; g < this->numGranularities; g++)
-                if (this->bucketIsBeforeGranularity(b, g))
-                    return g;
-            return -1;
-        }
-
-        int numGranularities;
-        int numBuckets;
-        QVector<Bucket> bucketCount;
-        QVector<Bucket> bucketOffset;
-        QVector<char> granularityChar;
-    };
-
 
     #define TTW_BUCKET_UNUSED MAX_SUPPORT
     #define TTW_EMPTY -1
@@ -104,7 +66,6 @@ namespace Analytics {
     };
 
 #ifdef DEBUG
-    QDebug operator<<(QDebug dbg, const TTWDefinition & def);
     QDebug operator<<(QDebug dbg, const TiltedTimeWindow & ttw);
 #endif
 }

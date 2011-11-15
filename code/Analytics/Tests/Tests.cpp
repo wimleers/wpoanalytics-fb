@@ -2,6 +2,7 @@
 #include "TestConstraints.h"
 #include "TestFPGrowth.h"
 #include "TestRuleMiner.h"
+#include "TestTTWDefinition.h"
 #include "TestTiltedTimeWindow.h"
 #include "TestPatternTree.h"
 #include "TestFPStream.h"
@@ -20,6 +21,9 @@ int main() {
     QTest::qExec(&ruleMiner);
 
     // FP-Stream related classes & tests.
+    TestTTWDefinition ttwDefinition;
+    QTest::qExec(&ttwDefinition);
+
     TestTiltedTimeWindow tiltedTimeWindow;
     QTest::qExec(&tiltedTimeWindow);
 

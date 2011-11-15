@@ -304,38 +304,11 @@ namespace Analytics {
             this->oldestBucketFilled = offset + this->capacityUsed[granularity] - 1;
     }
 
-#ifdef DEBUG
-    QDebug operator<<(QDebug dbg, const TTWDefinition & def) {
-        static const char * prefix = "  ";
-        dbg.nospace() << "{" << endl;
-        // Line 1: how many buckets in each granularity.
-        dbg.nospace() << prefix;
-        for (int i = 0; i < def.numGranularities; i++) {
-            QString s;
-            s.sprintf("[ %5d*%-5c ]", def.bucketCount[i], def.granularityChar[i]);
-            dbg.nospace() << s.toStdString().c_str();
-        }
-        dbg.nospace() << endl;
-        // Line 2: visualize the buckets.
-        dbg.nospace() << prefix;
-        for (int i = 0; i < def.numGranularities; i++) {
-            QString s;
-            s.sprintf("[ %c ][ … ][ %c ]", def.granularityChar[i], def.granularityChar[i]);
-            dbg.nospace() << s.toStdString().c_str();
-        }
-        dbg.nospace() << endl;
-        // Line 3: show the indices of the first and last bucket of each granularity.
-        dbg.nospace() << prefix;
-        for (int i = 0; i < def.numGranularities; i++) {
-            QString s;
-            s.sprintf("[ %-2d   …    %-2d]", def.bucketOffset[i], def.bucketOffset[i] + def.bucketCount[i] - 1);
-            dbg.nospace() << s.toStdString().c_str();
-        }
-        dbg.nospace() << endl;
-        dbg.nospace() << "}" << endl;
-        return dbg.nospace();
-    }
 
+    //--------------------------------------------------------------------------
+    // Debugging.
+
+#ifdef DEBUG
     QDebug operator<<(QDebug dbg, const TiltedTimeWindow & ttw) {
         const TTWDefinition & def = ttw.getDefinition();
         int capacityUsed, offset;
@@ -368,6 +341,5 @@ namespace Analytics {
 
         return dbg.nospace();
     }
-
 #endif
 }
