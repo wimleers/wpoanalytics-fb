@@ -96,8 +96,8 @@ namespace Analytics {
      */
     SupportCount TiltedTimeWindow::getSupportForRange(Bucket from, Bucket to) const {
         Q_ASSERT(this->built);
-        Q_ASSERT(from > 0);
-        Q_ASSERT(to > 0);
+        Q_ASSERT(from >= 0);
+        Q_ASSERT(to >= 0);
         Q_ASSERT(from <= to);
         Q_ASSERT(from < this->def.numBuckets);
         Q_ASSERT(to   < this->def.numBuckets);
