@@ -30,10 +30,23 @@ namespace Analytics {
             }
         }
 
+        bool bucketIsBeforeGranularity(Bucket b, Granularity g) const {
+            Bucket offset = this->bucketOffset[g];
+            Bucket count  = this->bucketCount[g];
+            return (b <= offset && b <= offset + count);
+        }
+
+        Granularity findLowestGranularityAfterBucket(Bucket b) const {
+            for (Granularity g = 0; g < this->numGranularities; g++)
+                if (this->bucketIsBeforeGranularity(b, g))
+                    return g;
+            return -1;
+        }
+
         int numGranularities;
         int numBuckets;
-        QVector<int> bucketCount;
-        QVector<int> bucketOffset;
+        QVector<Bucket> bucketCount;
+        QVector<Bucket> bucketOffset;
         QVector<char> granularityChar;
     };
 
@@ -69,9 +82,11 @@ namespace Analytics {
         const TTWDefinition & getDefinition() const { return this->def; }
         quint32 getLastUpdate() const { return this->lastUpdate; }
         Bucket getOldestBucketFilled() const { return this->oldestBucketFilled; }
-        Granularity getNextWholeGranularity(Bucket bucket) const;
         SupportCount getSupportForRange(Bucket from, Bucket to) const;
+
+        // Queries.
         bool isEmpty() const { return this->oldestBucketFilled == TTW_EMPTY; }
+        Granularity findLowestGranularityAfterBucket(Bucket bucket) const;
 
         // Setters.
         void append(SupportCount s, quint32 updateID);

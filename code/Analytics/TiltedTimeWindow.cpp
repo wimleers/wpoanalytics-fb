@@ -116,11 +116,8 @@ namespace Analytics {
         return sum;
     }
 
-    Granularity TiltedTimeWindow::getNextWholeGranularity(Bucket bucket) const {
-        for (Granularity g = 0; g < this->def.numGranularities; g++)
-            if (bucket <= this->def.bucketOffset[g] && bucket < this->def.bucketOffset[g + 1])
-                return g;
-        return -1;
+    Granularity TiltedTimeWindow::findLowestGranularityAfterBucket(Bucket bucket) const {
+        return this->def.findLowestGranularityAfterBucket(bucket);
     }
 
     QVariantMap TiltedTimeWindow::toVariantMap() const {

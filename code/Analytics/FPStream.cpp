@@ -490,9 +490,8 @@ namespace Analytics {
         // m that can be dropped in its entirety (when m corresponds to the
         // first bucket of a granularity, it is of course *that* granularity
         // that can be dropped).
-        if (m > -1) {
-            return window.getNextWholeGranularity(m);
-        }
+        if (m > -1)
+            return window.findLowestGranularityAfterBucket(m);
 
         return -1;
     }
