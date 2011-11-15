@@ -8,14 +8,6 @@
  * directly write -1 instead.
  */
 void TestTiltedTimeWindow::basic() {
-    /*
-    TiltedTimeWindow * ttw = new TiltedTimeWindow<DefaultTTWDefinition.Granularity,
-                                                  DefaultTTWDefinition.numGranularities,
-                                                  DefaultTTWDefinition.numBuckets,
-                                                  DefaultTTWDefinition.GranularityBucketCount,
-                                                  DefaultTTWDefinition.GranularityBucketOffset,
-                                                  DefaultTTWDefinition.GranularityChar>();
-                                                  */
     QMap<char, uint> granularitiesDefault;
     granularitiesDefault.insert('Q', 4);
     granularitiesDefault.insert('H', 24);
