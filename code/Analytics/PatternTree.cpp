@@ -61,7 +61,8 @@ namespace Analytics {
             uint futureCurrentQuarter = json["currentQuarter"].toInt();
             // version 2 addition: tilted time window definition
             if (json.keys().contains("tilted time window definition")) {
-                this->ttwDef.deserialize(json["tilted time window definition"].toString());
+                if (!this->ttwDef.deserialize(json["tilted time window definition"].toString()))
+                    return false;
             }
             else {
                 // Before version 2, a different default was used, so set that

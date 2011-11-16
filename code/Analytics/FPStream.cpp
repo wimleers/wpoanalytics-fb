@@ -118,7 +118,8 @@ namespace Analytics {
             }
 
             // All remaining data is for the PatternTree data structure.
-            this->patternTree.deserialize(input, this->itemIDNameHash, *this->itemNameIDHash, this->currentBatchID);
+            if (!this->patternTree.deserialize(input, this->itemIDNameHash, *this->itemNameIDHash, this->currentBatchID))
+                return false;
             // Update the TTWDefinition because it may have changed.
             this->ttwDef = this->patternTree.getTTWDefinition();
             this->eventsPerBatch.build(this->ttwDef, true);
