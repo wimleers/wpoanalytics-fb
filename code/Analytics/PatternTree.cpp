@@ -24,8 +24,9 @@ namespace Analytics {
     {
         // First line: PatternTree metadata.
         QVariantMap json;
-        json.insert("v", 1);
+        json.insert("v", 2);
         json.insert("currentQuarter", (int) currentQuarter);
+        json.insert("tilted time window definition", this->ttwDef.serialize());
 
         output << QxtJSON::stringify(json) << "\n";
 
@@ -52,12 +53,31 @@ namespace Analytics {
         json = QxtJSON::parse(input.readLine()).toMap();
 
         int version = json["v"].toInt();
-        if (version == 1) {
+        if (version == 1 || version == 2) {
             // First line: PatternTree metadata.
             // Don't store "currentQuarter" right away, or it would interfere
             // with addPattern() calls. Set it after all patterns have been
             // loaded.
             uint futureCurrentQuarter = json["currentQuarter"].toInt();
+            // version 2 addition: tilted time window definition
+            if (json.keys().contains("tilted time window definition")) {
+                this->ttwDef.deserialize(json["tilted time window definition"].toString());
+            }
+            else {
+                // Before version 2, a different default was used, so set that
+                // default.
+                QMap<char, uint> granularitiesDefault;
+                granularitiesDefault.insert('Q', 4);
+                granularitiesDefault.insert('H', 24);
+                granularitiesDefault.insert('D', 31);
+                granularitiesDefault.insert('M', 12);
+                granularitiesDefault.insert('Y', 1);
+                this->ttwDef = TTWDefinition(granularitiesDefault,
+                                             QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
+            }
+
+            // Rebuild the root node.
+            this->root->getPointerToValue()->build(this->ttwDef, true);
 
             // Remaining lines: nodes in PatternTree.
             TiltedTimeWindow * ttw;

@@ -375,6 +375,8 @@ namespace Analytics {
         else {
             QTextStream input(&file);
             bool success = this->fpstream->deserialize(input);
+            // Update the TTWDefinition because it may have changed.
+            this->ttwDef = this->fpstream->getTTWDefinition();
             file.close();
             emit loaded(
                 success,

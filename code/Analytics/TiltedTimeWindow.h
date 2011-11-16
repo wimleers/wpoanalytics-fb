@@ -21,7 +21,7 @@ namespace Analytics {
     public:
         TiltedTimeWindow();
         ~TiltedTimeWindow();
-        void build(const TTWDefinition & def);
+        void build(const TTWDefinition & def, bool rebuild = false);
 
         // Getters.
         uint getCapacityUsed(Granularity g) const { return this->capacityUsed[g]; }
@@ -56,6 +56,8 @@ namespace Analytics {
         void reset(Granularity granularity);
         void shift(Granularity granularity);
         void store(Granularity granularity, SupportCount supportCount);
+
+        void clear();
 
         // Properties.
         TTWDefinition def;

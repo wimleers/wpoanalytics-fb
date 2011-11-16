@@ -57,6 +57,7 @@ namespace Analytics {
         bool getInitialBatchProcessed() const { return this->initialBatchProcessed; }
         const ItemIDList * getF_list() const { return this->f_list; }
         const ItemIDNameHash * getItemIDNameHash() const { return this->itemIDNameHash; }
+        const TTWDefinition & getTTWDefinition() const { return this->ttwDef; }
 
         // Static methods (public to allow for unit testing).
         static int calculateDroppableTail(const TiltedTimeWindow & window,

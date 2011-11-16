@@ -25,6 +25,7 @@ namespace Analytics {
             // Update the root node with the TTW definition.
             this->root->getPointerToValue()->build(this->ttwDef);
         }
+        const TTWDefinition & getTTWDefinition() const { return this->ttwDef; }
 
         bool serialize(QTextStream & output,
                                    const ItemIDNameHash & itemIDNameHash) const;

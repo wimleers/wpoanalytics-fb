@@ -6,23 +6,33 @@ namespace Analytics {
     // Public methods.
 
     TiltedTimeWindow::TiltedTimeWindow() {
-        this->oldestBucketFilled = TTW_EMPTY;
-        this->lastUpdate = 0;
-        this->built = false;
-
         // Arrays that still need to be allocated. @see build().
         this->buckets = NULL;
         this->capacityUsed = NULL;
+
+        this->clear();
     }
 
-    TiltedTimeWindow::~TiltedTimeWindow() {
+    void TiltedTimeWindow::clear() {
+        this->oldestBucketFilled = TTW_EMPTY;
+        this->lastUpdate = 0;
+        this->built = false;
         if (this->built) {
             delete [] this->buckets;
             delete [] this->capacityUsed;
         }
     }
 
-    void TiltedTimeWindow::build(const TTWDefinition & def) {
+    TiltedTimeWindow::~TiltedTimeWindow() {
+        this->clear();
+    }
+
+    void TiltedTimeWindow::build(const TTWDefinition & def, bool rebuild) {
+        if (this->built && !rebuild)
+            return;
+        else if (this->built)
+            this->clear();
+
         this->def = def;
 
         // Allocate the arrays.

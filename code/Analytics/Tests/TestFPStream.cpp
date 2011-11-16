@@ -331,12 +331,17 @@ void TestFPStream::serialization() {
     itemNameIDHash.clear();
     sortedFrequentItemIDs.clear();
     FPNode<TiltedTimeWindow>::resetLastNodeID();
-    fpstream = new FPStream(TestFPStream::getTTWDefinition(), 0.4, 0.05, &itemIDNameHash, &itemNameIDHash, &sortedFrequentItemIDs);
+    QMap<char, uint> granularitiesEvil;
+    granularitiesEvil.insert('Z', 10);
+    TTWDefinition evilTTWDefinition(granularitiesEvil, QList<char>() << 'Z');
+    fpstream = new FPStream(evilTTWDefinition, 0.4, 0.05, &itemIDNameHash, &itemNameIDHash, &sortedFrequentItemIDs);
+    QCOMPARE(fpstream->getTTWDefinition(), evilTTWDefinition);
     // Deserialize.
     io.seek(0);
     fpstream->deserialize(io);
     // Verify.
     this->verifyShapeOfBasicTree(fpstream, false);
+    QCOMPARE(fpstream->getTTWDefinition(), this->getTTWDefinition());
     QCOMPARE(fpstream->getInitialBatchProcessed(), true);
     QCOMPARE(fpstream->getCurrentBatchID(), (quint32) 1);
     const TiltedTimeWindow * transactionsPerBatch = fpstream->getTransactionsPerBatch();

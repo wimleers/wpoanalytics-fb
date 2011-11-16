@@ -75,10 +75,10 @@ namespace Analytics {
             // TODO: read "time of first batch" and "end time of last batch"
             this->initialBatchProcessed = true;
             this->currentBatchID = json["current batch ID"].toUInt();
-            success = success && this->transactionsPerBatch.fromVariantMap(json["transactions per batch"].toMap());
-            success = success && this->eventsPerBatch.fromVariantMap(json["events per batch"].toMap());
-            if (!success)
-                return false;
+            // transactionsPerBatch and eventsPerBatch are now set *after*
+            // the PatternTree is deserialized, because the PatternTree contains
+            // the TTWDefinition that we also need to set for eventsPerBatch and
+            // transactionsPerBatch before we can set them.
 
             QVariantMap itemNameIDHashVariant = json["item name -> ID mapping"].toMap();
             ItemID itemID;
@@ -107,6 +107,17 @@ namespace Analytics {
 
             // All remaining data is for the PatternTree data structure.
             this->patternTree.deserialize(input, this->itemIDNameHash, *this->itemNameIDHash, this->currentBatchID);
+            // Update the TTWDefinition because it may have changed.
+            this->ttwDef = this->patternTree.getTTWDefinition();
+            this->eventsPerBatch.build(this->ttwDef, true);
+            this->transactionsPerBatch.build(this->ttwDef, true);
+
+            // Now that the TTWDefinition is deserialized, set eventsPerBatch
+            // and transactinsPerBatch.
+            success = success && this->transactionsPerBatch.fromVariantMap(json["transactions per batch"].toMap());
+            success = success && this->eventsPerBatch.fromVariantMap(json["events per batch"].toMap());
+            if (!success)
+                return false;
         }
 
         // TODO: add JSON conversion error checks.
