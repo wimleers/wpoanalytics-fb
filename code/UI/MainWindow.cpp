@@ -449,8 +449,8 @@ void MainWindow::settingsDialog() {
 void MainWindow::loadedFile(bool success, Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize) {
     if (!success) {
         QMessageBox messageBox;
-        messageBox.setText("Loading calculations");
-        messageBox.setInformativeText("The calculations could not be loaded.");
+        messageBox.setText("Loading state");
+        messageBox.setInformativeText("The state could not be loaded.");
         messageBox.setIcon(QMessageBox::Warning);
         messageBox.setStandardButtons(QMessageBox::Ok);
         messageBox.setDefaultButton(QMessageBox::Ok);
@@ -465,7 +465,7 @@ void MainWindow::savedFile(bool success) {
     if (!success) {
         QMessageBox messageBox;
         messageBox.setText("Saving calculations");
-        messageBox.setInformativeText("The calculations could not be saved.");
+        messageBox.setInformativeText("The state could not be saved.");
         messageBox.setIcon(QMessageBox::Warning);
         messageBox.setStandardButtons(QMessageBox::Ok);
         messageBox.setDefaultButton(QMessageBox::Ok);
