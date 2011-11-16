@@ -14,7 +14,8 @@ CLI::CLI() {
     QMap<char, uint> granularities;
     granularities.insert('H', 24);
     granularities.insert('D', 30);
-    this->ttwDef = new Analytics::TTWDefinition(granularities,
+    this->ttwDef = new Analytics::TTWDefinition(3600,
+                                                granularities,
                                                 QList<char>() << 'H' << 'D');
 
     // Status.

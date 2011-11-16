@@ -14,7 +14,8 @@ void TestTiltedTimeWindow::basic() {
     granularitiesDefault.insert('D', 31);
     granularitiesDefault.insert('M', 12);
     granularitiesDefault.insert('Y', 1);
-    TTWDefinition defaultTTWDefinition(granularitiesDefault,
+    TTWDefinition defaultTTWDefinition(3600,
+                                       granularitiesDefault,
                                        QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
 
     Bucket U = TTW_BUCKET_UNUSED;

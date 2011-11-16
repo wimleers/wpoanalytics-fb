@@ -2,8 +2,22 @@
 
 namespace Analytics {
 
-    TTWDefinition::TTWDefinition(QMap<char, uint> granularities, QList<char> order) {
+    /**
+     * TTWDefinition constructor.
+     *
+     * @param secPerWindow
+     *   Seconds per window, i.e. the number of seconds that the smallest
+     *   granularity covers.
+     * @param granularities
+     *   A map of (char, uint) pairs that describe the single-char identifier
+     *   for each granularity as well as how many buckets exist in it.
+     * @param order
+     *   The order in which the granularities should be used (and stored in
+     *   memory), from smallest to largest.
+     */
+    TTWDefinition::TTWDefinition(uint secPerWindow, QMap<char, uint> granularities, QList<char> order) {
         this->reset();
+        this->secPerWindow = secPerWindow;
         this->numGranularities = granularities.size();
         foreach (char c, order) {
             uint s = granularities[c];
@@ -23,7 +37,8 @@ namespace Analytics {
                && def1.numBuckets == def2.numBuckets
                && def1.bucketCount == def2.bucketCount
                && def1.bucketOffset == def2.bucketOffset
-               && def1.granularityChar == def2.granularityChar;
+               && def1.granularityChar == def2.granularityChar
+               && def1.secPerWindow == def2.secPerWindow;
     }
 
 
@@ -49,6 +64,7 @@ namespace Analytics {
 
     QString TTWDefinition::serialize() const {
         QString output;
+        output += QString::number(this->secPerWindow) + ":";
         for (Granularity g = 0; g < this->numGranularities; g++)
             for (Bucket b = 0; b < this->bucketCount[g]; b++)
                 output += this->granularityChar[g];
@@ -60,9 +76,18 @@ namespace Analytics {
         char c, charForGranularity = ' ';
 
         this->reset();
-        this->numBuckets = serialized.size();
-        for (int i = 0; i < serialized.size(); i++) {
-            c = serialized.at(i).toAscii();
+
+        QStringList parts = serialized.split(":");
+        if (parts.size() != 2)
+            return false;
+
+        // Part 1: secPerWindow.
+        this->secPerWindow = parts[0].toUInt();
+
+        // Part 2: everything else (granularities, buckets).
+        this->numBuckets = parts[1].size();
+        for (int i = 0; i < parts[1].size(); i++) {
+            c = parts[1].at(i).toAscii();
 
             // Detect new granularities.
             if (c != charForGranularity) {
@@ -87,6 +112,7 @@ namespace Analytics {
     // Protected methods.
 
     void TTWDefinition::reset() {
+        this->secPerWindow = 0;
         this->numBuckets = 0;
         this->numGranularities = 0;
         this->bucketCount.clear();
@@ -102,6 +128,8 @@ namespace Analytics {
     QDebug operator<<(QDebug dbg, const TTWDefinition & def) {
         static const char * prefix = "  ";
         dbg.nospace() << "{" << endl;
+        // Line 0: number of seconds in the smallest granularity.
+        dbg.nospace() << prefix << def.secPerWindow << "s per " << def.granularityChar[0] << endl;
         // Line 1: how many buckets in each granularity.
         dbg.nospace() << prefix;
         for (int i = 0; i < def.numGranularities; i++) {

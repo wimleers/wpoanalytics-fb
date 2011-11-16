@@ -73,7 +73,8 @@ namespace Analytics {
                 granularitiesDefault.insert('D', 31);
                 granularitiesDefault.insert('M', 12);
                 granularitiesDefault.insert('Y', 1);
-                this->ttwDef = TTWDefinition(granularitiesDefault,
+                this->ttwDef = TTWDefinition(3600,
+                                             granularitiesDefault,
                                              QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
             }
 

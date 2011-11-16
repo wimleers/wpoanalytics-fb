@@ -2,6 +2,7 @@
 #define TTWDEFINITION
 
 #include <QString>
+#include <QStringList>
 #include <QMap>
 
 #include "Item.h"
@@ -13,10 +14,13 @@ namespace Analytics {
     class TTWDefinition {
     public:
         TTWDefinition() {}
-        TTWDefinition(QMap<char, uint> granularities, QList<char> order);
+        TTWDefinition(uint secPerWindow, QMap<char, uint> granularities, QList<char> order);
 
         // Operators.
         friend bool operator==(const TTWDefinition & def1, const TTWDefinition & def2);
+
+        // Getters.
+        uint getSecPerWindow() const { return this->secPerWindow; }
 
         // Queries.
         bool bucketIsBeforeGranularity(Bucket b, Granularity g) const;
@@ -26,6 +30,7 @@ namespace Analytics {
         QString serialize() const;
         bool deserialize(QString serialized);
 
+        uint secPerWindow;
         int numGranularities;
         int numBuckets;
         QVector<Bucket> bucketCount;

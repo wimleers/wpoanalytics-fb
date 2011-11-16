@@ -311,7 +311,7 @@ void TestFPStream::serialization() {
     QVERIFY(tempFile.open() != false);
     QTextStream io(&tempFile);
 
-    fpstream->serialize(io);
+    fpstream->serialize(io, 123456789, 987654321, 1);
 
     // Debug output: the serialized FPStream data.
     io.seek(0);
@@ -333,7 +333,7 @@ void TestFPStream::serialization() {
     FPNode<TiltedTimeWindow>::resetLastNodeID();
     QMap<char, uint> granularitiesEvil;
     granularitiesEvil.insert('Z', 10);
-    TTWDefinition evilTTWDefinition(granularitiesEvil, QList<char>() << 'Z');
+    TTWDefinition evilTTWDefinition(666, granularitiesEvil, QList<char>() << 'Z');
     fpstream = new FPStream(evilTTWDefinition, 0.4, 0.05, &itemIDNameHash, &itemNameIDHash, &sortedFrequentItemIDs);
     QCOMPARE(fpstream->getTTWDefinition(), evilTTWDefinition);
     // Deserialize.
