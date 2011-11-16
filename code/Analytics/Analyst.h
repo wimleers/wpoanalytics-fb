@@ -38,6 +38,7 @@ namespace Analytics {
         // Override moveToThread to also move the FPStream instance.
         void moveToThread(QThread * thread);
 
+        const TTWDefinition & getTTWDefinition() const { return this->ttwDef; }
         int getPatternTreeSize() const { return this->fpstream->getPatternTreeSize(); }
 
         // UI integration.
