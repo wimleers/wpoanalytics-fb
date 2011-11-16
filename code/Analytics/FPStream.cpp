@@ -30,7 +30,11 @@ namespace Analytics {
         this->statusMutex.unlock();
     }
 
-    bool FPStream::serialize(QTextStream & output) const {
+    bool FPStream::serialize(QTextStream & output,
+                             uint startTime,
+                             uint endTime,
+                             uint initialStartTime) const
+    {
         // Convert itemNameIDHash to a variant.
         QVariantMap itemNameIDHashVariant;
         foreach (ItemName itemName, this->itemNameIDHash->keys())
@@ -43,9 +47,11 @@ namespace Analytics {
 
         QVariantMap json;
         json.insert("v", 1);
-        json.insert("start time of first batch", (int) 0); // TODO
-        json.insert("end time of last batch", (int) 0); // TODO
-        json.insert("current batch ID", (int) this->currentBatchID); // Bug in QxtJSON prevents uints from being stringified.
+        // Bug in QxtJSON prevents uints from being stringified.
+        json.insert("start time of oldest batch", (int) startTime);
+        json.insert("end time of newest batch", (int) endTime);
+        json.insert("start time of first batch", (int) initialStartTime);
+        json.insert("current batch ID", (int) this->currentBatchID);
         json.insert("transactions per batch", this->transactionsPerBatch.toVariantMap());
         json.insert("events per batch", this->eventsPerBatch.toVariantMap());
         json.insert("item name -> ID mapping", itemNameIDHashVariant);
@@ -60,7 +66,11 @@ namespace Analytics {
         return true;
     }
 
-    bool FPStream::deserialize(QTextStream & input) {
+    bool FPStream::deserialize(QTextStream & input,
+                               uint & startTime,
+                               uint & endTime,
+                               uint & initialStartTime)
+    {
         // All data specific to FPStream is on the first line.
         QVariantMap json = QxtJSON::parse(input.readLine()).toMap();
 
@@ -72,7 +82,9 @@ namespace Analytics {
 
             bool success = true;
 
-            // TODO: read "time of first batch" and "end time of last batch"
+            startTime        = json["start time of oldest batch"].toUInt();
+            endTime          = json["end time of newest batch"].toUInt();
+            initialStartTime = json["start time of first batch"].toUInt();
             this->initialBatchProcessed = true;
             this->currentBatchID = json["current batch ID"].toUInt();
             // transactionsPerBatch and eventsPerBatch are now set *after*

@@ -338,8 +338,12 @@ void TestFPStream::serialization() {
     QCOMPARE(fpstream->getTTWDefinition(), evilTTWDefinition);
     // Deserialize.
     io.seek(0);
-    fpstream->deserialize(io);
+    uint startTime, endTime, initialStartTime;
+    fpstream->deserialize(io, startTime, endTime, initialStartTime);
     // Verify.
+    QCOMPARE(startTime, (uint) 123456789);
+    QCOMPARE(endTime, (uint) 987654321);
+    QCOMPARE(initialStartTime, (uint) 1);
     this->verifyShapeOfBasicTree(fpstream, false);
     QCOMPARE(fpstream->getTTWDefinition(), this->getTTWDefinition());
     QCOMPARE(fpstream->getInitialBatchProcessed(), true);

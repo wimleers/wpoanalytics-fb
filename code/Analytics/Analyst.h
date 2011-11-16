@@ -102,7 +102,8 @@ namespace Analytics {
         uint currentBatchEndTime;
         quint64 currentBatchNumPageViews;
         quint64 currentBatchNumTransactions;
-        quint64 allBatchesStartTime;
+        uint allBatchesStartTime;
+        uint allBatchesEverStartTime; // TODO: this one is not yet being used.
         quint64 allBatchesNumPageViews;
         quint64 allBatchesNumTransactions;
         QTime timer;

@@ -374,14 +374,17 @@ namespace Analytics {
         }
         else {
             QTextStream input(&file);
-            bool success = this->fpstream->deserialize(input);
+            bool s = this->fpstream->deserialize(input,
+                                                 this->allBatchesStartTime,
+                                                 this->currentBatchEndTime,
+                                                 this->allBatchesEverStartTime);
             // Update the TTWDefinition because it may have changed.
             this->ttwDef = this->fpstream->getTTWDefinition();
             file.close();
             emit loaded(
-                success,
-                0,
-                0,
+                s,
+                this->allBatchesStartTime,
+                this->currentBatchEndTime,
                 this->fpstream->getEventsPerBatch()->getSupportForRange(0, this->ttwDef.numBuckets-1),
                 this->fpstream->getTransactionsPerBatch()->getSupportForRange(0, this->ttwDef.numBuckets-1),
                 this->fpstream->getItemIDNameHash()->size(),
@@ -415,9 +418,12 @@ namespace Analytics {
         }
         else {
             QTextStream out(&file);
-            bool success = this->fpstream->serialize(out);
+            bool s = this->fpstream->serialize(out,
+                                               this->allBatchesStartTime,
+                                               this->currentBatchEndTime,
+                                               this->allBatchesEverStartTime);
             file.close();
-            emit saved(success);
+            emit saved(s);
         }
     }
 

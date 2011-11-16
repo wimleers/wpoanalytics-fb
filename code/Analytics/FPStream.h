@@ -35,8 +35,14 @@ namespace Analytics {
                  ItemNameIDHash * itemNameIDHash,
                  ItemIDList * sortedFrequentItemIDs);
 
-        bool serialize(QTextStream & output) const;
-        bool deserialize(QTextStream & input);
+        bool serialize(QTextStream & output,
+                       uint startTime,
+                       uint endTime,
+                       uint initialStartTime) const;
+        bool deserialize(QTextStream & input,
+                         uint & startTime,
+                         uint & endTime,
+                         uint & initialStartTime);
 
         SupportCount calculateMinSupportForRange(uint from, uint to) const;
 
