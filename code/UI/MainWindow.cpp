@@ -628,27 +628,21 @@ QPair<uint, uint> MainWindow::mapTimerangeChoiceToBucket(int choice) {
     uint from, to;
 
     switch (choice) {
-    case 0: // last quarter
-        from = to = 0;
+    case 0: // last hour
+        from = 0; to = 3;
         break;
-    case 1: // last hour
-        from = to = 4;
+    case 1: // last 24 hours
+        from = 0; to = 23;
         break;
-    case 2: // last day
-        from = to = 28;
+    case 2: // last week
+        from = 0; to = 29;
         break;
-    case 3: // last week
-        from = 28; to = 34;
+    case 3: // last 2 weeks
+        from = 0; to = 36;
         break;
-    case 4: // last month
-        from = to = 59;
-        break;
-    case 5: // last year
-        from = to = 71;
-        break;
-    case 6:
+    case 4:
     default: // entire data set
-        from = 0; to = 71;
+        from = 0; to = 53;
         break;
     }
 
@@ -778,13 +772,11 @@ void MainWindow::createCausesGroupbox() {
     layout->addLayout(filterLayout);
 
     // Add children to "mine" layout.
-    QStringList timeRanges = QStringList() << "last quarter"
-                                           << "last hour"
-                                           << "last day"
+    QStringList timeRanges = QStringList() << "last hour"
+                                           << "last 24 hours"
                                            << "last week"
-                                           << "last month"
-                                           << "last year"
-                                           << "entire data set";
+                                           << "last 2 weeks"
+                                           << "entire data set (24 hours + 30 days)";
     this->causesActionChoice = new QComboBox(this);
     this->causesActionChoice->addItem(tr("Mine"));
     this->causesActionChoice->addItem(tr("Compare"));
