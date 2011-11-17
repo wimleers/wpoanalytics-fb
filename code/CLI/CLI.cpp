@@ -734,7 +734,7 @@ void CLI::initConfig() {
 
 void CLI::initLogic() {
     // Instantiate the Parser.
-    this->parser = new JSONLogParser::Parser(*this->config);
+    this->parser = new JSONLogParser::Parser(*this->config, this->ttwDef->getSecPerWindow());
 
     // Instantiate the Analyst.
     double minSupport = this->config->getMinPatternSupport();

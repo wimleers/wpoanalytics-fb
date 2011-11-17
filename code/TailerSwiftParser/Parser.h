@@ -9,7 +9,7 @@ namespace TailerSwiftParser {
         Q_OBJECT
 
     public:
-        Parser(Config::Config config);
+        Parser(Config::Config config, uint secPerBatch);
 
     protected:
         virtual void processParsedChunk(const QStringList & chunk, bool forceProcessing = false);

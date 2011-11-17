@@ -503,7 +503,8 @@ void MainWindow::initLogic() {
     this->config = new Config::Config();
 
     // Instantiate the Parser.
-    this->parser = new JSONLogParser::Parser(*this->config);
+    this->parser = new JSONLogParser::Parser(*this->config,
+                                             this->ttwDef->getSecPerWindow());
 
     // Instantiate the Analyst.
     double minSupport = settings.value("analyst/minimumSupport", 0.05).toDouble();

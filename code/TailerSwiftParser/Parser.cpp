@@ -2,8 +2,8 @@
 
 namespace TailerSwiftParser {
 
-    Parser::Parser(Config::Config config)
-        : JSONLogParser::Parser::Parser(config)
+    Parser::Parser(Config::Config config, uint secPerBatch)
+        : JSONLogParser::Parser::Parser(config, secPerBatch)
     {
     }
 
@@ -24,7 +24,7 @@ namespace TailerSwiftParser {
         QString rawSample;
         Config::Sample sample;
         foreach (rawSample, chunk) {
-            // ptail checkpoint: 15 minutes have passed!
+            // ptail checkpoint: one hour has passed!
             if (rawSample.startsWith("swift_event")) {
                 // There are often multiple checkpoints after each other. Don't
                 // trigger a new time window for each.

@@ -33,7 +33,7 @@ namespace JSONLogParser {
         Q_OBJECT
 
     public:
-        Parser(Config::Config config);
+        Parser(Config::Config config, uint secPerBatch);
 
         // Processing logic.
         static Config::Sample parseSample(const QString & rawSample, const Config::Config * const config);
@@ -67,6 +67,8 @@ namespace JSONLogParser {
         static Config::EpisodeID mapEpisodeNameToID(const Config::EpisodeName & name, const QString & fieldName);
         static quint32 calculateQuarterID(Time t);
 
+        // Parameters.
+        uint secPerBatch;
         Config::Config config; // No const reference/pointer because we need a
                                // copy: the Parser runs in its own thread.
 

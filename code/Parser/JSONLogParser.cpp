@@ -7,9 +7,11 @@ namespace JSONLogParser {
 
     QMutex Parser::episodeHashMutex;
 
-    Parser::Parser(Config::Config config) {
+    Parser::Parser(Config::Config config, uint secPerBatch) {
+        this->secPerBatch = secPerBatch;
         this->config = config;
     }
+
 
     //---------------------------------------------------------------------------
     // Public static methods.
@@ -288,7 +290,7 @@ namespace JSONLogParser {
 
             sampleNumber++;
 
-            // Create a batch for each quarter (900 seconds) and process it.
+            // Create a batch (every secPerBatch seconds) and process it.
             if (sampleNumber % CHECK_TIME_INTERVAL == 0) { // Only check once very CHECK_TIME_INTERVAL lines.
                 sampleNumber = 0; // Reset.
                 quint32 quarterID = Parser::calculateQuarterID(sample.time);
