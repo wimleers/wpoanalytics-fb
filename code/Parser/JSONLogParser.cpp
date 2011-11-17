@@ -174,8 +174,11 @@ namespace JSONLogParser {
         emit parsing(true);
 
         QFile file;
+        QString line;
         QStringList chunk;
         int numLines = 0;
+        WindowMarkerMethod markerMethod = this->getWindowMarkerMethod();
+        QString timeWindowMarkerLine = this->getWindowMarkerLine();
 
         file.setFileName(fileName);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -187,10 +190,26 @@ namespace JSONLogParser {
             this->timer.start();
             QTextStream in(&file);
             while (!in.atEnd()) {
-                chunk.append(in.readLine());
+                line = in.readLine();
                 numLines++;
+
+                // Special handling for marker lines.
+                if (markerMethod == WindowMarkerMethodMarkerLine) {
+                    if (line == timeWindowMarkerLine) {
+                        this->processParsedChunk(chunk, true);
+                        chunk.clear();
+                    }
+                    else
+                        chunk.append(line);
+                }
+                // Append *all* lines if there are no marker lines.
+                else
+                    chunk.append(line);
+
+                // Always process parsed chunks if we've reached the max chunk
+                // size.
                 if (chunk.size() == PARSE_CHUNK_SIZE) {
-                    this->processParsedChunk(chunk);
+                    this->processParsedChunk(chunk, false);
                     chunk.clear();
                 }
             }
@@ -198,7 +217,7 @@ namespace JSONLogParser {
             // Check if we have another chunk (with size < PARSE_CHUNK_SIZE).
             if (chunk.size() > 0) {
                 // TODO: remove the forceProcessing = true parameter!
-                this->processParsedChunk(chunk, true);
+                this->processParsedChunk(chunk, false, true);
             }
 
             // Notify the UI.
@@ -267,9 +286,21 @@ namespace JSONLogParser {
     //---------------------------------------------------------------------------
     // Protected overridable methods.
 
-    void Parser::processParsedChunk(const QStringList & chunk, bool forceProcessing) {
-        static quint32 currentBatchID = 0;
+    WindowMarkerMethod Parser::getWindowMarkerMethod() const {
+        return WindowMarkerMethodTimestamp;
+    }
+
+    QString Parser::getWindowMarkerLine() const {
+        return QString::null;
+    }
+
+    void Parser::processParsedChunk(const QStringList & chunk,
+                                    bool finishesTimeWindow,
+                                    bool forceProcessing)
+    {
+        static quint32 batchID = 0;
         static QList<Config::Sample> batch;
+        static WindowMarkerMethod markerMethod = this->getWindowMarkerMethod();
         quint16 sampleNumber = 0;
         quint32 discardedSamples = 0;
 
@@ -284,23 +315,25 @@ namespace JSONLogParser {
                 continue;
             }
 
-            // Calculate the initial currentBatchID.
-            if (currentBatchID == 0)
-                currentBatchID = Parser::calculateBatchID(sample.time);
-
             sampleNumber++;
 
-            // Create a batch (every secPerBatch seconds) and process it.
-            if (sampleNumber % CHECK_TIME_INTERVAL == 0) { // Only check once very CHECK_TIME_INTERVAL lines.
-                sampleNumber = 0; // Reset.
-                quint32 batchID = Parser::calculateBatchID(sample.time);
-                if (batchID > currentBatchID && !batch.isEmpty()) {
-                    currentBatchID = batchID;
+            if (markerMethod == WindowMarkerMethodTimestamp) {
+                // Calculate the initial currentBatchID.
+                if (batchID == 0)
+                    batchID = Parser::calculateBatchID(sample.time);
 
-                    // The batch we just finished is the previous batch ID!
-                    this->processBatch(batch, batchID - 1, true, discardedSamples);
-                    discardedSamples = 0;
-                    batch.clear();
+                // Create a batch (every secPerBatch seconds) and process it.
+                if (sampleNumber % CHECK_TIME_INTERVAL == 0) {
+                    sampleNumber = 0; // Reset.
+                    quint32 newBatchID = Parser::calculateBatchID(sample.time);
+                    if (newBatchID > batchID && !batch.isEmpty()) {
+                        batchID = newBatchID;
+
+                        // The batch we just finished is the previous batch ID!
+                        this->processBatch(batch, newBatchID - 1, true, discardedSamples);
+                        discardedSamples = 0;
+                        batch.clear();
+                    }
                 }
             }
 
@@ -308,7 +341,7 @@ namespace JSONLogParser {
             // too much memory): let it be processed when it has grown to
             // PROCESS_CHUNK_SIZE lines.
             if (batch.size() == PROCESS_CHUNK_SIZE) {
-                this->processBatch(batch, currentBatchID, false, discardedSamples); // The batch doesn't end here!
+                this->processBatch(batch, batchID, false, discardedSamples); // The batch doesn't end here!
                 discardedSamples = 0;
                 batch.clear();
             }
@@ -316,11 +349,14 @@ namespace JSONLogParser {
             batch.append(sample);
         }
 
-        if (forceProcessing && !batch.isEmpty()) {
-            this->processBatch(batch, currentBatchID, true, discardedSamples);
+        if ((finishesTimeWindow || forceProcessing) && !batch.isEmpty()) {
+            this->processBatch(batch, batchID, true, discardedSamples);
             discardedSamples = 0;
             batch.clear();
         }
+
+        if (finishesTimeWindow)
+            batchID++;
     }
 
 

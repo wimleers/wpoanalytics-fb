@@ -23,6 +23,11 @@
 typedef uint Time;
 
 
+enum WindowMarkerMethod {
+    WindowMarkerMethodMarkerLine, // Batching during parsing.
+    WindowMarkerMethodTimestamp   // Batching during processing.
+};
+
 namespace JSONLogParser {
 
     #define PARSE_CHUNK_SIZE 4000
@@ -62,8 +67,12 @@ namespace JSONLogParser {
                           quint32 discardedSamples);
 
     protected:
-        virtual void processParsedChunk(const QStringList & chunk, bool forceProcessing = false);
-        quint32 calculateBatchID(Time t);
+        virtual WindowMarkerMethod getWindowMarkerMethod() const;
+        virtual QString getWindowMarkerLine() const;
+        virtual quint32 calculateBatchID(Time t);
+        virtual void processParsedChunk(const QStringList & chunk,
+                                        bool finishesTimeWindow,
+                                        bool forceProcessing = false);
 
         static Config::EpisodeID mapEpisodeNameToID(const Config::EpisodeName & name, const QString & fieldName);
 

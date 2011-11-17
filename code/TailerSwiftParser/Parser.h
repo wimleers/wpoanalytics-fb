@@ -12,7 +12,8 @@ namespace TailerSwiftParser {
         Parser(Config::Config config, uint secPerBatch);
 
     protected:
-        virtual void processParsedChunk(const QStringList & chunk, bool forceProcessing = false);
+        virtual WindowMarkerMethod getWindowMarkerMethod() const;
+        virtual QString getWindowMarkerLine() const;
     };
 
 }
