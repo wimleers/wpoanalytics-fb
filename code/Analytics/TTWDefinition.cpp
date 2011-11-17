@@ -58,6 +58,10 @@ namespace Analytics {
         return -1;
     }
 
+    uint TTWDefinition::calculateTimeOfNextBucket(uint time) const {
+        return time - (time % this->secPerWindow) + this->secPerWindow;
+    }
+
 
     //--------------------------------------------------------------------------
     // (De)serialization helper methods.
