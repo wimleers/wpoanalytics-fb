@@ -145,11 +145,12 @@ void MainWindow::updateAnalyzingStats(Time start, Time end, quint64 pageViews, q
 }
 
 void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange) {
-    Time latestAnalyzedTime = this->endTime - (this->endTime % 900) + 900;
-    Time endTime = latestAnalyzedTime - (Analytics::TiltedTimeWindow::quarterDistanceToBucket(*this->ttwDef, from, false) * 900);
-    Time startTime = latestAnalyzedTime - (Analytics::TiltedTimeWindow::quarterDistanceToBucket(*this->ttwDef, to, true) * 900);
-    if (startTime < this->startTime)
-        startTime = this->startTime;
+    // Confusing here, `toTime` uses `from`, `fromTime` uses `to`. It has good
+    // reason though: the `from` bucket refers to the first bucket in memory,
+    // but it contains the most recent data, hence `toTime`.
+    Time lastBucketEndTime = this->ttwDef->calculateTimeOfNextBucket(this->endTime);
+    Time toTime = lastBucketEndTime- this->ttwDef->calculateSecondsToBucket(from, false);
+    Time fromTime = lastBucketEndTime - this->ttwDef->calculateSecondsToBucket(to, true);
 
     this->statusMutex.lock();
     this->totalPatternsExaminedWhileMining += this->patternTreeSize;
@@ -157,8 +158,8 @@ void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule
                 QString(tr("%1 rules mined from %2 log lines (from %3 until %4)"))
                 .arg(associationRules.size())
                 .arg(eventsInTimeRange)
-                .arg(QDateTime::fromTime_t(startTime).toString("yyyy-MM-dd hh:mm:ss"))
-                .arg(QDateTime::fromTime_t(endTime).toString("yyyy-MM-dd hh:mm:ss"))
+                .arg(QDateTime::fromTime_t(fromTime).toString("yyyy-MM-dd hh:mm:ss"))
+                .arg(QDateTime::fromTime_t(toTime).toString("yyyy-MM-dd hh:mm:ss"))
     );
     this->statusMutex.unlock();
 

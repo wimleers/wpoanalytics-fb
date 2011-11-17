@@ -25,6 +25,7 @@ namespace Analytics {
         // Queries.
         bool bucketIsBeforeGranularity(Bucket b, Granularity g) const;
         Granularity findLowestGranularityAfterBucket(Bucket b) const;
+        uint calculateSecondsToBucket(Bucket bucket, bool includeBucketItself) const;
         uint calculateTimeOfNextBucket(uint time) const;
 
         // (De)serialization helper methods.

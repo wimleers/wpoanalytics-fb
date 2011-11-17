@@ -196,32 +196,6 @@ namespace Analytics {
         return v;
     }
 
-
-    //--------------------------------------------------------------------------
-    // Public static methods.
-
-    /**
-     * Measure the distance from bucket 0 to the given bucket.
-     */
-    Bucket TiltedTimeWindow::quarterDistanceToBucket(const TTWDefinition & ttwDef, Bucket bucket, bool includeBucketItself) {
-        Bucket distance = 0;
-
-        Granularity nextGranularity = 1;
-        uint quartersInGranularity = 1;
-        for (Bucket b = 0; b < bucket || (includeBucketItself && b == bucket); b++) {
-            // Ensure we're working with the right quarters increment.
-            while (b >= ttwDef.bucketOffset[nextGranularity]) {
-                quartersInGranularity *= ttwDef.bucketCount[nextGranularity - 1];
-                nextGranularity++;
-            }
-
-            distance += quartersInGranularity;
-        }
-
-        return distance;
-    }
-
-
     //--------------------------------------------------------------------------
     // Private methods.
 

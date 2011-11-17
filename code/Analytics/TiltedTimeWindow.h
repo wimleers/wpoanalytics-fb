@@ -48,9 +48,6 @@ namespace Analytics {
         // Properties.
         SupportCount * buckets;
 
-        // Static methods.
-        static Bucket quarterDistanceToBucket(const TTWDefinition & ttwDef, Bucket bucket, bool includeBucketItself);
-
     protected:
         // Methods.
         void reset(Granularity granularity);
