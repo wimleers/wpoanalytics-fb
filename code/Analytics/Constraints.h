@@ -87,6 +87,7 @@ namespace Analytics {
         static bool matchItemsetHelper(const QSet<ItemName> & itemset, ItemConstraintType type, const QSet<ItemName> & constraintItems);
         static bool matchSearchSpaceHelper(const ItemIDList & frequentItemset, const QHash<ItemID, SupportCount> & prefixPathsSupportCounts, ItemConstraintType type, const QSet<ItemID> & constraintItems);
 
+        void updatePreprocesedItemConstraintsStructure();
         void addPreprocessedItemConstraint(ItemConstraintType type, uint constraint, ItemID id);
 
         ItemConstraintsHash itemConstraints;

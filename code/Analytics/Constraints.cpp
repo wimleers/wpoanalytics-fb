@@ -62,10 +62,13 @@ namespace Analytics {
         if (!this->itemConstraints.contains(type))
             this->itemConstraints.insert(type, QVector<QSet<ItemName> >());
         this->itemConstraints[type].append(items);
+
+        this->updatePreprocesedItemConstraintsStructure();
     }
 
     void Constraints::setItemConstraints(const ItemConstraintsHash & itemConstraints) {
         this->itemConstraints = itemConstraints;
+        this->updatePreprocesedItemConstraintsStructure();
     }
 
     /**
@@ -373,6 +376,21 @@ namespace Analytics {
 
         // Satisfy the compiler.
         return false;
+    }
+
+    /**
+     * Make sure the preprocessedItemConstraints data structure mirrors the
+     * itemConstraints datastructure, albeit it will be empty for now.
+     */
+    void Constraints::updatePreprocesedItemConstraintsStructure() {
+        for (int i = ItemConstraintPositive; i <= ItemConstraintNegative; i++) {
+            ItemConstraintType type = (ItemConstraintType) i;
+
+            if (!this->preprocessedItemConstraints.contains(type))
+                this->preprocessedItemConstraints.insert(type, QVector<QSet<ItemID> >());
+
+            this->preprocessedItemConstraints[type].resize(this->itemConstraints[type].size());
+        }
     }
 
     /**

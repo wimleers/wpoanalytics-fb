@@ -28,6 +28,7 @@ private slots:
     void alternate_data();
     void alternateWildcard();
     void alternateWildcard_data();
+    void edgeCases();
 };
 
 
