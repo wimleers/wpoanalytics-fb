@@ -216,7 +216,7 @@ namespace JSONLogParser {
     // Protected slots.
 
     void Parser::processBatch(const QList<Config::Sample> batch,
-                              quint32 quarterID,
+                              quint32 batchID,
                               bool lastChunkOfBatch,
                               quint32 discardedSamples)
     {
@@ -252,7 +252,7 @@ namespace JSONLogParser {
                          transactionsPerEvent,
                          batch.first().time,
                          batch.last().time,
-                         quarterID,
+                         batchID,
                          lastChunkOfBatch);
 
 
@@ -268,7 +268,7 @@ namespace JSONLogParser {
     // Protected overridable methods.
 
     void Parser::processParsedChunk(const QStringList & chunk, bool forceProcessing) {
-        static quint32 currentQuarterID = 0;
+        static quint32 currentBatchID = 0;
         static QList<Config::Sample> batch;
         quint16 sampleNumber = 0;
         quint32 discardedSamples = 0;
@@ -284,21 +284,21 @@ namespace JSONLogParser {
                 continue;
             }
 
-            // Calculate the initial currentQuarterID.
-            if (currentQuarterID == 0)
-                currentQuarterID = Parser::calculateQuarterID(sample.time);
+            // Calculate the initial currentBatchID.
+            if (currentBatchID == 0)
+                currentBatchID = Parser::calculateBatchID(sample.time);
 
             sampleNumber++;
 
             // Create a batch (every secPerBatch seconds) and process it.
             if (sampleNumber % CHECK_TIME_INTERVAL == 0) { // Only check once very CHECK_TIME_INTERVAL lines.
                 sampleNumber = 0; // Reset.
-                quint32 quarterID = Parser::calculateQuarterID(sample.time);
-                if (quarterID > currentQuarterID && !batch.isEmpty()) {
-                    currentQuarterID = quarterID;
+                quint32 batchID = Parser::calculateBatchID(sample.time);
+                if (batchID > currentBatchID && !batch.isEmpty()) {
+                    currentBatchID = batchID;
 
-                    // The batch we just finished is the previous quarter ID!
-                    this->processBatch(batch, quarterID - 1, true, discardedSamples);
+                    // The batch we just finished is the previous batch ID!
+                    this->processBatch(batch, batchID - 1, true, discardedSamples);
                     discardedSamples = 0;
                     batch.clear();
                 }
@@ -308,7 +308,7 @@ namespace JSONLogParser {
             // too much memory): let it be processed when it has grown to
             // PROCESS_CHUNK_SIZE lines.
             if (batch.size() == PROCESS_CHUNK_SIZE) {
-                this->processBatch(batch, currentQuarterID, false, discardedSamples); // The batch doesn't end here!
+                this->processBatch(batch, currentBatchID, false, discardedSamples); // The batch doesn't end here!
                 discardedSamples = 0;
                 batch.clear();
             }
@@ -317,7 +317,7 @@ namespace JSONLogParser {
         }
 
         if (forceProcessing && !batch.isEmpty()) {
-            this->processBatch(batch, currentQuarterID, true, discardedSamples);
+            this->processBatch(batch, currentBatchID, true, discardedSamples);
             discardedSamples = 0;
             batch.clear();
         }
@@ -326,6 +326,22 @@ namespace JSONLogParser {
 
     //---------------------------------------------------------------------------
     // Protected methods.
+
+    quint32 Parser::calculateBatchID(Time t) {
+        static quint32 minBatchID = 0;
+
+        quint32 batchID;
+
+        batchID = t / this->secPerBatch;
+
+        // Cope with data that is not chronologically ordered perfectly.
+        if (batchID > minBatchID)
+            minBatchID = batchID;
+        else if (minBatchID > batchID)
+            batchID = minBatchID;
+
+        return batchID;
+    }
 
     /**
      * Map an episode name to an episode ID. Generate a new ID when necessary.
@@ -384,21 +400,5 @@ namespace JSONLogParser {
         }
 
         return transactions;
-    }
-
-    quint32 Parser::calculateQuarterID(Time t) {
-        static quint32 minQuarterID = 0;
-
-        quint32 quarterID;
-
-        quarterID = t / 900;
-
-        // Cope with data that is not chronologically ordered perfectly.
-        if (quarterID > minQuarterID)
-            minQuarterID = quarterID;
-        else if (minQuarterID > quarterID)
-            quarterID = minQuarterID;
-
-        return quarterID;
     }
 }

@@ -49,7 +49,7 @@ namespace JSONLogParser {
                    Time start,
                    Time end,
                    quint32 discardedSamples);
-        void parsedBatch(QList<QStringList> transactions, double transactionsPerEvent, Time start, Time end, quint32 quarterID, bool lastChunkOfBatch);
+        void parsedBatch(QList<QStringList> transactions, double transactionsPerEvent, Time start, Time end, quint32 batchID, bool lastChunkOfBatch);
 
     public slots:
         void parse(const QString & fileName);
@@ -57,15 +57,15 @@ namespace JSONLogParser {
 
     protected slots:
         void processBatch(const QList<Config::Sample> batch,
-                          quint32 quarterID,
+                          quint32 batchID,
                           bool lastChunkOfBatch,
                           quint32 discardedSamples);
 
     protected:
         virtual void processParsedChunk(const QStringList & chunk, bool forceProcessing = false);
+        quint32 calculateBatchID(Time t);
 
         static Config::EpisodeID mapEpisodeNameToID(const Config::EpisodeName & name, const QString & fieldName);
-        static quint32 calculateQuarterID(Time t);
 
         // Parameters.
         uint secPerBatch;
