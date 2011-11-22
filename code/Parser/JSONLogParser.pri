@@ -5,6 +5,7 @@ INCLUDEPATH += $${PWD}
 
 DEPENDPATH += $${PWD}
 
+include("../common/common.pri")
 include("../Config/Config.pri")
 include("../shared/qxtjson.pri")
 

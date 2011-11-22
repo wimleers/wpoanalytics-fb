@@ -55,9 +55,8 @@ CLI::CLI() {
     // Options for which defaults are needed.
     this->optionVerbosity = 0;
 
-    qRegisterMetaType< QList<QStringList> >("QList<QStringList>");
-    qRegisterMetaType< QList<float> >("QList<float>");
-    qRegisterMetaType<Time>("Time");
+    registerCommonMetaTypes();
+    Config::registerMetaTypes();
     Analytics::registerBasicMetaTypes();
 }
 
@@ -108,26 +107,19 @@ void CLI::updateParsingStatus(bool parsing) {
     }
 }
 
-void CLI::updateParserStats(int duration,
-                            quint64 transactions,
-                            double transactionsPerEvent,
-                            double averageTransactionLength,
-                            bool lastChunkOfBatch,
-                            Time start,
-                            Time end,
-                            quint32 discardedSamples) {
+void CLI::updateParserStats(int duration, const BatchMetadata & m) {
     this->statsMutex.lock();
     this->statsParserDuration             += duration;
-    this->statsParserTransactions         += transactions;
-    this->statsParserLines                += transactions / transactionsPerEvent;
-    this->statsParserLinesDropped         += discardedSamples;
-    double weightedUpToNow = this->statsParserAvgTransactionLength * ((double) (this->statsParserTransactions - transactions) / this->statsParserTransactions);
-    double weightedNew = averageTransactionLength * ((double) transactions / this->statsParserTransactions);
+    this->statsParserTransactions         += m.transactions;
+    this->statsParserLines                += m.samples;
+    this->statsParserLinesDropped         += m.discardedSamples;
+    double weightedUpToNow = this->statsParserAvgTransactionLength * ((double) (this->statsParserTransactions - m.transactions) / this->statsParserTransactions);
+    double weightedNew = m.itemsPerTransaction * ((double) m.transactions / this->statsParserTransactions);
     this->statsParserAvgTransactionLength  = weightedUpToNow + weightedNew;
     this->statsMutex.unlock();
 
-    quint64 actualLines = transactions / transactionsPerEvent;
-    quint64 totalLines = actualLines + discardedSamples;
+    quint64 actualLines = m.samples;
+    quint64 totalLines = actualLines + m.discardedSamples;
 
     this->out("Parser", "Chunk parsed.", 0);
     this->out(
@@ -135,24 +127,24 @@ void CLI::updateParserStats(int duration,
                 QString(" |- %1 lines/s (%2 s, %3 dropped)")
                 .arg(QString::number(totalLines / (duration / 1000.0), 'f', 2))
                 .arg(QString::number(duration / 1000.0, 'f', 2))
-                .arg(QString::number(1.0 * discardedSamples / totalLines * 100.0, 'f', 2) + '%'),
+                .arg(QString::number(1.0 * m.discardedSamples / totalLines * 100.0, 'f', 2) + '%'),
                 1
     );
     this->out(
                 "Parser",
                 QString(" |- %1 (net) lines -> %2 transactions (%3 transactions/line)")
-                .arg(transactions / transactionsPerEvent)
-                .arg(transactions)
-                .arg(transactionsPerEvent),
+                .arg(m.samples)
+                .arg(m.transactions)
+                .arg(m.transactionsPerSample),
                 1
     );
-    this->out("Parser", QString(" |- %1 items/transaction").arg(averageTransactionLength), 1);
+    this->out("Parser", QString(" |- %1 items/transaction").arg(m.itemsPerTransaction), 1);
     this->out(
                 "Parser",
                 QString(" |- Batch completed: %1. Time range: [%2, %3].")
-                .arg(lastChunkOfBatch ? "Yes" : "No")
-                .arg(QDateTime::fromTime_t(start).toString("yyyy-MM-dd hh:mm:ss"))
-                .arg(QDateTime::fromTime_t(end).toString("yyyy-MM-dd hh:mm:ss")),
+                .arg(m.isLastChunk ? "Yes" : "No")
+                .arg(QDateTime::fromTime_t(m.startTime).toString("yyyy-MM-dd hh:mm:ss"))
+                .arg(QDateTime::fromTime_t(m.endTime).toString("yyyy-MM-dd hh:mm:ss")),
                 2
     );
     this->out(
@@ -771,14 +763,14 @@ void CLI::initLogic() {
 
 void CLI::connectLogic() {
     // Pure logic.
-    connect(this->parser, SIGNAL(parsedBatch(QList<QStringList>, double, Time, Time, quint32, bool)), this->analyst, SLOT(analyzeTransactions(QList<QStringList>, double, Time, Time, quint32, bool)));
+    connect(this->parser, SIGNAL(parsedBatch(Batch<RawTransaction>)), this->analyst, SLOT(analyzeBatch(Batch<RawTransaction>)));
 
     // Logic -> main thread -> logic (wake up sleeping threads).
     connect(this->analyst, SIGNAL(processedBatch()), this, SLOT(wakeParser()));
 
     // Logic -> UI.
     connect(this->parser, SIGNAL(parsing(bool)), SLOT(updateParsingStatus(bool)));
-    connect(this->parser, SIGNAL(stats(int,quint64,double,double,bool,Time,Time,quint32)), SLOT(updateParserStats(int,quint64,double,double,bool,Time,Time,quint32)));
+    connect(this->parser, SIGNAL(stats(int,BatchMetadata)), SLOT(updateParserStats(int,BatchMetadata)));
     connect(this->analyst, SIGNAL(analyzing(bool,Time,Time,quint64,quint64)), SLOT(updatePatternMiningStatus(bool,Time,Time,quint64,quint64)));
     connect(this->analyst, SIGNAL(stats(int,Time,Time,quint64,quint64,quint64,quint64,quint64)), SLOT(updatePatternMiningStats(int,Time,Time,quint64,quint64,quint64,quint64,quint64)));
     connect(this->analyst, SIGNAL(mining(bool)), SLOT(updateRuleMiningStatus(bool)));

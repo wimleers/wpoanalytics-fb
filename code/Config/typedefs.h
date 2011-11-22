@@ -7,16 +7,14 @@
 #include <QStringList>
 #include <QString>
 #include <QHash>
-
-#ifdef DEBUG
+#include <QMetaType>
 #include <QDebug>
-#endif
+
+#include "common.h"
 
 
 namespace Config {
 
-
-typedef uint Time;
 
 // Efficient storage of Episode names: don't store the actual names, use
 // 8-bit IDs instead. This allows for 256 different Episode names, which
@@ -58,6 +56,8 @@ struct Sample {
     EpisodeIDNameHash * episodeIDNameHash;
 #endif
 };
+
+void registerMetaTypes();
 
 #ifdef DEBUG
 // QDebug() streaming output operators.

@@ -12,14 +12,13 @@
 #include <QWaitCondition>
 #include <QMutex>
 
+#include "common.h"
 #include "Item.h"
 #include "TiltedTimeWindow.h"
 #include "Constraints.h"
 #include "FPGrowth.h"
 #include "FPStream.h"
 #include "RuleMiner.h"
-
-typedef uint Time;
 
 namespace Analytics {
 
@@ -71,7 +70,7 @@ namespace Analytics {
                                 Analytics::SupportCount eventsInNewerTimeRange);
 
     public slots:
-        void analyzeTransactions(const QList<QStringList> & transactions, double transactionsPerEvent, Time start, Time end, quint32 quarterID, bool lastChunkOfBatch);
+        void analyzeBatch(Batch<RawTransaction> batch);
         void mineRules(uint from, uint to);
         void mineAndCompareRules(uint fromOlder, uint toOlder, uint fromNewer, uint toNewer);
         void load(QString fileName);
@@ -81,8 +80,6 @@ namespace Analytics {
         void fpstreamProcessedBatch();
 
     protected:
-        void performMining(const QList<QStringList> & transactions, double transactionsPerEvent, quint32 quarterID, bool lastChunkOfBatch);
-
         TTWDefinition ttwDef;
         FPStream * fpstream;
         double minSupport;

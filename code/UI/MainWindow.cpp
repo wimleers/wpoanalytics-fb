@@ -482,9 +482,8 @@ void MainWindow::savedFile(bool success) {
 // Private methods: logic.
 
 void MainWindow::initLogic() {
-    qRegisterMetaType< QList<QStringList> >("QList<QStringList>");
-    qRegisterMetaType< QList<float> >("QList<float>");
-    qRegisterMetaType<Time>("Time");
+    registerCommonMetaTypes();
+    Config::registerMetaTypes();
     Analytics::registerBasicMetaTypes();
 
     QSettings settings;
@@ -541,14 +540,14 @@ void MainWindow::initLogic() {
 
 void MainWindow::connectLogic() {
     // Pure logic.
-    connect(this->parser, SIGNAL(parsedBatch(QList<QStringList>, double, Time, Time, quint32, bool)), this->analyst, SLOT(analyzeTransactions(QList<QStringList>, double, Time, Time, quint32, bool)));
+    connect(this->parser, SIGNAL(parsedBatch(Batch<RawTransaction>)), this->analyst, SLOT(analyzeBatch(Batch<RawTransaction>)));
 
     // Logic -> main thread -> logic (wake up sleeping threads).
     connect(this->analyst, SIGNAL(processedBatch()), SLOT(wakeParser()));
 
     // Logic -> UI.
     connect(this->parser, SIGNAL(parsing(bool)), SLOT(updateParsingStatus(bool)));
-//    connect(this->parser, SIGNAL(stats(int,quint64,double,double,bool,Time,Time,quint32)))
+    connect(this->parser, SIGNAL(stats(int,BatchMetadata)), SLOT(updateParsingDuration(int)));
     connect(this->analyst, SIGNAL(analyzing(bool,Time,Time,quint64,quint64)), SLOT(updateAnalyzingStatus(bool,Time,Time,quint64,quint64)));
 //    connect(this->analyst, SIGNAL(analyzedDuration(int)), SLOT(updateAnalyzingDuration(int)));
     connect(this->analyst, SIGNAL(mining(bool)), SLOT(updateMiningStatus(bool)));

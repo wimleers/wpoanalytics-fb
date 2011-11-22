@@ -12,6 +12,7 @@ namespace Analytics {
         this->allBatchesNumPageViews = 0;
         this->allBatchesNumTransactions = 0;
         this->allBatchesStartTime = 0;
+        this->allBatchesEverStartTime = 0;
 
 #ifdef DEBUG
         this->frequentItemsetItemConstraints.itemIDNameHash = &this->itemIDNameHash;
@@ -157,12 +158,12 @@ namespace Analytics {
     //------------------------------------------------------------------------
     // Public slots.
 
-    void Analyst::analyzeTransactions(const QList<QStringList> &transactions, double transactionsPerEvent, Time start, Time end, quint32 quarterID, bool lastChunkOfBatch) {
+    void Analyst::analyzeBatch(Batch<RawTransaction> batch) {
         // Stats for the UI.
-        this->currentBatchStartTime = start;
-        this->currentBatchEndTime = end;
-        this->currentBatchNumPageViews = ((transactionsPerEvent == 0) ? 0 : (transactions.size() / transactionsPerEvent));
-        this->currentBatchNumTransactions = transactions.size();
+        this->currentBatchStartTime       = batch.meta.startTime;
+        this->currentBatchEndTime         = batch.meta.endTime;
+        this->currentBatchNumPageViews    = batch.meta.samples;
+        this->currentBatchNumTransactions = batch.meta.transactions;
         this->timer.start();
 
         // Necessary to be able to update the browsable concept hierarchy in
@@ -172,8 +173,54 @@ namespace Analytics {
         // Notify the UI.
         emit analyzing(true, this->currentBatchStartTime, this->currentBatchEndTime, this->currentBatchNumPageViews, this->currentBatchNumTransactions);
 
+        // Commented out: original, FP-Growth-powered behavior, before FP-Stream
+        // was implemented..
+/*
+        // Clear these every time, to ensure the original behavior.
+        this->itemIDNameHash.clear();
+        this->itemNameIDHash.clear();
+        this->sortedFrequentItemIDs.clear();
+
+        qDebug() << "starting mining, # transactions: " << batch.meta.transactions;
+        FPGrowth * fpgrowth = new FPGrowth(batch.data, ceil(this->minSupport * batch.meta.samples), &this->itemIDNameHash, &this->itemNameIDHash, &this->sortedFrequentItemIDs);
+        fpgrowth->setConstraints(this->frequentItemsetItemConstraints);
+        fpgrowth->setConstraintsForRuleConsequents(this->ruleConsequentItemConstraints);
+        QList<FrequentItemset> frequentItemsets = fpgrowth->mineFrequentItemsets(false);
+        qDebug() << "frequent itemset mining complete, # frequent itemsets:" << frequentItemsets.size();
+
+        this->ruleConsequentItemConstraints = fpgrowth->getPreprocessedConstraints();
+        QList<AssociationRule> associationRules = RuleMiner::mineAssociationRules(frequentItemsets, this->minConfidence, this->ruleConsequentItemConstraints, fpgrowth);
+        qDebug() << "mining association rules complete, # association rules:" << associationRules.size();
+
+        qDebug() << associationRules;
+
+        delete fpgrowth;
+*/
+
         // Perform the actual mining.
-        this->performMining(transactions, transactionsPerEvent, quarterID, lastChunkOfBatch);
+        static bool initial = true;
+        bool startNewTimeWindow;
+        if (initial) {
+            this->fpstream->setConstraints(this->frequentItemsetItemConstraints);
+            this->fpstream->setConstraintsToPreprocess(this->ruleConsequentItemConstraints);
+            initial = false;
+        }
+        if (batch.meta.batchID != this->currentQuarterID) {
+            this->currentQuarterID = batch.meta.batchID;
+            startNewTimeWindow = true;
+        }
+        else
+            startNewTimeWindow = false;
+        this->fpstream->processBatchTransactions(batch.data,
+                                                 batch.meta.transactionsPerSample,
+                                                 startNewTimeWindow,
+                                                 batch.meta.isLastChunk);
+
+        /*
+        qDebug() << this->fpstream->getPatternTree().getNodeCount();
+        qDebug() << this->itemIDNameHash.size() << this->itemNameIDHash.size() << this->sortedFrequentItemIDs.size();
+        qDebug() << this->fpstream->getPatternTree();
+        */
 
         // Since the mining above is performed asynchronously, this is NOT the
         // place where we know the calculations end. Only FP-Stream can know,
@@ -453,63 +500,5 @@ namespace Analytics {
         );
         emit analyzing(false, 0, 0, 0, 0);
         emit processedBatch();
-    }
-
-
-    //------------------------------------------------------------------------
-    // Protected methods.
-
-    void Analyst::performMining(const QList<QStringList> & transactions, double transactionsPerEvent, quint32 quarterID, bool lastChunkOfBatch) {
-        bool fpstream = true;
-        bool startNewTimeWindow;
-
-        if (!fpstream) {
-//            qDebug() << "----------------------> FPGROWTH";
-        // Clear these every time, to ensure the original behavior.
-        this->itemIDNameHash.clear();
-        this->itemNameIDHash.clear();
-        this->sortedFrequentItemIDs.clear();
-
-        qDebug() << "starting mining, # transactions: " << transactions.size();
-        FPGrowth * fpgrowth = new FPGrowth(transactions, ceil(this->minSupport * transactions.size() / transactionsPerEvent), &this->itemIDNameHash, &this->itemNameIDHash, &this->sortedFrequentItemIDs);
-        fpgrowth->setConstraints(this->frequentItemsetItemConstraints);
-        fpgrowth->setConstraintsForRuleConsequents(this->ruleConsequentItemConstraints);
-        QList<FrequentItemset> frequentItemsets = fpgrowth->mineFrequentItemsets(false);
-        qDebug() << "frequent itemset mining complete, # frequent itemsets:" << frequentItemsets.size();
-
-        /*
-        this->ruleConsequentItemConstraints = fpgrowth->getPreprocessedConstraints();
-        QList<AssociationRule> associationRules = RuleMiner::mineAssociationRules(frequentItemsets, this->minConfidence, this->ruleConsequentItemConstraints, fpgrowth);
-        qDebug() << "mining association rules complete, # association rules:" << associationRules.size();
-
-        qDebug() << associationRules;
-        */
-
-        delete fpgrowth;
-
-        } else {
-//            qDebug() << "----------------------> FPSTREAM";
-
-        // Temporary show the FPStream datastructure (PatternTree) as it's
-        // being built, until rule mining has also been implemented.
-        static bool initial = true;
-        if (initial) {
-            this->fpstream->setConstraints(this->frequentItemsetItemConstraints);
-            this->fpstream->setConstraintsToPreprocess(this->ruleConsequentItemConstraints);
-            initial = false;
-        }
-        if (quarterID != this->currentQuarterID) {
-            this->currentQuarterID = quarterID;
-            startNewTimeWindow = true;
-        }
-        else
-            startNewTimeWindow = false;
-        this->fpstream->processBatchTransactions(transactions, transactionsPerEvent, startNewTimeWindow, lastChunkOfBatch);
-        /*
-        qDebug() << this->fpstream->getPatternTree().getNodeCount();
-        qDebug() << this->itemIDNameHash.size() << this->itemNameIDHash.size() << this->sortedFrequentItemIDs.size();
-        qDebug() << this->fpstream->getPatternTree();
-        */
-        }
     }
 }

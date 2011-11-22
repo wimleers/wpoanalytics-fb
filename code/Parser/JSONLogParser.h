@@ -13,14 +13,10 @@
 #include <QWaitCondition>
 #include <QTime>
 #include <QVariant>
-
 #include "qxtjson.h"
 
-
-#include "../Config/Config.h"
-
-
-typedef uint Time;
+#include "common.h"
+#include "Config.h"
 
 
 enum WindowMarkerMethod {
@@ -46,25 +42,15 @@ namespace JSONLogParser {
 
     signals:
         void parsing(bool);
-        void stats(int duration,
-                   quint64 transactions,
-                   double transactionsPerEvent,
-                   double averageTransactionLength,
-                   bool lastChunkOfBatch,
-                   Time start,
-                   Time end,
-                   quint32 discardedSamples);
-        void parsedBatch(QList<QStringList> transactions, double transactionsPerEvent, Time start, Time end, quint32 batchID, bool lastChunkOfBatch);
+        void stats(int duration, BatchMetadata metadata);
+        void parsedBatch(Batch<RawTransaction> transactions);
 
     public slots:
         void parse(const QString & fileName);
         void continueParsing();
 
     protected slots:
-        void processBatch(const QList<Config::Sample> batch,
-                          quint32 batchID,
-                          bool lastChunkOfBatch,
-                          quint32 discardedSamples);
+        void processBatch(const Batch<Config::Sample> & batch);
 
     protected:
         virtual WindowMarkerMethod getWindowMarkerMethod() const;

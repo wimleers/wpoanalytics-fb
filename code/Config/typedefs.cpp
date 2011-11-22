@@ -3,6 +3,10 @@
 
 namespace Config {
 
+void registerMetaTypes() {
+    qRegisterMetaType<Batch<Config::Sample> >("Batch<Config::Sample>");
+}
+
 #ifdef DEBUG
     QDebug operator<<(QDebug dbg, const Episode & e) {
         dbg.nospace() << e.IDNameHash->value(e.id).toStdString().c_str()

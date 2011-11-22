@@ -34,14 +34,7 @@ public slots:
     // Parser.
     void wakeParser();
     void updateParsingStatus(bool parsing);
-    void updateParserStats(int duration,
-                           quint64 transactions,
-                           double transactionsPerEvent,
-                           double averageTransactionLength,
-                           bool lastChunkOfBatch,
-                           Time start,
-                           Time end,
-                           quint32 discardedSamples);
+    void updateParserStats(int duration, const BatchMetadata & m);
 
     // Analyst: mining patterns.
     void updatePatternMiningStatus(bool miningPatterns, Time start, Time end, quint64 lines, quint64 transactions);

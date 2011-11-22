@@ -234,46 +234,32 @@ namespace JSONLogParser {
     //---------------------------------------------------------------------------
     // Protected slots.
 
-    void Parser::processBatch(const QList<Config::Sample> batch,
-                              quint32 batchID,
-                              bool lastChunkOfBatch,
-                              quint32 discardedSamples)
-    {
-        double transactionsPerEvent;
-        uint items = 0;
-        double averageTransactionLength;
+    void Parser::processBatch(const Batch<Config::Sample> & s) {
+        Batch<RawTransaction> b;
+        b.meta           = s.meta;
+        b.meta.samples   = s.data.size();
+        b.meta.startTime = s.data.first().time;
+        b.meta.endTime   = s.data.last().time;
 
         // Map: samples to groups of transactions.
-        QList< QList<QStringList> > groupedTransactions = QtConcurrent::blockingMapped(batch, SampleToTransactionMapper(&this->config));
+        QList< QList<RawTransaction> > groupedTransactions;
+        SampleToTransactionMapper mapper(&this->config);
+        groupedTransactions = QtConcurrent::blockingMapped(s.data, mapper);
 
         // Reduce: merge transaction groups into a single list of transactions.
-        QList<QStringList> transactions;
-        QList<QStringList> transactionGroup;
+        b.meta.items = 0;
+        QList<RawTransaction> transactionGroup;
         foreach (transactionGroup, groupedTransactions) {
-            transactions.append(transactionGroup);
-            // NOTE: this somewhat impacts performance. But it provides useful
-            // insight.
+            b.data.append(transactionGroup);
             foreach (const QStringList & transaction, transactionGroup)
-                items += transaction.size();
+                b.meta.items += transaction.size();
         }
+        b.meta.transactions          = b.data.size();
+        b.meta.transactionsPerSample = 1.0 * b.meta.transactions/b.meta.samples;
+        b.meta.itemsPerTransaction   = 1.0 * b.meta.items/b.meta.transactions;
 
-        transactionsPerEvent = ((double) transactions.size()) / batch.size();
-        averageTransactionLength = 1.0 * items / transactions.size();
-        emit stats(timer.elapsed(),
-                   transactions.size(),
-                   transactionsPerEvent,
-                   averageTransactionLength,
-                   lastChunkOfBatch,
-                   batch.first().time,
-                   batch.last().time,
-                   discardedSamples);
-        emit parsedBatch(transactions,
-                         transactionsPerEvent,
-                         batch.first().time,
-                         batch.last().time,
-                         batchID,
-                         lastChunkOfBatch);
-
+        emit stats(timer.elapsed(), b.meta);
+        emit parsedBatch(b);
 
         // Pause the parsing until these transactions have been processed!
         this->mutex.lock();
@@ -299,13 +285,16 @@ namespace JSONLogParser {
                                     bool forceProcessing)
     {
         static quint32 batchID = 0;
-        static QList<Config::Sample> batch;
+        static Batch<Config::Sample> b;
         static WindowMarkerMethod markerMethod = this->getWindowMarkerMethod();
+        static quint32 discardedSamples = 0;
         quint16 sampleNumber = 0;
-        quint32 discardedSamples = 0;
+
 
         // Perform the mapping from strings to EpisodesLogLine concurrently.
-        QList<Config::Sample> samples = QtConcurrent::blockingMapped(chunk, ParseSampleMapper(&this->config));
+        QList<Config::Sample> samples;
+        ParseSampleMapper mapper(&this->config);
+        samples = QtConcurrent::blockingMapped(chunk, mapper);
 
         Config::Sample sample;
         foreach (sample, samples) {
@@ -326,13 +315,13 @@ namespace JSONLogParser {
                 if (sampleNumber % CHECK_TIME_INTERVAL == 0) {
                     sampleNumber = 0; // Reset.
                     quint32 newBatchID = Parser::calculateBatchID(sample.time);
-                    if (newBatchID > batchID && !batch.isEmpty()) {
-                        batchID = newBatchID;
+                    if (newBatchID > batchID && !b.data.isEmpty()) {
+                        b.meta.setChunkInfo(batchID, true, discardedSamples);
+                        this->processBatch(b);
 
-                        // The batch we just finished is the previous batch ID!
-                        this->processBatch(batch, newBatchID - 1, true, discardedSamples);
+                        batchID = newBatchID;
                         discardedSamples = 0;
-                        batch.clear();
+                        b.data.clear();
                     }
                 }
             }
@@ -340,19 +329,23 @@ namespace JSONLogParser {
             // Ensure that the batch doesn't get too large (and thus consumes
             // too much memory): let it be processed when it has grown to
             // PROCESS_CHUNK_SIZE lines.
-            if (batch.size() == PROCESS_CHUNK_SIZE) {
-                this->processBatch(batch, batchID, false, discardedSamples); // The batch doesn't end here!
+            if (b.data.size() == PROCESS_CHUNK_SIZE) {
+                b.meta.setChunkInfo(batchID, false, discardedSamples);
+                this->processBatch(b);
+
                 discardedSamples = 0;
-                batch.clear();
+                b.data.clear();
             }
 
-            batch.append(sample);
+            b.data.append(sample);
         }
 
-        if ((finishesTimeWindow || forceProcessing) && !batch.isEmpty()) {
-            this->processBatch(batch, batchID, true, discardedSamples);
+        if ((finishesTimeWindow || forceProcessing) && !b.data.isEmpty()) {
+            b.meta.setChunkInfo(batchID, true, discardedSamples);
+            this->processBatch(b);
+
             discardedSamples = 0;
-            batch.clear();
+            b.data.clear();
         }
 
         if (finishesTimeWindow)
@@ -410,11 +403,11 @@ namespace JSONLogParser {
     }
 
     QList<QStringList> Parser::mapSampleToTransactions(const Config::Sample & sample, const Config::Config * const config) {
-        QList<QStringList> transactions;
+        QList<RawTransaction> transactions;
 
         Config::Episode episode;
         Config::EpisodeName episodeName;
-        QStringList transaction;
+        RawTransaction transaction;
         foreach (episode, sample.episodes) {
             episodeName = Parser::episodeIDNameHash[episode.id];
             transaction << QString("episode:") + episodeName
