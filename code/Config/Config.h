@@ -27,7 +27,7 @@ namespace Config {
     };
 
     struct Attribute {
-        Attribute(const QString & field ="",
+        Attribute(const QString & field = "",
                   const QString & name  = QString::null,
                   bool isEpisode        = false,
                   QString parentAttribute = QString::null,
