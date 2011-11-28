@@ -70,6 +70,7 @@ private:
     void verifyConfig();
 
     // Helpers.
+    void performSave();
     void showHelpText();
     void out(const QString & module, const QString & output, int verbosity);
     void exit(int returnCode);
@@ -96,6 +97,7 @@ private:
     bool optionOutput;
     QString optionOutputFile;
     bool optionOutputStdout;
+    bool optionSaveStateAfterEveryChunk;
 
     // Threads.
     QThread parserThread;
@@ -112,6 +114,7 @@ private:
     bool parsing;
     bool miningPatterns;
     bool miningRules;
+    bool finalSave;
 
     // run() flow.
     bool configVerificationCompleted;

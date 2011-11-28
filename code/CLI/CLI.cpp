@@ -21,6 +21,7 @@ CLI::CLI() {
     // Status.
     this->parsing = false;
     this->miningPatterns = false;
+    this->finalSave = false;
 
     // run() flow.
     this->configVerificationCompleted = false;
@@ -171,6 +172,9 @@ void CLI::updatePatternMiningStatus(bool miningPatterns, Time start, Time end, q
 
     if (miningPatterns)
         this->out("Analyst", "Mining patterns...", 0);
+
+    if (optionSaveStateAfterEveryChunk && !miningPatterns)
+        this->performSave();
 }
 
 void CLI::updatePatternMiningStats(int duration, Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize) {
@@ -248,9 +252,15 @@ void CLI::saved(bool success) {
         this->exit(1);
     }
     else {
-        this->saveCompleted = true;
         this->out("CLI", "Saving successful!", 0);
-        this->run();
+
+        // Only do this if we're doing our final save; i.e. don't do this when
+        // we're just saving the state if a chunk has been processed.
+        QMutexLocker(&this->statusMutex);
+        if (this->finalSave) {
+            this->saveCompleted = true;
+            this->run();
+        }
     }
 }
 
@@ -459,6 +469,8 @@ bool CLI::parseCommandOptions() {
     options.alias("load", "l");
     options.add("save", "Save pattern tree; save the state to a file so it can be continued later.", QxtCommandOptions::ValueRequired);
     options.alias("save", "s");
+    options.add("save-per-chunk", "Save pattern tree; save the state to a file after every chunk that is processed (ignored without --save)", QxtCommandOptions::NoValue);
+    options.alias("save-per-chunk", "sc");
     // Data.
     int inputGroup = 0;
     options.add("input", "Define input file (required).", QxtCommandOptions::ValueRequired, inputGroup);
@@ -529,9 +541,13 @@ bool CLI::parseCommandOptions() {
     if (options.count("save") > 0) {
         this->optionSave = true;
         this->optionSaveFile = options.value("save").toString();
+        if (options.count("save-per-chunk"))
+            this->optionSaveStateAfterEveryChunk = true;
     }
-    else
+    else {
         this->optionSave = false;
+        this->optionSaveStateAfterEveryChunk = false;
+    }
 
     // Optional functionality: rule mining.
     this->optionMineRules = false;
@@ -616,8 +632,10 @@ void CLI::run() {
 
     // Save state if requested.
     if (this->optionSave && !this->saveCompleted) {
-        this->out("CLI", QString("Saving state to '%1'.").arg(this->optionSaveFile), 0);
-        emit save(this->optionSaveFile);
+        this->statusMutex.lock();
+        this->finalSave = true;
+        this->statusMutex.unlock();
+        this->performSave();
         return;
     }
     // run() will be called again by saved()
@@ -652,6 +670,11 @@ void CLI::verifyConfig() {
 
 //---------------------------------------------------------------------------
 // Private methods (helpers).
+
+void CLI::performSave() {
+    this->out("CLI", QString("Saving state to '%1'.").arg(this->optionSaveFile), 0);
+    emit save(this->optionSaveFile);
+}
 
 void CLI::showHelpText() {
     QTextStream out(stdout);
