@@ -87,6 +87,8 @@ namespace Analytics {
             FrequentItemset frequentItemset;
 #ifdef DEBUG
             frequentItemset.IDNameHash = itemIDNameHash;
+#else
+            Q_UNUSED(itemIDNameHash)
 #endif
             ItemID itemID;
             while (!input.atEnd()) {
