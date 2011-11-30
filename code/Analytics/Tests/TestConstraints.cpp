@@ -248,6 +248,16 @@ void TestConstraints::alternateWildcard() {
     QCOMPARE(c.matchItemset(f3), result_3);
 }
 
+void TestConstraints::noConstraints() {
+    Constraints c;
+
+    QCOMPARE(c.matchItemset(QSet<ItemName>() << "foo" << "bar"), true);
+
+    c.preprocessItem("foo", 12345);
+    c.preprocessItem("bar", 98765);
+    QCOMPARE(c.matchItemset(ItemIDList() << 12345 << 98765), true);
+}
+
 void TestConstraints::edgeCases() {
     // Calling removeItem() for a preprocessed item when not all item
     // constraints have been preprocessed. This should not break.
