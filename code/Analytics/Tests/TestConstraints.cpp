@@ -11,6 +11,14 @@ void TestConstraints::basic_data() {
     QTest::addColumn<bool>("result_4");
     QTest::addColumn<bool>("result_5");
 
+    // Empty constraints.
+    QTest::newRow("empty constraints")
+            << QSet<ItemName>()
+            << QSet<ItemName>()
+            << QSet<ItemName>()
+            << QSet<ItemName>()
+            << true << true << true << true << true;
+
     // Simple positive.
     QTest::newRow("simple positive constraint")
             << (QSet<ItemName>() << "A")
