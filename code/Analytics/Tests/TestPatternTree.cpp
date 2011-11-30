@@ -121,21 +121,47 @@ void TestPatternTree::additionsRemainInSync() {
 
 void TestPatternTree::getFrequentItemsetsForRange() {
     PatternTree * p = this->buildBasicPatternTree();
-    Constraints noConstraints;
+    Constraints nc;
+
+    Bucket lastBucket = TestPatternTree::getTTWDefinition().numBuckets - 1;
 
     // Whole range.
     QList<FrequentItemset> expected;
     expected << FrequentItemset(ItemIDList() << 1 << 2,      4);
     expected << FrequentItemset(ItemIDList() << 1 << 2 << 3, 1);
     expected << FrequentItemset(ItemIDList() << 1 << 4,      5);
-    QCOMPARE(p->getFrequentItemsetsForRange(0, noConstraints, 0, 10), expected);
+    QCOMPARE(p->getFrequentItemsetsForRange(0, nc, 0, lastBucket), expected);
 
     // Subset: only first bucket.
     expected.clear();
     expected << FrequentItemset(ItemIDList() << 1 << 2,      2);
     expected << FrequentItemset(ItemIDList() << 1 << 2 << 3, 1);
     expected << FrequentItemset(ItemIDList() << 1 << 4,      5);
-    QCOMPARE(p->getFrequentItemsetsForRange(0, noConstraints, 0, 0), expected);
+    QCOMPARE(p->getFrequentItemsetsForRange(0, nc, 0, 0), expected);
+
+    // Subset: only second bucket.
+    expected.clear();
+    expected << FrequentItemset(ItemIDList() << 1 << 2,      2);
+    QCOMPARE(p->getFrequentItemsetsForRange(0, nc, 1, 1), expected);
+
+    // Use constraints: single positive constraint.
+    Constraints c;
+    c.addItemConstraint(QSet<ItemName>() << "<2>", ItemConstraintPositive);
+    c.preprocessItem("<2>", 2);
+    expected.clear();
+    expected << FrequentItemset(ItemIDList() << 1 << 2,      4);
+    expected << FrequentItemset(ItemIDList() << 1 << 2 << 3, 1);
+    QCOMPARE(p->getFrequentItemsetsForRange(0, c, 0, lastBucket), expected);
+
+    // Use constraints: single positive constraint *and* single negative.
+    c.reset();
+    c.addItemConstraint(QSet<ItemName>() << "<2>", ItemConstraintPositive);
+    c.addItemConstraint(QSet<ItemName>() << "<3>", ItemConstraintNegative);
+    c.preprocessItem("<2>", 2);
+    c.preprocessItem("<3>", 3);
+    expected.clear();
+    expected << FrequentItemset(ItemIDList() << 1 << 2,      4);
+    QCOMPARE(p->getFrequentItemsetsForRange(0, c, 0, lastBucket), expected);
 }
 
 PatternTree * TestPatternTree::buildBasicPatternTree() {
