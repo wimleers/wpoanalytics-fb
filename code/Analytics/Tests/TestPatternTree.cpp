@@ -119,6 +119,25 @@ void TestPatternTree::additionsRemainInSync() {
     QCOMPARE(node->getValue().getBuckets(2), referenceBuckets);
 }
 
+void TestPatternTree::getFrequentItemsetsForRange() {
+    PatternTree * p = this->buildBasicPatternTree();
+    Constraints noConstraints;
+
+    // Whole range.
+    QList<FrequentItemset> expected;
+    expected << FrequentItemset(ItemIDList() << 1 << 2,      4);
+    expected << FrequentItemset(ItemIDList() << 1 << 2 << 3, 1);
+    expected << FrequentItemset(ItemIDList() << 1 << 4,      5);
+    QCOMPARE(p->getFrequentItemsetsForRange(0, noConstraints, 0, 10), expected);
+
+    // Subset: only first bucket.
+    expected.clear();
+    expected << FrequentItemset(ItemIDList() << 1 << 2,      2);
+    expected << FrequentItemset(ItemIDList() << 1 << 2 << 3, 1);
+    expected << FrequentItemset(ItemIDList() << 1 << 4,      5);
+    QCOMPARE(p->getFrequentItemsetsForRange(0, noConstraints, 0, 0), expected);
+}
+
 PatternTree * TestPatternTree::buildBasicPatternTree() {
     FPNode<TiltedTimeWindow>::resetLastNodeID();
     PatternTree * patternTree = new PatternTree();

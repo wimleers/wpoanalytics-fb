@@ -12,6 +12,7 @@ class TestPatternTree : public QObject {
 private slots:
     void basic();
     void additionsRemainInSync();
+    void getFrequentItemsetsForRange();
 
 private:
     PatternTree * buildBasicPatternTree();
