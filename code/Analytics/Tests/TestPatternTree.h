@@ -14,6 +14,7 @@ private slots:
     void additionsRemainInSync();
 
 private:
+    PatternTree * buildBasicPatternTree();
     static const TTWDefinition getTTWDefinition() {
         QMap<char, uint> granularitiesDefault;
         granularitiesDefault.insert('Q', 4);

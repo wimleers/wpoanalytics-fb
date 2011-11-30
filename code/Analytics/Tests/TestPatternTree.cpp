@@ -1,37 +1,7 @@
 #include "TestPatternTree.h"
 
 void TestPatternTree::basic() {
-    FPNode<TiltedTimeWindow>::resetLastNodeID();
-    PatternTree * patternTree = new PatternTree();
-    patternTree->setTTWDefinition(TestPatternTree::getTTWDefinition());
-
-    // Pattern 1: {1, 2, 3}, support: 1.
-    ItemIDList p1;
-    p1 << 1 << 2 << 3;
-    SupportCount s1 = 1;
-    patternTree->addPattern(FrequentItemset(p1, s1, NULL), 1);
-
-    // Pattern 2: {1, 2}, support: 2, add this twice.
-    ItemIDList p2;
-    p2 << 1 << 2;
-    SupportCount s2 = 2;
-    patternTree->addPattern(FrequentItemset(p2, s2, NULL), 1);
-    patternTree->addPattern(FrequentItemset(p2, s2, NULL), 2);
-
-    // Pattern 3: {1, 4}, support: 5.
-    ItemIDList p3;
-    p3 << 1 << 4;
-    SupportCount s3 = 5;
-    patternTree->addPattern(FrequentItemset(p3, s3, NULL), 1);
-
-    // Helpful for debugging/expanding this test.
-    // Currently, this should match:
-    // (NULL)
-    // -> ({1}, {} (lastUpdate=0)) (0x0001)
-    //     -> ({1, 2}, {Q={2, 2}} (lastUpdate=2)) (0x0002)
-    //         -> ({1, 2, 3}, {Q={1}} (lastUpdate=1)) (0x0003)
-    //     -> ({1, 4}, {Q={5}} (lastUpdate=1)) (0x0004)
-    //qDebug() << *patternTree;
+    PatternTree * patternTree = this->buildBasicPatternTree();
 
     // Verify the tree shape.
     FPNode<TiltedTimeWindow> * node;
@@ -91,7 +61,6 @@ void TestPatternTree::basic() {
     delete patternTree;
 }
 
-
 void TestPatternTree::additionsRemainInSync() {
     FPNode<TiltedTimeWindow>::resetLastNodeID();
     PatternTree * patternTree = new PatternTree();
@@ -148,4 +117,40 @@ void TestPatternTree::additionsRemainInSync() {
     FPNode<TiltedTimeWindow> * node = patternTree->getRoot()->getChild(4)->getChild(5);
     QVector<SupportCount> referenceBuckets = QVector<SupportCount>() << 2 << 0;
     QCOMPARE(node->getValue().getBuckets(2), referenceBuckets);
+}
+
+PatternTree * TestPatternTree::buildBasicPatternTree() {
+    FPNode<TiltedTimeWindow>::resetLastNodeID();
+    PatternTree * patternTree = new PatternTree();
+    patternTree->setTTWDefinition(TestPatternTree::getTTWDefinition());
+
+    // Pattern 1: {1, 2, 3}, support: 1.
+    ItemIDList p1;
+    p1 << 1 << 2 << 3;
+    SupportCount s1 = 1;
+    patternTree->addPattern(FrequentItemset(p1, s1, NULL), 1);
+
+    // Pattern 2: {1, 2}, support: 2, add this twice.
+    ItemIDList p2;
+    p2 << 1 << 2;
+    SupportCount s2 = 2;
+    patternTree->addPattern(FrequentItemset(p2, s2, NULL), 1);
+    patternTree->addPattern(FrequentItemset(p2, s2, NULL), 2);
+
+    // Pattern 3: {1, 4}, support: 5.
+    ItemIDList p3;
+    p3 << 1 << 4;
+    SupportCount s3 = 5;
+    patternTree->addPattern(FrequentItemset(p3, s3, NULL), 1);
+
+    // Helpful for debugging/expanding this test.
+    // Currently, this should match:
+    // (NULL)
+    // -> ({1}, {} (lastUpdate=0)) (0x0001)
+    //     -> ({1, 2}, {Q={2, 2}} (lastUpdate=2)) (0x0002)
+    //         -> ({1, 2, 3}, {Q={1}} (lastUpdate=1)) (0x0003)
+    //     -> ({1, 4}, {Q={5}} (lastUpdate=1)) (0x0004)
+    //qDebug() << *patternTree;
+
+    return patternTree;
 }
