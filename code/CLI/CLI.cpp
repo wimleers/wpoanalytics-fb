@@ -543,6 +543,8 @@ bool CLI::parseCommandOptions() {
         this->optionSaveFile = options.value("save").toString();
         if (options.count("save-per-chunk"))
             this->optionSaveStateAfterEveryChunk = true;
+        else
+            this->optionSaveStateAfterEveryChunk = false;
     }
     else {
         this->optionSave = false;
