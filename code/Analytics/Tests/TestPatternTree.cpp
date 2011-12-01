@@ -164,6 +164,36 @@ void TestPatternTree::getFrequentItemsetsForRange() {
     QCOMPARE(p->getFrequentItemsetsForRange(0, c, 0, lastBucket), expected);
 }
 
+void TestPatternTree::getTotalSupportForRange() {
+    PatternTree * p = this->buildBasicPatternTree();
+    Constraints noConstraints;
+
+    Bucket lastBucket = TestPatternTree::getTTWDefinition().numBuckets - 1;
+
+    // Whole range.
+    QCOMPARE(p->getTotalSupportForRange(noConstraints, 0, lastBucket), (SupportCount) 10);
+
+    // Subset: only first bucket of TiltedTimeWindows.
+    QCOMPARE(p->getTotalSupportForRange(noConstraints, 0, 0), (SupportCount) 8);
+
+    // Subset: only second bucket of TiltedTimeWindows.
+    QCOMPARE(p->getTotalSupportForRange(noConstraints, 1, 1), (SupportCount) 2);
+
+    // Use constraints: single positive constraint.
+    Constraints c;
+    c.addItemConstraint(QSet<ItemName>() << "<2>", ItemConstraintPositive);
+    c.preprocessItem("<2>", 2);
+    QCOMPARE(p->getTotalSupportForRange(c, 0, lastBucket), (SupportCount) 5);
+
+    // Use constraints: single positive constraint *and* single negative.
+    c.reset();
+    c.addItemConstraint(QSet<ItemName>() << "<2>", ItemConstraintPositive);
+    c.addItemConstraint(QSet<ItemName>() << "<3>", ItemConstraintNegative);
+    c.preprocessItem("<2>", 2);
+    c.preprocessItem("<3>", 3);
+    QCOMPARE(p->getTotalSupportForRange(c, 0, lastBucket), (SupportCount) 4);
+}
+
 PatternTree * TestPatternTree::buildBasicPatternTree() {
     FPNode<TiltedTimeWindow>::resetLastNodeID();
     PatternTree * patternTree = new PatternTree();

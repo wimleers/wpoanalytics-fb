@@ -13,6 +13,7 @@ private slots:
     void basic();
     void additionsRemainInSync();
     void getFrequentItemsetsForRange();
+    void getTotalSupportForRange();
 
 private:
     PatternTree * buildBasicPatternTree();

@@ -44,7 +44,9 @@ namespace Analytics {
                                                            uint from,
                                                            uint to,
                                                            const ItemIDList & prefix = ItemIDList(),
-                                                           FPNode<TiltedTimeWindow> * node = NULL) const;
+                                                           const FPNode<TiltedTimeWindow> * node = NULL) const;
+        SupportCount getTotalSupportForRange(const Constraints & c,
+                                             uint from, uint to) const;
 
         // Modifiers.
         void addPattern(const FrequentItemset & pattern, quint32 updateID);
@@ -60,6 +62,12 @@ namespace Analytics {
                                         const ItemIDNameHash & itemIDNameHash,
                                         QTextStream & output,
                                         QList<ItemName> pattern);
+        static bool totalSupportForRangeHelper(const Constraints & c,
+                                               uint from, uint to,
+                                               uint & totalSupport,
+                                               const ItemIDList & pattern,
+                                               const FPNode<TiltedTimeWindow> * node);
+
 
         TTWDefinition ttwDef;
         FPNode<TiltedTimeWindow> * root;

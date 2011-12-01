@@ -143,7 +143,7 @@ namespace Analytics {
      *   The frequent itemsets over the given range that match the given
      *   constraints.
      */
-    QList<FrequentItemset> PatternTree::getFrequentItemsetsForRange(SupportCount minSupport, const Constraints & frequentItemsetConstraints, uint from, uint to, const ItemIDList & prefix, FPNode<TiltedTimeWindow> * node) const {
+    QList<FrequentItemset> PatternTree::getFrequentItemsetsForRange(SupportCount minSupport, const Constraints & frequentItemsetConstraints, uint from, uint to, const ItemIDList & prefix, const FPNode<TiltedTimeWindow> * node) const {
         QList<FrequentItemset> frequentItemsets;
         FrequentItemset frequentItemset;
 
@@ -167,7 +167,7 @@ namespace Analytics {
             frequentItemsets.append(frequentItemset);
 
         // Recursive call for each child node of the current node.
-        foreach (FPNode<TiltedTimeWindow> * child, node->getChildren()) {
+        foreach (const FPNode<TiltedTimeWindow> * child, node->getChildren()) {
             frequentItemsets.append(this->getFrequentItemsetsForRange(
                     minSupport,
                     frequentItemsetConstraints,
@@ -179,6 +179,31 @@ namespace Analytics {
         }
 
         return frequentItemsets;
+    }
+
+    /**
+     * Get the total support of all frequent itemsets that match given
+     * constraints for a range of buckets in the TiltedTimeWindows in this
+     * PatternTree.
+     *
+     * @param c
+     *   The constraints that frequent itemsets/patterns  must match.
+     * @param from
+     *   The range starts at this bucket.
+     * @param to
+     *   The range starts at this bucket.
+     * @return
+     *   The total support of all frequent itemsets that match the given
+     *   constraints.
+     */
+    SupportCount PatternTree::getTotalSupportForRange(const Constraints & c,
+                                                      uint from, uint to) const
+    {
+        uint totalSupport = 0;
+        PatternTree::totalSupportForRangeHelper(c, from, to, totalSupport,
+                                                ItemIDList(), this->root);
+
+        return totalSupport;
     }
 
     void PatternTree::addPattern(const FrequentItemset & pattern, quint32 updateID) {
@@ -268,6 +293,56 @@ namespace Analytics {
         if (node->numChildren() > 0)
             foreach (const FPNode<TiltedTimeWindow> * child, node->getChildren())
                 PatternTree::recursiveSerializer(child, itemIDNameHash, output, pattern);
+    }
+
+    /**
+     * Helper method for @func PatternTree::gettotalSupportForRange().
+     *
+     * @param c
+     *   The constraints that frequent itemsets/patterns  must match.
+     * @param from
+     *   The range starts at this bucket.
+     * @param to
+     *   The range starts at this bucket.
+     * @param totalSupport
+     *   Internal parameter (for recursive calls).
+     * @param prefix
+     *   Internal parameter (for recursive calls).
+     * @param node
+     *   Internal parameter (for recursive calls).
+     * @return
+     *   The total support of all frequent itemsets that match the given
+     *   constraints.
+     */
+    bool PatternTree::totalSupportForRangeHelper(const Constraints & c,
+                                                 uint from, uint to,
+                                                 uint & totalSupport,
+                                                 const ItemIDList & prefix,
+                                                 const FPNode<TiltedTimeWindow> * node)
+    {
+        ItemIDList frequentItemset = prefix;
+        frequentItemset << node->getItemID();
+        bool matches = false;
+
+        // Recursive call for each child node of the current node.
+        foreach (const FPNode<TiltedTimeWindow> * child, node->getChildren()) {
+            matches = PatternTree::totalSupportForRangeHelper(c, from, to,
+                                                              totalSupport,
+                                                              frequentItemset,
+                                                              child)
+                      || matches;
+        }
+
+        // Only check at the leaf level, and try to match again if it didn't
+        // match, because it's possible that the superset contains an item that
+        // is in a negative item constraint, causing the match to fail.
+        if (!matches || node->numChildren() == 0)
+            matches = c.matchItemset(frequentItemset);
+
+        if (matches)
+            totalSupport += node->getValue().getSupportForRange(from, to);
+
+        return matches;
     }
 
 
