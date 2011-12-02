@@ -179,9 +179,16 @@ namespace JSONLogParser {
         int numLines = 0;
         WindowMarkerMethod markerMethod = this->getWindowMarkerMethod();
         QString timeWindowMarkerLine = this->getWindowMarkerLine();
+        bool opened = false;
 
-        file.setFileName(fileName);
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        if (fileName == ":stdin")
+            opened = file.open(stdin, QIODevice::ReadOnly | QIODevice::Text);
+        else {
+            file.setFileName(fileName);
+            opened = file.open(QIODevice::ReadOnly | QIODevice::Text);
+        }
+
+        if (!opened) {
             qDebug() << "Could not open file for reading.";
             // TODO: emit signal indicating parsing failure.
             return;
