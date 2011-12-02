@@ -688,14 +688,17 @@ void CLI::showHelpText() {
     out << endl << endl;
 
     out << startBold << "Examples" << stopBold << endl;
-    out << indent << "1. Mine TTI-related patterns from a dump of the perfpipe_cavalry dataset and saving the resulting state, so we can continue with a subsequent dump later. Also mine rules." << endl;
-    out << indent << indent << "PatternMiner --config ~/perfpipe_cavalry/tti_config.json --input ~/perfpipe_cavalry/dump.json --save ~/perfpipe_cavalry/state.pf -vv" << endl;
+    out << indent << "1. Mine association rules directly from two seconds worth of data from a ptail data stream of the 'perfpipe_cavalry' data set, starting Dec 1, 2011." << endl;
+    out << indent << indent << "ptail -f -time 2011-12-01 -t 2 perfpipe_cavalry | patternminer --config sample_config.json --input-stdout --rules --output-stdout -vv" << endl;
     out << endl;
-    out << indent << "2. Load a state we saved before and mine association rules from it." << endl;
-    out << indent << indent << "PatternMiner --config ~/perfpipe_cavalry/tti_config.json --load ~/perfpipe_cavalry/state.pf --rules --output-stdout -vv" << endl;
+    out << indent << "2. Mine TTI-related patterns from a dump of the perfpipe_cavalry data set and saving the resulting state, so we can continue with a subsequent dump later. Also mine rules." << endl;
+    out << indent << indent << "patternminer --config ~/perfpipe_cavalry/tti_config.json --input ~/perfpipe_cavalry/dump.json --save ~/perfpipe_cavalry/state.pf -vv" << endl;
     out << endl;
-    out << indent << "3. The same, but this time store the asociation rules in a file." << endl;
-    out << indent << indent << "PatternMiner --config ~/perfpipe_cavalry/tti_config.json --load ~/perfpipe_cavalry/state.pf --rules --output ~/perfpipe_cavalry_rules.json -vv" << endl;
+    out << indent << "3. Load a state we saved before and mine association rules from it." << endl;
+    out << indent << indent << "patternminer --config ~/perfpipe_cavalry/tti_config.json --load ~/perfpipe_cavalry/state.pf --rules --output-stdout -vv" << endl;
+    out << endl;
+    out << indent << "4. The same, but this time store the asociation rules in a file." << endl;
+    out << indent << indent << "patternminer --config ~/perfpipe_cavalry/tti_config.json --load ~/perfpipe_cavalry/state.pf --rules --output ~/perfpipe_cavalry_rules.json -vv" << endl;
     out << endl << endl;
 
     out << startBold << "Options" << stopBold << endl;
