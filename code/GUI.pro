@@ -1,4 +1,4 @@
-include("WPOAnalytics.pri")
+include("patternminer.pri")
 
 DEFINES += INTERFACE_GRAPHICAL
 DEPENDPATH += UI
