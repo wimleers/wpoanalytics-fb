@@ -16,6 +16,8 @@ namespace Analytics {
      *   memory), from smallest to largest.
      */
     TTWDefinition::TTWDefinition(uint secPerWindow, QMap<char, uint> granularities, QList<char> order) {
+        Q_ASSERT(granularities.size() == order.size());
+
         this->reset();
         this->secPerWindow = secPerWindow;
         this->numGranularities = granularities.size();
