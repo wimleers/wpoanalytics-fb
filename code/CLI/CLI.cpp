@@ -712,8 +712,8 @@ void CLI::out(const QString & module, const QString & output, int verbosity) {
     static QTextStream out(stdout);
     static QString startBold = "\033[7m";
     static QString stopBold = "\033[0m";
-    static QString startBlink = "\033[5m";
-    static QString stopBlink = "\033[0m";
+    static QString startRedBG = "\033[0;41m";
+    static QString stopRedBG = "\033[0m";
 
 
     // Ignore too verbose messages.
@@ -723,7 +723,7 @@ void CLI::out(const QString & module, const QString & output, int verbosity) {
     // Blink the output if it's a warning!
     QString message = output;
     if (module == "WARNING") {
-        message = startBlink + output + stopBlink;
+        message = startRedBG + output + stopRedBG;
     }
 
     out << QString(startBold + "[%1]" + stopBold + " ").arg(module, -7) << message << endl;
