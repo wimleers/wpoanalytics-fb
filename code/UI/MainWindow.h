@@ -82,12 +82,11 @@ public slots:
 
     // Analyst: analyzing.
     void updateAnalyzingStatus(bool analyzing, Time start, Time end, quint64 numPageViews, quint64 numTransactions);
-    void updateAnalyzingDuration(int duration);
-    void updateAnalyzingStats(Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize);
+    void updateAnalyzingStats(int duration, Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize);
 
     // Analyst: mining.
-    void updateMiningStatus(bool mining);
-    void updateMiningDuration(int duration);
+    void updateRuleMiningStatus(bool mining);
+    void updateRuleMiningStats(int duration, Time start, Time end, quint64 numAssociationRules, quint64 numTransactions, quint64 numLines);
     void minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange);
     void comparedMinedRules(uint fromOlder, uint toOlder,
                             uint fromNewer, uint toNewer,

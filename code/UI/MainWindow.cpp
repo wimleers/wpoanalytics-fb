@@ -52,19 +52,16 @@ void MainWindow::updateParsingDuration(int duration) {
     );
 }
 
-void MainWindow::updateAnalyzingDuration(int duration) {
-    QMutexLocker(&this->statusMutex);
-    this->totalAnalyzingDuration += duration;
-    this->status_performance_analyzing->setText(
-                QString("%1 s (%2 transactions/s)")
-                .arg(QString::number(this->totalAnalyzingDuration / 1000.0, 'f', 2))
-                .arg(QString::number(this->totalTransactions / (this->totalAnalyzingDuration / 1000.0), 'f', 0))
-    );
-}
+void MainWindow::updateRuleMiningStats(int duration, Time start, Time end, quint64 numAssociationRules, quint64 numTransactions, quint64 numLines) {
+    Q_UNUSED(start)
+    Q_UNUSED(end)
+    Q_UNUSED(numAssociationRules)
+    Q_UNUSED(numTransactions)
+    Q_UNUSED(numLines)
 
-void MainWindow::updateMiningDuration(int duration) {
     QMutexLocker(&this->statusMutex);
     this->totalMiningDuration += duration;
+    this->totalPatternsExaminedWhileMining += this->patternTreeSize;
     this->status_performance_mining->setText(
                 QString("%1 s (%2 patterns/s)")
                 .arg(QString::number(this->totalMiningDuration / 1000.0, 'f', 2))
@@ -93,7 +90,7 @@ void MainWindow::updateAnalyzingStatus(bool analyzing, Time start, Time end, qui
         this->updateStatus();
 }
 
-void MainWindow::updateMiningStatus(bool mining) {
+void MainWindow::updateRuleMiningStatus(bool mining) {
     this->menuFileImport->setEnabled(!mining);
     this->menuFileLoadConfig->setEnabled(!mining);
     this->menuFileLoad->setEnabled(!mining);
@@ -105,10 +102,11 @@ void MainWindow::updateMiningStatus(bool mining) {
         this->updateStatus();
 }
 
-void MainWindow::updateAnalyzingStats(Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize) {
+void MainWindow::updateAnalyzingStats(int duration, Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize) {
     this->statusMutex.lock();
     this->totalPageViews = pageViews;
     this->totalTransactions = transactions;
+    this->totalAnalyzingDuration += duration;
     this->patternTreeSize = patternTreeSize;
     this->startTime = start;
     this->endTime = end;
@@ -136,12 +134,11 @@ void MainWindow::updateAnalyzingStats(Time start, Time end, quint64 pageViews, q
                 .arg(QString::number(((12 + (patternTreeSize * (STATS_TILTED_TIME_WINDOW_BYTES + STATS_FPNODE_ESTIMATED_CHILDREN_AVG_BYTES))) / 1000.0 / 1000.0), 'f', 2))
     );
 
-    // Also update performance stats.
-    this->updateParsingDuration(0);
-    if (this->totalTransactions)
-        this->updateAnalyzingDuration(0);
-    if (this->totalPatternsExaminedWhileMining)
-        this->updateMiningDuration(0);
+    this->status_performance_analyzing->setText(
+                QString("%1 s (%2 transactions/s)")
+                .arg(QString::number(this->totalAnalyzingDuration / 1000.0, 'f', 2))
+                .arg(QString::number(this->totalTransactions / (this->totalAnalyzingDuration / 1000.0), 'f', 0))
+    );
 }
 
 void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange) {
@@ -153,7 +150,6 @@ void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule
     Time fromTime = lastBucketEndTime - this->ttwDef->calculateSecondsToBucket(to, true);
 
     this->statusMutex.lock();
-    this->totalPatternsExaminedWhileMining += this->patternTreeSize;
     this->causesDescription->setText(
                 QString(tr("%1 rules mined from %2 samples (from %3 until %4)"))
                 .arg(associationRules.size())
@@ -461,7 +457,7 @@ void MainWindow::loadedFile(bool success, Time start, Time end, quint64 pageView
         // Update the TTWDefinition because it may have changed.
         *this->ttwDef = this->analyst->getTTWDefinition();
 
-        this->updateAnalyzingStats(start, end, pageViews, transactions, uniqueItems, frequentItems, patternTreeSize);
+        this->updateAnalyzingStats(0, start, end, pageViews, transactions, uniqueItems, frequentItems, patternTreeSize);
 
         this->mineOrCompare();
     }
@@ -552,9 +548,9 @@ void MainWindow::connectLogic() {
     connect(this->parser, SIGNAL(stats(int,BatchMetadata)), SLOT(updateParsingDuration(int)));
     connect(this->analyst, SIGNAL(analyzing(bool,Time,Time,quint64,quint64)), SLOT(updateAnalyzingStatus(bool,Time,Time,quint64,quint64)));
 //    connect(this->analyst, SIGNAL(analyzedDuration(int)), SLOT(updateAnalyzingDuration(int)));
-    connect(this->analyst, SIGNAL(mining(bool)), SLOT(updateMiningStatus(bool)));
-//    connect(this->analyst, SIGNAL(minedDuration(int)), SLOT(updateMiningDuration(int)));
-//    connect(this->analyst, SIGNAL(stats(Time,Time,quint64,quint64,quint64,quint64,quint64)), SLOT(updateAnalyzingStats(Time,Time,quint64,quint64,quint64,quint64,quint64)));
+    connect(this->analyst, SIGNAL(stats(int,Time,Time,quint64,quint64,quint64,quint64,quint64)), SLOT(updateAnalyzingStats(int,Time,Time,quint64,quint64,quint64,quint64,quint64)));
+    connect(this->analyst, SIGNAL(mining(bool)), SLOT(updateRuleMiningStatus(bool)));
+    connect(this->analyst, SIGNAL(ruleMiningStats(int,Time,Time,quint64,quint64,quint64)), SLOT(updateRuleMiningStats(int,Time,Time,quint64,quint64,quint64)));
     connect(this->analyst, SIGNAL(minedRules(uint,uint,QList<Analytics::AssociationRule>,Analytics::SupportCount)), SLOT(minedRules(uint,uint,QList<Analytics::AssociationRule>,Analytics::SupportCount)));
     connect(
                 this->analyst,
