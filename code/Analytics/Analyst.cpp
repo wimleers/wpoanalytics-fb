@@ -71,7 +71,18 @@ namespace Analytics {
         // frequent itemsets.
         // By also applying these item constraints to frequent itemset
         // generation, we reduce the amount of work to be done to a minimum.
-        this->frequentItemsetItemConstraints.addItemConstraint(items, type);
+
+        // IMPORTANT: this has been disabled for now! While this will indeed
+        // increase the size of the PatternTree and thus the memory consumption,
+        // it has one major benefit: if the state is loaded, we can ask *any*
+        // query.
+        // Hence it makes the config file more meaningful:
+        // - everything in config[query][patterns] defines what patterns are
+        //   retained while the stream progresses; thus these settings should
+        //   never change
+        // - everything in config[query][association rules] defines the query
+        //   this *can* change
+//        this->frequentItemsetItemConstraints.addItemConstraint(items, type);
 
         this->ruleAntecedentItemConstraints.addItemConstraint(items, type);
     }
