@@ -5,8 +5,7 @@
 #include <QStringList>
 #include <QMap>
 #include <QVector>
-
-#include "Item.h"
+#include <QDebug>
 
 namespace Analytics {
     typedef int Granularity;
