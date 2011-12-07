@@ -284,7 +284,7 @@ void MainWindow::comparedMinedRules(uint fromOlder, uint toOlder,
 
         QChar plusOrEmpty = (confidenceVariance[i] > 0) ? QChar('+') : QChar(QChar::Null);
         QStandardItem * confidenceVarianceItem = new QStandardItem(QString("%1%2%").arg(plusOrEmpty).arg(QString::number(confidenceVariance[i] * 100, 'f', 2)));
-        confidenceItem->setData(confidenceVariance[i], Qt::UserRole);
+        confidenceVarianceItem->setData(confidenceVariance[i], Qt::UserRole);
         model->setItem(row, 3, confidenceVarianceItem);
 
         Analytics::SupportCount eventCount;
