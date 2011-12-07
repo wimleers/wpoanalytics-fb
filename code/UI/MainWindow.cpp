@@ -462,6 +462,8 @@ void MainWindow::loadedFile(bool success, Time start, Time end, quint64 pageView
         *this->ttwDef = this->analyst->getTTWDefinition();
 
         this->updateAnalyzingStats(start, end, pageViews, transactions, uniqueItems, frequentItems, patternTreeSize);
+
+        this->mineOrCompare();
     }
 }
 
