@@ -1,12 +1,5 @@
 #include "TestTiltedTimeWindow.h"
 
-
-/**
- * IMPORTANT NOTE:
- * Each time when the SupportCount -1 is being used in this test, it's meant
- * to be TTW_BUCKET_UNUSED. However, for legibility purposes, I've opted to
- * directly write -1 instead.
- */
 void TestTiltedTimeWindow::basic() {
     QMap<char, uint> granularitiesDefault;
     granularitiesDefault.insert('Q', 4);
@@ -14,7 +7,7 @@ void TestTiltedTimeWindow::basic() {
     granularitiesDefault.insert('D', 31);
     granularitiesDefault.insert('M', 12);
     granularitiesDefault.insert('Y', 1);
-    TTWDefinition defaultTTWDefinition(3600,
+    TTWDefinition defaultTTWDefinition(900,
                                        granularitiesDefault,
                                        QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
 
