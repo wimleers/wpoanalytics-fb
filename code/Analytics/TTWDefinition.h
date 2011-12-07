@@ -18,6 +18,7 @@ namespace Analytics {
 
         // Operators.
         friend bool operator==(const TTWDefinition & def1, const TTWDefinition & def2);
+        friend bool operator!=(const TTWDefinition & def1, const TTWDefinition & def2);
 
         // Getters.
         uint getSecPerWindow() const { return this->secPerWindow; }

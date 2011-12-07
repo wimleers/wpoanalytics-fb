@@ -10,14 +10,6 @@ CLI::CLI() {
     this->ttwDef = NULL;
     this->analyst = NULL;
 
-    // For now: hardcoded TiltedTimeWindow definition: 24 hours, 30 days.
-    QMap<char, uint> granularities;
-    granularities.insert('H', 24);
-    granularities.insert('D', 30);
-    this->ttwDef = new Analytics::TTWDefinition(3600,
-                                                granularities,
-                                                QList<char>() << 'H' << 'D');
-
     // Status.
     this->parsing = false;
     this->miningPatterns = false;
@@ -228,6 +220,16 @@ void CLI::loaded(bool success, Time start, Time end, quint64 pageViews, quint64 
     }
     else {
         this->loadCompleted = true;
+
+        // If the state file that has just been loaded contains a different
+        // TTWDefinition than the config file, then use that one instead,
+        // because that is how the data has been stored in the PatternTree.
+        if (*(this->ttwDef) != this->analyst->getTTWDefinition()) {
+            this->out("WARNING", "The state file contains a different Tilted Time Window definition than the config file. Now using the state file's definition to guarantee correct behavior.", 0);
+            this->out("WARNING", "\tbefore (config file): " + this->ttwDef->serialize(), 0);
+            this->out("WARNING", "\tafter (state file):   " + this->analyst->getTTWDefinition().serialize(), 0);
+            *this->ttwDef = this->analyst->getTTWDefinition();
+        }
 
         this->out("Analyst", "Loading successful! Previously analyzed:", 0);
         this->out("Analyst", QString(" |- lines: %1").arg(pageViews), 0);
@@ -750,6 +752,10 @@ void CLI::initConfig() {
     this->config = new Config::Config();
     if (!this->config->parse(this->optionConfigFile))
         qCritical("Failed to parse the config file '%s'.", qPrintable(this->optionConfigFile));
+
+    // Load the TTWDefinition from the Config file.
+    this->ttwDef = new Analytics::TTWDefinition();
+    *this->ttwDef = this->config->getTTWDefinition();
 }
 
 void CLI::initLogic() {

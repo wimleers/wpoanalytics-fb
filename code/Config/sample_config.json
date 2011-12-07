@@ -4,7 +4,8 @@
 			"minimum support" : 0.05,
 			"minimum potential pattern support" : 0.03,
 			"item constraints" : [
-			]
+			],
+			"tilted time window definition" : "",
 		}
 		"association rules" : {
 			"minimum confidence" : 0.10,

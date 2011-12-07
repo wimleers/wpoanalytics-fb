@@ -43,6 +43,10 @@ namespace Analytics {
                && def1.secPerWindow == def2.secPerWindow;
     }
 
+    bool operator!=(const TTWDefinition & def1, const TTWDefinition & def2) {
+        return !(def1 == def2);
+    }
+
 
     //--------------------------------------------------------------------------
     // Queries.

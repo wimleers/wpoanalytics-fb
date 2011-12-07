@@ -29,6 +29,8 @@ namespace Config {
             this->minPatternSupport             = Config::parseDouble(patternsJSON, "minimum support");
             this->minPotentialPatternSupport    = Config::parseDouble(patternsJSON, "minimum potential pattern support");
             this->patternItemConstraints        = Config::parseConstraints(patternsJSON, "item constraints");
+            this->ttwDef.deserialize(Config::parseSerializedTTWDef(patternsJSON, "tilted time window definition"));
+
             // Query: association rules.
             const QVariantMap & associationRulesJSON = queryJSON["association rules"].toMap();
             this->minRuleConfidence             = Config::parseDouble(associationRulesJSON, "minimum confidence");
@@ -226,6 +228,13 @@ namespace Config {
         }
 
         return discretizations;
+    }
+
+    QString Config::parseSerializedTTWDef(const QVariantMap & json, const QString & field) {
+        if (json.keys().contains(field) && json[field].toString().size() > 0)
+            return json[field].toString();
+        else
+            return CONFIG_DEFAULT_TTWDEF;
     }
 
 

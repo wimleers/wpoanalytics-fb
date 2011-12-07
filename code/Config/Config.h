@@ -16,6 +16,12 @@
 #include "typedefs.h"
 #include "../Analytics/Item.h"
 #include "../Analytics/Constraints.h"
+#include "../Analytics/TTWDefinition.h"
+
+
+// Default: 24 hours, 30 days.
+#define CONFIG_DEFAULT_TTWDEF "3600:HHHHHHHHHHHHHHHHHHHHHHHHDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
+
 
 namespace Config {
 
@@ -73,6 +79,7 @@ namespace Config {
         double getMinPatternSupport() const { return this->minPatternSupport; }
         double getMinPotentialPatternSupport() const { return this->minPotentialPatternSupport; }
         const Analytics::ItemConstraintsHash & getPatternItemConstraints() const { return this->patternItemConstraints; }
+        const Analytics::TTWDefinition & getTTWDefinition() const { return this->ttwDef; }
 
         // Getters (query: association rules).
         double getMinRuleConfidence() const { return this->minRuleConfidence; }
@@ -95,6 +102,7 @@ namespace Config {
         static Analytics::ItemConstraintsHash parseConstraints(const QVariantMap & json, const QString & key);
         static Attribute parseAttribute(const QVariantMap & json, const QString & field);
         static QSet<Discretization> parseDiscretizations(const QVariant & json, const QString & field);
+        static QString parseSerializedTTWDef(const QVariantMap & json, const QString & field);
 
         // Parser.
         Analytics::ItemConstraintsHash parserCategoricalItemConstraints;
@@ -104,6 +112,7 @@ namespace Config {
         double minPatternSupport;
         double minPotentialPatternSupport;
         Analytics::ItemConstraintsHash patternItemConstraints;
+        Analytics::TTWDefinition ttwDef;
 
         // Query: association rules
         double minRuleConfidence;
