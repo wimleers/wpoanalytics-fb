@@ -1,35 +1,50 @@
 #include "TestTTWDefinition.h"
 
-void TestTTWDefinition::serialization() {
+void TestTTWDefinition::serialization_data() {
+    QTest::addColumn<uint>("secPerWindow");
+    QTest::addColumn<MapCharUint>("granularities");
+    QTest::addColumn<QList<char> >("order");
+    QTest::addColumn<QString>("expected");
+
+    // Default.
     QMap<char, uint> granularitiesDefault;
     granularitiesDefault.insert('Q', 4);
     granularitiesDefault.insert('H', 24);
     granularitiesDefault.insert('D', 31);
     granularitiesDefault.insert('M', 12);
     granularitiesDefault.insert('Y', 1);
-    TTWDefinition defaultTTWDef(900,
-                                granularitiesDefault,
-                                QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
+    QTest::newRow("default")
+            << (uint) 900
+            << granularitiesDefault
+            << (QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y')
+            << QString("900:QQQQHHHHHHHHHHHHHHHHHHHHHHHHDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDMMMMMMMMMMMMY");
 
-    QMap<char, uint> granularitiesThirtyDays;
-    granularitiesThirtyDays.insert('H', 24);
-    granularitiesThirtyDays.insert('D', 30);
-    TTWDefinition thirtyDaysTTWDef(3600,
-                                   granularitiesThirtyDays,
-                                   QList<char>() << 'H' << 'D');
+    // 30 days.
+    QMap<char, uint> granularities30Days;
+    granularities30Days.insert('H', 24);
+    granularities30Days.insert('D', 30);
+    QTest::newRow("30 days")
+            << (uint) 3600
+            << granularities30Days
+            << (QList<char>() << 'H' << 'D')
+            << QString("3600:HHHHHHHHHHHHHHHHHHHHHHHHDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
 
-    // Serialize both.
-    QString defaultTTWDefSerialized = defaultTTWDef.serialize();
-    QString thirtyDaysTTWDefSerialized = thirtyDaysTTWDef.serialize();
+}
 
-    // Verify serialization.
-    QCOMPARE(defaultTTWDefSerialized, QString("900:QQQQHHHHHHHHHHHHHHHHHHHHHHHHDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDMMMMMMMMMMMMY"));
-    QCOMPARE(thirtyDaysTTWDefSerialized, QString("3600:HHHHHHHHHHHHHHHHHHHHHHHHDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"));
+void TestTTWDefinition::serialization() {
+    QFETCH(uint, secPerWindow);
+    QFETCH(MapCharUint, granularities);
+    QFETCH(QList<char>, order);
+    QFETCH(QString, expected);
+
+    TTWDefinition ttwDef(secPerWindow, granularities, order);
+
+    // Verify expected serialization.
+    QString serialized = ttwDef.serialize();
+    QCOMPARE(serialized, expected);
 
     // Verify deserialization == serialization.
-    TTWDefinition deserializedTTWDef;
-    deserializedTTWDef.deserialize(defaultTTWDefSerialized);
-    QCOMPARE(deserializedTTWDef, defaultTTWDef);
-    deserializedTTWDef.deserialize(thirtyDaysTTWDefSerialized);
-    QCOMPARE(deserializedTTWDef, thirtyDaysTTWDef);
+    TTWDefinition deserialized;
+    deserialized.deserialize(serialized);
+    QCOMPARE(deserialized, ttwDef);
 }
