@@ -29,6 +29,15 @@ void TestTTWDefinition::serialization_data() {
             << (QList<char>() << 'H' << 'D')
             << QString("3600:HHHHHHHHHHHHHHHHHHHHHHHHDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
 
+    // 48 hours.
+    QMap<char, uint> granularities48Hours;
+    granularities48Hours.insert('H', 48);
+    QTest::newRow("48 hours")
+            << (uint) 3600
+            << granularities48Hours
+            << (QList<char>() << 'H')
+            << QString("3600:HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH");
+
 }
 
 void TestTTWDefinition::serialization() {
