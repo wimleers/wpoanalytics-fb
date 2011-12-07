@@ -787,6 +787,7 @@ void MainWindow::createCausesGroupbox() {
     this->causesCompareLabel = new QLabel(tr("with those in the"));
     this->causesCompareTimerangeChoice = new QComboBox(this);
     this->causesCompareTimerangeChoice->addItems(timeRanges);
+    this->causesCompareTimerangeChoice->setCurrentIndex(this->causesCompareTimerangeChoice->count() - 1);
     this->causesReloadButton = new QPushButton(tr("Reload"), this);
     this->causesReloadButton->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_R));
     mineLayout->addWidget(this->causesActionChoice);
