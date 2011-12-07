@@ -27,15 +27,9 @@ private:
 
     void verifyShapeOfBasicTree(const FPStream * fpstream, bool verifyNodeIDs = true);
     static const TTWDefinition getTTWDefinition() {
-        QMap<char, uint> granularitiesDefault;
-        granularitiesDefault.insert('Q', 4);
-        granularitiesDefault.insert('H', 24);
-        granularitiesDefault.insert('D', 31);
-        granularitiesDefault.insert('M', 12);
-        granularitiesDefault.insert('Y', 1);
-        TTWDefinition defaultTTWDefinition(3600,
-                                           granularitiesDefault,
-                                           QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
+        TTWDefinition defaultTTWDefinition;
+        defaultTTWDefinition.deserialize("900:QQQQHHHHHHHHHHHHHHHHHHHHHHHHDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDMMMMMMMMMMMMY");
+
         return defaultTTWDefinition;
     }
 };

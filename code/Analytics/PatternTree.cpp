@@ -67,15 +67,7 @@ namespace Analytics {
             else {
                 // Before version 2, a different default was used, so set that
                 // default.
-                QMap<char, uint> granularitiesDefault;
-                granularitiesDefault.insert('Q', 4);
-                granularitiesDefault.insert('H', 24);
-                granularitiesDefault.insert('D', 31);
-                granularitiesDefault.insert('M', 12);
-                granularitiesDefault.insert('Y', 1);
-                this->ttwDef = TTWDefinition(3600,
-                                             granularitiesDefault,
-                                             QList<char>() << 'Q' << 'H' << 'D' << 'M' << 'Y');
+                this->ttwDef.deserialize("900:QQQQHHHHHHHHHHHHHHHHHHHHHHHHDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDMMMMMMMMMMMMY");
             }
 
             // Rebuild the root node.
