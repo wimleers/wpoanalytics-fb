@@ -469,6 +469,7 @@ bool CLI::parseCommandOptions() {
     // State.
     options.add("load", "Load pattern tree: continue from the state in this file.", QxtCommandOptions::ValueRequired);
     options.alias("load", "l");
+    options.add("load-if-exists", "Load only if it exists, otherwise start anew.", QxtCommandOptions::NoValue);
     options.add("save", "Save pattern tree; save the state to a file so it can be continued later.", QxtCommandOptions::ValueRequired);
     options.alias("save", "s");
     options.add("save-per-chunk", "Save pattern tree; save the state to a file after every chunk that is processed (ignored without --save)", QxtCommandOptions::NoValue);
@@ -535,6 +536,9 @@ bool CLI::parseCommandOptions() {
     if (options.count("load") > 0) {
         this->optionLoad = true;
         this->optionLoadFile = options.value("load").toString();
+        this->optionLoadIfExists = false;
+        if (options.count("load-if-exists") > 0)
+            this->optionLoadIfExists = true;
     }
     else
         this->optionLoad = false;
@@ -613,9 +617,15 @@ void CLI::run() {
 
     // Load state if requested.
     if (this->optionLoad && !this->loadCompleted) {
-        this->out("CLI", QString("Loading state from '%1'.").arg(this->optionLoadFile), 0);
-        emit load(this->optionLoadFile);
-        return;
+        if (this->optionLoadIfExists && !QFile::exists(this->optionLoadFile)) {
+            this->loadCompleted = true;
+            // No `return`: immediately continue with the next step.
+        }
+        else {
+            this->out("CLI", QString("Loading state from '%1'.").arg(this->optionLoadFile), 0);
+            emit load(this->optionLoadFile);
+            return;
+        }
     }
     // run() will be called again by loaded()
 

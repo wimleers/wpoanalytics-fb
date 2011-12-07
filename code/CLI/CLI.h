@@ -91,6 +91,7 @@ private:
     bool optionInputStdin;
     bool optionLoad;
     QString optionLoadFile;
+    bool optionLoadIfExists;
     bool optionSave;
     QString optionSaveFile;
     bool optionMineRules;
