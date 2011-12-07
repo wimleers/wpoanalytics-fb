@@ -271,8 +271,18 @@ namespace Analytics {
         // If the current granularity's maximum capacity has been reached,
         // then shift it to the next (less granular) granularity.
         if (capacityUsed == count) {
-            this->shift(granularity);
-            capacityUsed = this->capacityUsed[granularity];
+            // This is the last granularity! Here, we apply the sliding window
+            // principle. We pretend there's still room, then the common case
+            // applies again.
+            if (granularity + 1 > this->def.numGranularities - 1) {
+                this->capacityUsed[granularity]--;
+                capacityUsed = this->capacityUsed[granularity];
+            }
+            // Shift the support counts in this granularity to the next.
+            else {
+                this->shift(granularity);
+                capacityUsed = this->capacityUsed[granularity];
+            }
         }
 
         // Store the value (in the first bucket of this granularity, which

@@ -11,6 +11,7 @@ class TestTiltedTimeWindow : public QObject {
 
 private slots:
     void basic();
+    void slidingWindow();
 };
 
 #endif // TESTTILTEDTIMEWINDOW_H

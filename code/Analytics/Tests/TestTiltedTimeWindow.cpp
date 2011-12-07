@@ -138,3 +138,78 @@ void TestTiltedTimeWindow::basic() {
 
     delete ttw;
 }
+
+/**
+ * The sliding window occurs for the last granularity in a TiltedTimeWindow: old
+ * data is removed. Here, we test it for both a TTWDefinition with a single
+ * granularity and one with two granularities.
+ */
+void TestTiltedTimeWindow::slidingWindow() {
+    Bucket U = TTW_BUCKET_UNUSED;
+    TiltedTimeWindow * ttw = new TiltedTimeWindow();
+    QList<SupportCount> supportCounts;
+
+    // TTWDefinition with single granularity.
+    QMap<char, uint> granularitiesSingle;
+    granularitiesSingle.insert('H', 4);
+    TTWDefinition singleGranularityTTWDefinition(3600,
+                                                 granularitiesSingle,
+                                                 QList<char>() << 'H');
+
+    ttw->build(singleGranularityTTWDefinition, true);
+
+    supportCounts.clear();
+    // Four hours of data.
+    supportCounts << 1 << 2 << 3 << 4;
+    // Fifth hour.
+    supportCounts << 5;
+
+    // First four hours.
+    for (int i = 0; i < 4; i++)
+        ttw->append(supportCounts[i], i+1);
+    QCOMPARE(ttw->getBuckets(4), QVector<SupportCount>() << 4 << 3 << 2 << 1);
+    QCOMPARE(ttw->getOldestBucketFilled(), (Bucket) 3);
+    QCOMPARE(ttw->getLastUpdate(), (unsigned int) 4);
+
+    // Fifth hour.
+    ttw->append(supportCounts[4], 5);
+    QCOMPARE(ttw->getBuckets(4), QVector<SupportCount>() << 5 << 4 << 3 << 2);
+    QCOMPARE(ttw->getOldestBucketFilled(), (Bucket) 3);
+    QCOMPARE(ttw->getLastUpdate(), (unsigned int) 5);
+
+
+
+
+    // TTWDefinition with double granularity.
+    QMap<char, uint> granularitiesDouble;
+    granularitiesDouble.insert('Q', 4);
+    granularitiesDouble.insert('H', 2);
+    TTWDefinition doubleGranularityTTWDefinition(3600,
+                                                 granularitiesDouble,
+                                                 QList<char>() << 'Q' << 'H');
+
+    ttw->build(doubleGranularityTTWDefinition, true);
+
+    supportCounts.clear();
+    // Four quarters of data: 1st hour.
+    supportCounts << 10 << 10 << 10 << 10;
+    // Four quarters of data: 2nd hour.
+    supportCounts << 20 << 20 << 20 << 20;
+    // Four quarters of data: 3rd hour.
+    supportCounts << 30 << 30 << 30 << 30;
+    // One quarter of data.
+    supportCounts << 40;
+
+    // First, second & third hour.
+    for (int i = 0; i < 12; i++)
+        ttw->append(supportCounts[i], i+1);
+    QCOMPARE(ttw->getBuckets(6), QVector<SupportCount>() << 30 << 30 << 30 << 30 << 80 << 40);
+    QCOMPARE(ttw->getOldestBucketFilled(), (Bucket) 5);
+    QCOMPARE(ttw->getLastUpdate(), (unsigned int) 12);
+
+    // First quarter of fourth hour.
+    ttw->append(supportCounts[12], 13);
+    QCOMPARE(ttw->getBuckets(6), QVector<SupportCount>() << 40 << U << U << U << 120 << 80);
+    QCOMPARE(ttw->getOldestBucketFilled(), (Bucket) 5);
+    QCOMPARE(ttw->getLastUpdate(), (unsigned int) 13);
+}
