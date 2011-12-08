@@ -7,6 +7,8 @@ void registerCommonMetaTypes() {
     // Common custom types.
     qRegisterMetaType<Time>("Time");
     qRegisterMetaType<RawTransaction>("RawTransaction");
+    qRegisterMetaType<Granularity>("Granularity");
+    qRegisterMetaType<Bucket>("Bucket");
     qRegisterMetaType<BatchMetadata>("BatchMetadata");
     qRegisterMetaType<Batch<RawTransaction> >("Batch<RawTransaction>");
 }

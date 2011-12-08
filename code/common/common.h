@@ -8,6 +8,9 @@
 
 typedef quint32 Time;
 typedef QStringList RawTransaction;
+// TiltedTimeWindow.
+typedef int Granularity;
+typedef int Bucket;
 
 struct BatchMetadata {
     BatchMetadata() : discardedSamples(0.0) {}

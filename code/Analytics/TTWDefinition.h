@@ -7,10 +7,9 @@
 #include <QVector>
 #include <QDebug>
 
-namespace Analytics {
-    typedef int Granularity;
-    typedef int Bucket;
+#include "../common/common.h"
 
+namespace Analytics {
     class TTWDefinition {
     public:
         TTWDefinition() {}
