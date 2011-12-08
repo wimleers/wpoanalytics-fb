@@ -1,4 +1,4 @@
-#include "Parser.h"
+#include "JSONLogParser.h"
 
 namespace JSONLogParser {
     Config::EpisodeNameIDHash Parser::episodeNameIDHash;
