@@ -429,7 +429,12 @@ void CLI::comparedMinedRules(uint fromOlder, uint toOlder,
             ruleJSON.insert("support",             (int) rule.support);
             ruleJSON.insert("confidence",          (double) rule.confidence);
             ruleJSON.insert("support variance",    (double) supportVariance[i]);
-            ruleJSON.insert("confidence variance", (double) confidenceVariance[i]);
+            // TRICKY: we're explicitly checking -1/1 because QxtJSON doesn't
+            // appear able to serialize this correctly :(
+            if (confidenceVariance[i] == -1 || confidenceVariance[i] == 1)
+                ruleJSON.insert("confidence variance", (int) confidenceVariance[i]);
+            else
+                ruleJSON.insert("confidence variance", (bool) confidenceVariance[i]);
             ruleJSON.insert("relative support",    (double) relativeSupport[i]);
 
             out << QxtJSON::stringify(ruleJSON) << "\n";
