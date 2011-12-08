@@ -482,6 +482,9 @@ bool CLI::parseCommandOptions() {
     options.alias("input-stdin", "is");
     // Rules.
     options.add("rules", "Mine rules (defaults to the entire data set)", QxtCommandOptions::NoValue);
+    options.alias("rules", "r");
+    options.add("rules-range", "Range over which to mine rules, of the form 'x,y', e.g.: '0,3' would mine over the first 4 buckets", QxtCommandOptions::ValueRequired);
+    options.alias("rules-range", "rr");
     int outputGroup = 1;
     options.add("output", "Define output file for storing the mined rules (required if --rules is set).", QxtCommandOptions::ValueRequired, outputGroup);
     options.alias("output", "o");
@@ -561,6 +564,16 @@ bool CLI::parseCommandOptions() {
     this->optionMineRules = false;
     if (options.count("rules") > 0) {
         this->optionMineRules = true;
+
+        // The default range is the *whole* range.
+        this->optionMineRulesRange = qMakePair((Bucket) -1, (Bucket) -1);
+
+        // Allow --rules-range to override the range.
+        QStringList p = options.value("rules-range").toString().split(",");
+        this->optionMineRulesRange = qMakePair((Bucket) p[0].toUInt(),
+                                               (Bucket) p[1].toUInt());
+
+        // --output
         if (options.count("output") > 0) {
             this->optionOutput = true;
             this->optionOutputStdout = false;
@@ -629,6 +642,40 @@ void CLI::run() {
     }
     // run() will be called again by loaded()
 
+    {
+        /**
+         * Parameters validation.
+         *
+         * Some options, such as the buckets in rule mining ranges, cannot be
+         * validated at option parse time, because they depend on the config
+         * file.
+         * Worse, also the state file must already be loaded (if any), because
+         * it can override the TTWDefinition in the config file.
+         */
+        static bool validated = false;
+        if (!validated) {
+            Analytics::TTWDefinition * t = this->ttwDef;
+            bool v;
+
+            // -1 is when the default (entire) time range is used.
+            if (this->optionMineRulesRange.first != -1) {
+                v = true;
+                v = v && t->exists(this->optionMineRulesRange.first);
+                v = v && t->exists(this->optionMineRulesRange.second);
+                if (!v) {
+                    QString output = QString(
+                                     "--rules-range: invalid range specified. "
+                                     "Valid range: [0,%1].")
+                                     .arg(this->ttwDef->numBuckets - 1);
+                    this->out("ERROR", output, 0);
+                    this->exit(0);
+                }
+            }
+
+            validated = true;
+        }
+    }
+
     // Parse & mine for patterns if requested.
     if (this->optionInput && !this->inputCompleted) {
         if (!this->optionInputStdin) {
@@ -655,11 +702,28 @@ void CLI::run() {
     // run() will be called again by saved()
 
     if (this->optionMineRules && !this->mineCompleted) {
-        if (this->analyst->getPatternTreeSize() == 0)
-            this->out("CLI", QString("There are zero patterns, hence there is nothing to be found but 42."), 0);
+        if (this->analyst->getPatternTreeSize() == 0) {
+            QString output("There are zero patterns, hence there is nothing to "
+                           "be found but 42.");
+            this->out("CLI", output, 0);
+        }
         else {
-            this->out("CLI", QString("Mining for association rules over %1 patterns...").arg(this->analyst->getPatternTreeSize()), 0);
-            emit mine(0, this->ttwDef->numBuckets - 1);
+            // If the whole range should be used, then actually load that now.
+            if (this->optionMineRulesRange.first == -1) {
+                int n = this->ttwDef->numBuckets - 1;
+                this->optionMineRulesRange = qMakePair((Bucket) 0, (Bucket) n);
+            }
+
+                QString output = QString(
+                                 "Mining for association rules over %1 patterns"
+                                 " in buckets [%2,%3]...")
+                                 .arg(this->analyst->getPatternTreeSize())
+                                 .arg(this->optionMineRulesRange.first)
+                                 .arg(this->optionMineRulesRange.second);
+
+                this->out("CLI", output, 0);
+                emit mine(this->optionMineRulesRange.first,
+                          this->optionMineRulesRange.second);
             return;
         }
     }
@@ -730,9 +794,9 @@ void CLI::out(const QString & module, const QString & output, int verbosity) {
     if (verbosity > this->optionVerbosity)
         return;
 
-    // Blink the output if it's a warning!
+    // Blink the output if it's a warning or an error!
     QString message = output;
-    if (module == "WARNING") {
+    if (module == "WARNING" || module == "ERROR") {
         message = startRedBG + output + stopRedBG;
     }
 

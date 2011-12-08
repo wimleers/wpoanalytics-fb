@@ -4,10 +4,12 @@
 #include <QTextStream>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QPair>
 
 #include <qxtcommandoptions.h>
 #include <qxtjson.h>
 
+#include "../common/common.h"
 #include "../Config/Config.h"
 #include "../Parser/JSONLogParser.h"
 #include "../Analytics/Analyst.h"
@@ -95,6 +97,7 @@ private:
     bool optionSave;
     QString optionSaveFile;
     bool optionMineRules;
+    QPair<Bucket, Bucket> optionMineRulesRange;
     bool optionOutput;
     QString optionOutputFile;
     bool optionOutputStdout;
