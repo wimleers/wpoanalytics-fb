@@ -65,6 +65,7 @@ namespace Analytics {
                                 QList<Analytics::AssociationRule> comparedRules,
                                 QList<Analytics::Confidence> confidenceVariance,
                                 QList<float> supportVariance,
+                                QList<float> relativeSupport,
                                 Analytics::SupportCount eventsInIntersectedTimeRange,
                                 Analytics::SupportCount eventsInOlderTimeRange,
                                 Analytics::SupportCount eventsInNewerTimeRange);

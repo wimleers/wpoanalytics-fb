@@ -357,6 +357,7 @@ namespace Analytics {
         QList<AssociationRule> comparedRules;
         QList<Confidence> confidenceVariance;
         QList<float> supportVariance;
+        QList<float> relativeSupport;
 
         // Intersected rules.
         QList<AssociationRule> intersectedRules = newerRules.toSet().intersect(olderRules.toSet()).toList();
@@ -367,6 +368,7 @@ namespace Analytics {
             o = olderRules.indexOf(rule);
             confidenceVariance.append(newerRules[n].confidence - olderRules[o].confidence);
             supportVariance.append((1.0 * newerRules[n].support / supportForNewerRange) - (1.0 * olderRules[o].support / supportForOlderRange));
+            relativeSupport.append(1.0 * rule.support / supportForIntersectedRange);
         }
 
         // Newer-only rules.
@@ -375,6 +377,7 @@ namespace Analytics {
         for (int i = 0; i < newerOnlyRules.size(); i++) {
             confidenceVariance.append(1.0);
             supportVariance.append(1.0);
+            relativeSupport.append(1.0 * newerOnlyRules[i].support / supportForNewerRange);
         }
 
         // Older-only rules.
@@ -383,6 +386,7 @@ namespace Analytics {
         for (int i = 0; i < olderOnlyRules.size(); i++) {
             confidenceVariance.append(-1.0);
             supportVariance.append(-1.0);
+            relativeSupport.append(1.0 * olderOnlyRules[i].support / supportForOlderRange);
         }
 
         int duration = this->timer.elapsed();
@@ -405,6 +409,7 @@ namespace Analytics {
                                 comparedRules,
                                 confidenceVariance,
                                 supportVariance,
+                                relativeSupport,
                                 supportForIntersectedRange,
                                 supportForNewerRange,
                                 supportForOlderRange);

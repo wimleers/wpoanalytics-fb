@@ -217,6 +217,7 @@ void MainWindow::comparedMinedRules(uint fromOlder, uint toOlder,
                         QList<Analytics::AssociationRule> comparedRules,
                         QList<Analytics::Confidence> confidenceVariance,
                         QList<float> supportVariance,
+                        QList<float> relativeSupport,
                         Analytics::SupportCount eventsInIntersectedTimeRange,
                         Analytics::SupportCount eventsInOlderTimeRange,
                         Analytics::SupportCount eventsInNewerTimeRange)
@@ -236,6 +237,9 @@ void MainWindow::comparedMinedRules(uint fromOlder, uint toOlder,
     Q_UNUSED(toOlder)
     Q_UNUSED(fromNewer)
     Q_UNUSED(toNewer)
+    Q_UNUSED(eventsInIntersectedTimeRange)
+    Q_UNUSED(eventsInOlderTimeRange)
+    Q_UNUSED(eventsInNewerTimeRange)
 
     this->statusMutex.lock();
     this->totalPatternsExaminedWhileMining += this->patternTreeSize * 2;
@@ -283,18 +287,10 @@ void MainWindow::comparedMinedRules(uint fromOlder, uint toOlder,
         confidenceVarianceItem->setData(confidenceVariance[i], Qt::UserRole);
         model->setItem(row, 3, confidenceVarianceItem);
 
-        Analytics::SupportCount eventCount;
-        if (supportVariance[i] == -1) // This only existed in the "older" time range.
-            eventCount = eventsInOlderTimeRange;
-        else if (supportVariance[i] == 1) // This only existed in the "newer" time range.
-            eventCount = eventsInNewerTimeRange;
-        else // This existed in both time ranges.
-            eventCount = eventsInIntersectedTimeRange;
-        double relOccurrences = rule.support * 100.0 / eventCount;
         QStandardItem * occurrencesItem = new QStandardItem(
                     QString("%1 (%2%)")
                     .arg(QString::number(rule.support))
-                    .arg(QString::number(relOccurrences, 'f', 2))
+                    .arg(QString::number(relativeSupport[i], 'f', 2))
         );
         occurrencesItem->setData(rule.support, Qt::UserRole);
         model->setItem(row, 4, occurrencesItem);
@@ -554,8 +550,8 @@ void MainWindow::connectLogic() {
     connect(this->analyst, SIGNAL(minedRules(uint,uint,QList<Analytics::AssociationRule>,Analytics::SupportCount)), SLOT(minedRules(uint,uint,QList<Analytics::AssociationRule>,Analytics::SupportCount)));
     connect(
                 this->analyst,
-                SIGNAL(comparedMinedRules(uint,uint,uint,uint,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::Confidence>,QList<float>,Analytics::SupportCount,Analytics::SupportCount,Analytics::SupportCount)),
-                SLOT(comparedMinedRules(uint,uint,uint,uint,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::Confidence>,QList<float>,Analytics::SupportCount,Analytics::SupportCount,Analytics::SupportCount))
+                SIGNAL(comparedMinedRules(uint,uint,uint,uint,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::Confidence>,QList<float>,QList<float>,Analytics::SupportCount,Analytics::SupportCount,Analytics::SupportCount)),
+                SLOT(comparedMinedRules(uint,uint,uint,uint,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::Confidence>,QList<float>,QList<float>,Analytics::SupportCount,Analytics::SupportCount,Analytics::SupportCount))
     );
     connect(this->analyst, SIGNAL(loaded(bool,Time,Time,quint64,quint64,quint64,quint64,quint64)), this, SLOT(loadedFile(bool,Time,Time,quint64,quint64,quint64,quint64,quint64)));
     connect(this->analyst, SIGNAL(saved(bool)), this, SLOT(savedFile(bool)));
