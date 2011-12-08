@@ -369,6 +369,82 @@ void CLI::minedRules(uint from, uint to, QList<Analytics::AssociationRule> assoc
 }
 
 
+void CLI::comparedMinedRules(uint fromOlder, uint toOlder,
+                            uint fromNewer, uint toNewer,
+                            QList<Analytics::AssociationRule> intersectedRules,
+                            QList<Analytics::AssociationRule> olderRules,
+                            QList<Analytics::AssociationRule> newerRules,
+                            QList<Analytics::AssociationRule> comparedRules,
+                            QList<Analytics::Confidence> confidenceVariance,
+                            QList<float> supportVariance,
+                            QList<float> relativeSupport,
+                            Analytics::SupportCount eventsInIntersectedTimeRange,
+                            Analytics::SupportCount eventsInOlderTimeRange,
+                            Analytics::SupportCount eventsInNewerTimeRange)
+{
+    Q_UNUSED(fromOlder)
+    Q_UNUSED(toOlder)
+    Q_UNUSED(fromNewer)
+    Q_UNUSED(toNewer)
+    Q_UNUSED(intersectedRules)
+    Q_UNUSED(olderRules)
+    Q_UNUSED(newerRules)
+    Q_UNUSED(eventsInIntersectedTimeRange)
+    Q_UNUSED(eventsInOlderTimeRange)
+    Q_UNUSED(eventsInNewerTimeRange)
+
+    QFile file;
+    bool opened = false;
+
+    if (this->optionOutputStdout) {
+        this->out("CLI", "Saving rules to stdout.", 0);
+        opened = file.open(stdout, QIODevice::WriteOnly | QIODevice::Text);
+    }
+    else {
+        this->out("CLI", QString("Saving rules to '%1'.").arg(this->optionOutputFile), 0);
+        file.setFileName(this->optionOutputFile);
+        opened = file.open(QIODevice::WriteOnly | QIODevice::Text);
+    }
+
+    if (!opened) {
+        qCritical("Could not open file %s for writing.", qPrintable(this->optionOutputFile));
+    }
+    else {
+        QTextStream out(&file);
+
+        QVariantMap ruleJSON;
+        for (int i = 0; i < comparedRules.size(); i++) {
+            Analytics::AssociationRule rule = comparedRules.at(i);
+
+            QVariantList antecedentJSON;
+            foreach (const Analytics::ItemName & itemName, this->analyst->itemsetIDsToNames(rule.antecedent))
+                antecedentJSON.append((QString) itemName);
+
+            QVariantList consequentJSON;
+            foreach (const Analytics::ItemName & itemName, this->analyst->itemsetIDsToNames(rule.consequent))
+                consequentJSON.append((QString) itemName);
+
+            ruleJSON.insert("antecedent",          antecedentJSON);
+            ruleJSON.insert("consequent",          consequentJSON);
+            ruleJSON.insert("support",             (int) rule.support);
+            ruleJSON.insert("confidence",          (double) rule.confidence);
+            ruleJSON.insert("support variance",    (double) supportVariance[i]);
+            ruleJSON.insert("confidence variance", (double) confidenceVariance[i]);
+            ruleJSON.insert("relative support",    (double) relativeSupport[i]);
+
+            out << QxtJSON::stringify(ruleJSON) << "\n";
+
+            ruleJSON.clear();
+        }
+
+        file.close();
+    }
+
+    this->mineCompleted = true;
+    this->run();
+}
+
+
 
 //---------------------------------------------------------------------------
 // Private slots.
@@ -485,6 +561,8 @@ bool CLI::parseCommandOptions() {
     options.alias("rules", "r");
     options.add("rules-range", "Range over which to mine rules, of the form 'x,y', e.g.: '0,3' would mine over the first 4 buckets", QxtCommandOptions::ValueRequired);
     options.alias("rules-range", "rr");
+    options.add("rules-compare-range", "Compare to rules mined over this range. Value format analogous to --rules-range's value.", QxtCommandOptions::ValueRequired);
+    options.alias("rules-compare-range", "rcr");
     int outputGroup = 1;
     options.add("output", "Define output file for storing the mined rules (required if --rules is set).", QxtCommandOptions::ValueRequired, outputGroup);
     options.alias("output", "o");
@@ -572,6 +650,16 @@ bool CLI::parseCommandOptions() {
         QStringList p = options.value("rules-range").toString().split(",");
         this->optionMineRulesRange = qMakePair((Bucket) p[0].toUInt(),
                                                (Bucket) p[1].toUInt());
+
+        // --rules-compare-range
+        this->optionMineRulesCompare = false;
+        if (options.count("rules-compare-range")) {
+            this->optionMineRulesCompare = true;
+            p = options.value("rules-compare-range").toString().split(",");
+            this->optionMineRulesCompareRange = qMakePair(
+                                                    (Bucket) p[0].toUInt(),
+                                                    (Bucket) p[1].toUInt());
+        }
 
         // --output
         if (options.count("output") > 0) {
@@ -672,6 +760,20 @@ void CLI::run() {
                 }
             }
 
+            if (this->optionMineRulesCompare) {
+                v = true;
+                v = v && t->exists(this->optionMineRulesRange.second);
+                v = v && t->exists(this->optionMineRulesCompareRange.second);
+                if (!v) {
+                    QString output = QString(
+                                     "--rules-compare-range: invalid range "
+                                     "specified. Valid range: [0,%1].")
+                                     .arg(this->ttwDef->numBuckets - 1);
+                    this->out("ERROR", output, 0);
+                    this->exit(0);
+                }
+            }
+
             validated = true;
         }
     }
@@ -714,6 +816,8 @@ void CLI::run() {
                 this->optionMineRulesRange = qMakePair((Bucket) 0, (Bucket) n);
             }
 
+            // Regular mining.
+            if (!this->optionMineRulesCompare) {
                 QString output = QString(
                                  "Mining for association rules over %1 patterns"
                                  " in buckets [%2,%3]...")
@@ -724,6 +828,25 @@ void CLI::run() {
                 this->out("CLI", output, 0);
                 emit mine(this->optionMineRulesRange.first,
                           this->optionMineRulesRange.second);
+            }
+            // Mine two time ranges and compare.
+            else {
+                QString output = QString(
+                                 "Mining for association rules over %1 patterns"
+                                 " in buckets [%2,%3] and [%4,%5] and comparing"
+                                 " them...")
+                                 .arg(this->analyst->getPatternTreeSize())
+                                 .arg(this->optionMineRulesRange.first)
+                                 .arg(this->optionMineRulesRange.second)
+                                 .arg(this->optionMineRulesCompareRange.first)
+                                 .arg(this->optionMineRulesCompareRange.second);
+                this->out("CLI", output, 0);
+                emit mineAndCompare(this->optionMineRulesRange.first,
+                                    this->optionMineRulesRange.second,
+                                    this->optionMineRulesCompareRange.first,
+                                    this->optionMineRulesCompareRange.second);
+            }
+
             return;
         }
     }
@@ -888,11 +1011,16 @@ void CLI::connectLogic() {
     connect(this->analyst, SIGNAL(saved(bool)), SLOT(saved(bool)));
 
     connect(this->analyst, SIGNAL(minedRules(uint,uint,QList<Analytics::AssociationRule>,Analytics::SupportCount)), SLOT(minedRules(uint,uint,QList<Analytics::AssociationRule>,Analytics::SupportCount)));
+    connect(
+                this->analyst,
+                SIGNAL(comparedMinedRules(uint,uint,uint,uint,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::Confidence>,QList<float>,QList<float>,Analytics::SupportCount,Analytics::SupportCount,Analytics::SupportCount)),
+                SLOT(comparedMinedRules(uint,uint,uint,uint,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::AssociationRule>,QList<Analytics::Confidence>,QList<float>,QList<float>,Analytics::SupportCount,Analytics::SupportCount,Analytics::SupportCount))
+    );
 
     // UI -> logic.
     connect(this, SIGNAL(parse(QString)), this->parser, SLOT(parse(QString)));
     connect(this, SIGNAL(mine(uint,uint)), this->analyst, SLOT(mineRules(uint,uint)));
-//    connect(this, SIGNAL(mineAndCompare(uint,uint,uint,uint)), this->analyst, SLOT(mineAndCompareRules(uint,uint,uint,uint)));
+    connect(this, SIGNAL(mineAndCompare(uint,uint,uint,uint)), this->analyst, SLOT(mineAndCompareRules(uint,uint,uint,uint)));
     connect(this, SIGNAL(load(QString)), this->analyst, SLOT(load(QString)));
     connect(this, SIGNAL(save(QString)), this->analyst, SLOT(save(QString)));
 }

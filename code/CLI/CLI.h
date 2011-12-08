@@ -27,7 +27,7 @@ signals:
     // For cross-thread communication.
     void parse(QString file);
     void mine(uint from, uint to);
-//    void mineAndCompare(uint fromOlder, uint toOlder, uint fromNewer, uint toNewer);
+    void mineAndCompare(uint fromOlder, uint toOlder, uint fromNewer, uint toNewer);
 
     void load(QString file);
     void save(QString file);
@@ -48,7 +48,6 @@ public slots:
     void updateRuleMiningStatus(bool mining);
     void updateRuleMiningStats(int duration, Time start, Time end, quint64 numAssociationRules, quint64 numTransactions, quint64 numLines);
     void minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange);
-    /*
     void comparedMinedRules(uint fromOlder, uint toOlder,
                             uint fromNewer, uint toNewer,
                             QList<Analytics::AssociationRule> intersectedRules,
@@ -57,10 +56,10 @@ public slots:
                             QList<Analytics::AssociationRule> comparedRules,
                             QList<Analytics::Confidence> confidenceVariance,
                             QList<float> supportVariance,
+                            QList<float> relativeSupport,
                             Analytics::SupportCount eventsInIntersectedTimeRange,
                             Analytics::SupportCount eventsInOlderTimeRange,
                             Analytics::SupportCount eventsInNewerTimeRange);
-*/
 
 private slots:
     void patterMiningFinished();
@@ -97,7 +96,9 @@ private:
     bool optionSave;
     QString optionSaveFile;
     bool optionMineRules;
+    bool optionMineRulesCompare;
     QPair<Bucket, Bucket> optionMineRulesRange;
+    QPair<Bucket, Bucket> optionMineRulesCompareRange;
     bool optionOutput;
     QString optionOutputFile;
     bool optionOutputStdout;
