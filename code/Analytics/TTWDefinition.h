@@ -23,6 +23,7 @@ namespace Analytics {
         uint getSecPerWindow() const { return this->secPerWindow; }
 
         // Queries.
+        bool exists(Bucket b) const;
         bool bucketIsBeforeGranularity(Bucket b, Granularity g) const;
         Granularity findLowestGranularityAfterBucket(Bucket b) const;
         uint calculateSecondsToBucket(Bucket bucket, bool includeBucketItself) const;

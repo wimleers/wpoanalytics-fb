@@ -51,6 +51,10 @@ namespace Analytics {
     //--------------------------------------------------------------------------
     // Queries.
 
+    bool TTWDefinition::exists(Bucket b) const {
+        return (b >= 0) && (b < this->numBuckets);
+    }
+
     bool TTWDefinition::bucketIsBeforeGranularity(Bucket b, Granularity g) const {
         Bucket offset = this->bucketOffset[g];
         Bucket count  = this->bucketCount[g];
