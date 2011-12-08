@@ -868,8 +868,9 @@ void CLI::verifyConfig() {
     // TODO: make this work with QTextStream.
 #ifndef DEBUG
     this->out("CLI", "This unfortunately only works in debug mode right now. Sorry about that.", 0);
-#endif
+#else
     qDebug() << *this->config;
+#endif
     this->run();
 }
 
