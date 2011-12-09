@@ -12,7 +12,7 @@
 #include <QWaitCondition>
 #include <QMutex>
 
-#include "common.h"
+#include "../common/common.h"
 #include "Item.h"
 #include "TiltedTimeWindow.h"
 #include "Constraints.h"

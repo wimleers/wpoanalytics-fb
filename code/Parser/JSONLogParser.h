@@ -13,10 +13,10 @@
 #include <QWaitCondition>
 #include <QTime>
 #include <QVariant>
-#include "qxtjson.h"
 
-#include "common.h"
-#include "Config.h"
+#include "../shared/qxtjson.h"
+#include "../common/common.h"
+#include "../Config/Config.h"
 
 
 enum WindowMarkerMethod {

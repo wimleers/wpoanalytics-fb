@@ -6,8 +6,8 @@
 #include <QMutexLocker>
 #include <QPair>
 
-#include <qxtcommandoptions.h>
-#include <qxtjson.h>
+#include "../shared/qxtcommandoptions.h"
+#include "../shared/qxtjson.h"
 
 #include "../common/common.h"
 #include "../Config/Config.h"

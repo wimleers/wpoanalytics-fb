@@ -10,7 +10,7 @@
 #include <QMetaType>
 #include <QDebug>
 
-#include "common.h"
+#include "../common/common.h"
 
 
 namespace Config {
