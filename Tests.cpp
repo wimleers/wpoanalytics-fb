@@ -1,4 +1,4 @@
-#include "Tests.h"
+#include "Analytics/Tests/Tests.h"
 
 int main() {
     Analytics::tests();
