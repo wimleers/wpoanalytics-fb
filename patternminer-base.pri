@@ -7,8 +7,4 @@ QMAKE_CXXFLAGS_RELEASE = -O3 \
     -funroll-loops \
     -fstrict-aliasing
 
-# Cleanup: filter to unique values.
-HEADERS = $$unique(HEADERS)
-DEFINES = $$unique(DEFINES)
-SOURCES = $$unique(SOURCES)
-INCLUDEPATH = $$unique(INCLUDEPATH)
+include("patternminer-building.pri")

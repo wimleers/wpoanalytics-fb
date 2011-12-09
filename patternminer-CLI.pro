@@ -1,4 +1,4 @@
-include("patternminer.pri")
+include("patternminer-base.pri")
 
 DEFINES += INTERFACE_COMMANDLINE
 DEPENDPATH += CLI

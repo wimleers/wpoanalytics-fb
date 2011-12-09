@@ -7,3 +7,5 @@ macx {
   CONFIG -= app_bundle
 }
 TARGET = tests
+
+include("patternminer-building.pri")

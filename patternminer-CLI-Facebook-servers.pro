@@ -7,7 +7,7 @@ FB_PLATFORM = "gcc-4.6.2-glibc-2.13"
 
 ###############################################################################
  
-include ("CLI.pro")
+include ("patternminer-CLI.pro")
 
 # Name the target binary.
 TARGET = patternminer
