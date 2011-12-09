@@ -5,3 +5,5 @@ DEPENDPATH += UI
 include("UI/UI.pri")
 
 SOURCES += main.cpp
+
+TARGET = "PatternMiner GUI"
