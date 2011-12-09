@@ -1,5 +1,0 @@
-*.o
-moc_*
-Makefile
-*-build-*
-*.pro.user

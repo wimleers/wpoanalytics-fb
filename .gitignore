@@ -1,2 +1,5 @@
-*build-desktop*
-*.pro.user.*
+*.o
+moc_*
+Makefile
+*-build-*
+*.pro.user
