@@ -6,6 +6,15 @@ FB_OS = "centos5.2-native"
 FB_PLATFORM = "gcc-4.6.2-glibc-2.13"
 
 ###############################################################################
+
+macx|win32 {
+    error("Use CLI.pro, this is a specialization of CLI.pro that only works on \
+          Facebook servers")
+}
+
+!exists(/home/engshare/third-party) {
+    error("/home/engshare/third-party does not exist!")
+}
  
 include ("patternminer-CLI.pro")
 
