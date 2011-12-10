@@ -960,7 +960,7 @@ void CLI::performSave() {
 }
 
 void CLI::showHelpText() {
-    QTextStream out(stdout);
+    QTextStream out(stderr);
     QString indent = "    ";
     QString startBold = "\033[7m";
     QString stopBold = "\033[0m";
