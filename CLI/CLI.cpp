@@ -412,8 +412,11 @@ void CLI::minedRules(uint from, uint to, QList<Analytics::AssociationRule> assoc
         file.close();
     }
 
-    this->mineCompleted = true;
-    this->run();
+    // Only call run() if we're mining only once, not after ever batch.
+    if (!this->optionMineRulesAfterBatch) {
+        this->mineCompleted = true;
+        this->run();
+    }
 }
 
 
@@ -587,6 +590,11 @@ void CLI::patterMiningFinished() {
     this->run();
 }
 
+void CLI::startRuleMiningAfterbatch(bool lastChunkPatternMined) {
+    if (lastChunkPatternMined && this->optionMineRulesAfterBatch)
+        this->runRuleMiner();
+}
+
 
 //---------------------------------------------------------------------------
 // Private methods (CLI functionality).
@@ -616,6 +624,8 @@ bool CLI::parseCommandOptions() {
     options.alias("rules-range", "rr");
     options.add("rules-compare-range", "Compare to rules mined over this range. Value format analogous to --rules-range's value.", QxtCommandOptions::ValueRequired);
     options.alias("rules-compare-range", "rcr");
+    options.add("rules-after-batch", "Mine rules after every batch.", QxtCommandOptions::NoValue);
+    options.alias("rules-after-batch", "rb");
     int outputGroup = 1;
     options.add("output", "Define output file for storing the mined rules (required if --rules is set).", QxtCommandOptions::ValueRequired, outputGroup);
     options.alias("output", "o");
@@ -718,6 +728,11 @@ bool CLI::parseCommandOptions() {
                                                     (Bucket) p[0].toUInt(),
                                                     (Bucket) p[1].toUInt());
         }
+
+        // --rules-after-batch
+        this->optionMineRulesAfterBatch = false;
+        if (options.count("rules-after-batch") > 0)
+            this->optionMineRulesAfterBatch = true;
 
         // --output
         if (options.count("output") > 0) {
@@ -869,56 +884,56 @@ void CLI::run() {
     }
     // run() will be called again by saved()
 
-    if (this->optionMineRules && !this->mineCompleted) {
-        if (this->analyst->getPatternTreeSize() == 0) {
-            QString output("There are zero patterns, hence there is nothing to "
-                           "be found but 42.");
-            this->out("CLI", output, 0);
-        }
-        else {
-            // If the whole range should be used, then actually load that now.
-            if (this->optionMineRulesRange.first == -1) {
-                int n = this->ttwDef->numBuckets - 1;
-                this->optionMineRulesRange = qMakePair((Bucket) 0, (Bucket) n);
-            }
-
-            // Regular mining.
-            if (!this->optionMineRulesCompare) {
-                QString output = QString(
-                                 "Mining for association rules over %1 patterns"
-                                 " in buckets [%2,%3]...")
-                                 .arg(this->analyst->getPatternTreeSize())
-                                 .arg(this->optionMineRulesRange.first)
-                                 .arg(this->optionMineRulesRange.second);
-
-                this->out("CLI", output, 0);
-                emit mine(this->optionMineRulesRange.first,
-                          this->optionMineRulesRange.second);
-            }
-            // Mine two time ranges and compare.
-            else {
-                QString output = QString(
-                                 "Mining for association rules over %1 patterns"
-                                 " in buckets [%2,%3] and [%4,%5] and comparing"
-                                 " them...")
-                                 .arg(this->analyst->getPatternTreeSize())
-                                 .arg(this->optionMineRulesRange.first)
-                                 .arg(this->optionMineRulesRange.second)
-                                 .arg(this->optionMineRulesCompareRange.first)
-                                 .arg(this->optionMineRulesCompareRange.second);
-                this->out("CLI", output, 0);
-                emit mineAndCompare(this->optionMineRulesRange.first,
-                                    this->optionMineRulesRange.second,
-                                    this->optionMineRulesCompareRange.first,
-                                    this->optionMineRulesCompareRange.second);
-            }
-
-            return;
-        }
+    // Mine association rules if requested.
+    if (this->optionMineRules && !this->optionMineRulesAfterBatch
+        && !this->mineCompleted)
+    {
+        this->runRuleMiner();
+        return;
     }
+    // run() will be called again by minedRules()
 
     // All done! :)
     this->exit(0);
+}
+
+void CLI::runRuleMiner() {
+    // If the whole range should be used, then actually load that now.
+    if (this->optionMineRulesRange.first == -1) {
+        int n = this->ttwDef->numBuckets - 1;
+        this->optionMineRulesRange = qMakePair((Bucket) 0, (Bucket) n);
+    }
+
+    // Regular mining.
+    if (!this->optionMineRulesCompare) {
+        QString output = QString(
+                         "Mining for association rules over %1 patterns"
+                         " in buckets [%2,%3]...")
+                         .arg(this->analyst->getPatternTreeSize())
+                         .arg(this->optionMineRulesRange.first)
+                         .arg(this->optionMineRulesRange.second);
+
+        this->out("CLI", output, 0);
+        emit mine(this->optionMineRulesRange.first,
+                  this->optionMineRulesRange.second);
+    }
+    // Mine two time ranges and compare.
+    else {
+        QString output = QString(
+                         "Mining for association rules over %1 patterns"
+                         " in buckets [%2,%3] and [%4,%5] and comparing"
+                         " them...")
+                         .arg(this->analyst->getPatternTreeSize())
+                         .arg(this->optionMineRulesRange.first)
+                         .arg(this->optionMineRulesRange.second)
+                         .arg(this->optionMineRulesCompareRange.first)
+                         .arg(this->optionMineRulesCompareRange.second);
+        this->out("CLI", output, 0);
+        emit mineAndCompare(this->optionMineRulesRange.first,
+                            this->optionMineRulesRange.second,
+                            this->optionMineRulesCompareRange.first,
+                            this->optionMineRulesCompareRange.second);
+    }
 }
 
 void CLI::verifyConfig() {
@@ -1073,6 +1088,8 @@ void CLI::connectLogic() {
     connect(this->analyst, SIGNAL(stats(int,Time,Time,quint64,quint64,quint64,quint64,quint64)), SLOT(updatePatternMiningStats(int,Time,Time,quint64,quint64,quint64,quint64,quint64)));
     connect(this->analyst, SIGNAL(mining(bool)), SLOT(updateRuleMiningStatus(bool)));
     connect(this->analyst, SIGNAL(ruleMiningStats(int,Time,Time,quint64,quint64,quint64)), SLOT(updateRuleMiningStats(int,Time,Time,quint64,quint64,quint64)));
+
+    connect(this->analyst, SIGNAL(processedChunkOfBatch(bool)), this, SLOT(startRuleMiningAfterbatch(bool)));
 
     connect(this->analyst, SIGNAL(loaded(bool,Time,Time,quint64,quint64,quint64,quint64,quint64)), SLOT(loaded(bool,Time,Time,quint64,quint64,quint64,quint64,quint64)));
     connect(this->analyst, SIGNAL(saved(bool)), SLOT(saved(bool)));

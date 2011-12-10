@@ -64,11 +64,13 @@ public slots:
 
 private slots:
     void patterMiningFinished();
+    void startRuleMiningAfterbatch(bool lastChunkPatternMined);
 
 private:
     // CLI functionality.
     bool parseCommandOptions();
     void run();
+    void runRuleMiner();
     void verifyConfig();
 
     // Helpers.
@@ -100,6 +102,7 @@ private:
     bool optionMineRulesCompare;
     QPair<Bucket, Bucket> optionMineRulesRange;
     QPair<Bucket, Bucket> optionMineRulesCompareRange;
+    bool optionMineRulesAfterBatch;
     bool optionOutput;
     QString optionOutputFile;
     bool optionOutputStdout;
