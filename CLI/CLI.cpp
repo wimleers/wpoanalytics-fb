@@ -696,15 +696,18 @@ bool CLI::parseCommandOptions() {
     // Optional functionality: rule mining.
     this->optionMineRules = false;
     if (options.count("rules") > 0) {
+        QStringList p;
         this->optionMineRules = true;
 
         // The default range is the *whole* range.
         this->optionMineRulesRange = qMakePair((Bucket) -1, (Bucket) -1);
 
         // Allow --rules-range to override the range.
-        QStringList p = options.value("rules-range").toString().split(",");
-        this->optionMineRulesRange = qMakePair((Bucket) p[0].toUInt(),
-                                               (Bucket) p[1].toUInt());
+        if (options.count("rules-range")) {
+            p = options.value("rules-range").toString().split(",");
+            this->optionMineRulesRange = qMakePair((Bucket) p[0].toUInt(),
+                                                   (Bucket) p[1].toUInt());
+        }
 
         // --rules-compare-range
         this->optionMineRulesCompare = false;
