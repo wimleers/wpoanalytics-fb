@@ -73,7 +73,7 @@ namespace Analytics {
 
     signals:
         void mineForFrequentItemsupersets(const FPTree * tree, const FrequentItemset & suffix);
-        void batchProcessed();
+        void chunkOfBatchProcessed();
 
     public slots:
         void processBatchTransactions(const QList<QStringList> & transactions, double transactionsPerEvent = 1.0, bool startNewTimeWindow = true, bool lastChunkOfBatch = true);

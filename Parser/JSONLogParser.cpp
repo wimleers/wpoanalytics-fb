@@ -241,7 +241,7 @@ namespace JSONLogParser {
     //---------------------------------------------------------------------------
     // Protected slots.
 
-    void Parser::processBatch(const Batch<Config::Sample> & s) {
+    void Parser::processChunkOfBatch(const Batch<Config::Sample> & s) {
         Batch<RawTransaction> b;
         b.meta           = s.meta;
         b.meta.samples   = s.data.size();
@@ -266,7 +266,7 @@ namespace JSONLogParser {
         b.meta.itemsPerTransaction   = 1.0 * b.meta.items/b.meta.transactions;
 
         emit stats(timer.elapsed(), b.meta);
-        emit parsedBatch(b);
+        emit parsedChunkOfBatch(b);
 
         // Pause the parsing until these transactions have been processed!
         this->mutex.lock();
@@ -324,7 +324,7 @@ namespace JSONLogParser {
                     quint32 newBatchID = Parser::calculateBatchID(sample.time);
                     if (newBatchID > batchID && !b.data.isEmpty()) {
                         b.meta.setChunkInfo(batchID, true, discardedSamples);
-                        this->processBatch(b);
+                        this->processChunkOfBatch(b);
 
                         batchID = newBatchID;
                         discardedSamples = 0;
@@ -338,7 +338,7 @@ namespace JSONLogParser {
             // PROCESS_CHUNK_SIZE lines.
             if (b.data.size() == PROCESS_CHUNK_SIZE) {
                 b.meta.setChunkInfo(batchID, false, discardedSamples);
-                this->processBatch(b);
+                this->processChunkOfBatch(b);
 
                 discardedSamples = 0;
                 b.data.clear();
@@ -349,7 +349,7 @@ namespace JSONLogParser {
 
         if ((finishesTimeWindow || forceProcessing) && !b.data.isEmpty()) {
             b.meta.setChunkInfo(batchID, true, discardedSamples);
-            this->processBatch(b);
+            this->processChunkOfBatch(b);
 
             discardedSamples = 0;
             b.data.clear();

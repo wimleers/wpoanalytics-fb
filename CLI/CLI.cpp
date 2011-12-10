@@ -1058,10 +1058,10 @@ void CLI::initLogic() {
 
 void CLI::connectLogic() {
     // Pure logic.
-    connect(this->parser, SIGNAL(parsedBatch(Batch<RawTransaction>)), this->analyst, SLOT(analyzeBatch(Batch<RawTransaction>)));
+    connect(this->parser, SIGNAL(parsedChunkOfBatch(Batch<RawTransaction>)), this->analyst, SLOT(analyzeChunkOfBatch(Batch<RawTransaction>)));
 
     // Logic -> main thread -> logic (wake up sleeping threads).
-    connect(this->analyst, SIGNAL(processedBatch()), this, SLOT(wakeParser()));
+    connect(this->analyst, SIGNAL(processedChunkOfBatch(bool)), this, SLOT(wakeParser()));
 
     // Logic -> UI.
     connect(this->parser, SIGNAL(parsing(bool)), SLOT(updateParsingStatus(bool)));

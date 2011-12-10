@@ -43,14 +43,14 @@ namespace JSONLogParser {
     signals:
         void parsing(bool);
         void stats(int duration, BatchMetadata metadata);
-        void parsedBatch(Batch<RawTransaction> transactions);
+        void parsedChunkOfBatch(Batch<RawTransaction> transactions);
 
     public slots:
         void parse(const QString & fileName);
         void continueParsing();
 
     protected slots:
-        void processBatch(const Batch<Config::Sample> & batch);
+        void processChunkOfBatch(const Batch<Config::Sample> & chunk);
 
     protected:
         virtual WindowMarkerMethod getWindowMarkerMethod() const;

@@ -213,7 +213,7 @@ namespace Analytics {
             this->processingBatch = false;
             this->statusMutex.unlock();
 
-            emit batchProcessed();
+            emit chunkOfBatchProcessed();
         }
         // Subsequent batches.
         else {
@@ -431,7 +431,7 @@ namespace Analytics {
             qDebug() << "\tf_list size: " << this->f_list->size();
 #endif
 
-            emit batchProcessed();
+            emit chunkOfBatchProcessed();
         }
     }
 

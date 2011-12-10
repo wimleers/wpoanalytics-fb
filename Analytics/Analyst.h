@@ -55,7 +55,7 @@ namespace Analytics {
         void newItemsEncountered(Analytics::ItemIDNameHash itemIDNameHash);
 
         // Signals for calculations.
-        void processedBatch();
+        void processedChunkOfBatch(bool batchCompleted);
         void minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange);
         void comparedMinedRules(uint fromOlder, uint toOlder,
                                 uint fromNewer, uint toNewer,
@@ -71,14 +71,14 @@ namespace Analytics {
                                 Analytics::SupportCount eventsInNewerTimeRange);
 
     public slots:
-        void analyzeBatch(Batch<RawTransaction> batch);
+        void analyzeChunkOfBatch(Batch<RawTransaction> chunk);
         void mineRules(uint from, uint to);
         void mineAndCompareRules(uint fromOlder, uint toOlder, uint fromNewer, uint toNewer);
         void load(QString fileName);
         void save(QString fileName);
 
     protected slots:
-        void fpstreamProcessedBatch();
+        void fpstreamProcessedChunkOfBatch();
 
     protected:
         TTWDefinition ttwDef;
@@ -87,6 +87,7 @@ namespace Analytics {
         double maxSupportError;
         double minConfidence;
         quint32 currentQuarterID;
+        bool isLastChunk;
 
         Constraints frequentItemsetItemConstraints;
         Constraints ruleAntecedentItemConstraints;

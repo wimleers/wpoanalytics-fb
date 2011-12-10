@@ -7,6 +7,7 @@ namespace Analytics {
         this->setParameters(minSupport, maxSupportError, minConfidence);
 
         this->currentQuarterID = 0;
+        this->isLastChunk = false;
 
         // Stats for the UI.
         this->allBatchesNumPageViews = 0;
@@ -21,7 +22,7 @@ namespace Analytics {
 #endif
 
         this->fpstream = new FPStream(this->ttwDef, this->minSupport, this->maxSupportError, &this->itemIDNameHash, &this->itemNameIDHash, &this->sortedFrequentItemIDs);
-        connect(this->fpstream, SIGNAL(batchProcessed()), this, SLOT(fpstreamProcessedBatch()));
+        connect(this->fpstream, SIGNAL(chunkOfBatchProcessed()), this, SLOT(fpstreamProcessedChunkOfBatch()));
     }
 
     Analyst::~Analyst() {
@@ -169,16 +170,16 @@ namespace Analytics {
     //------------------------------------------------------------------------
     // Public slots.
 
-    void Analyst::analyzeBatch(Batch<RawTransaction> batch) {
+    void Analyst::analyzeChunkOfBatch(Batch<RawTransaction> chunk) {
         // Stats for the UI.
-        this->currentBatchStartTime       = batch.meta.startTime;
-        this->currentBatchEndTime         = batch.meta.endTime;
-        this->currentBatchNumPageViews    = batch.meta.samples;
-        this->currentBatchNumTransactions = batch.meta.transactions;
+        this->currentBatchStartTime       = chunk.meta.startTime;
+        this->currentBatchEndTime         = chunk.meta.endTime;
+        this->currentBatchNumPageViews    = chunk.meta.samples;
+        this->currentBatchNumTransactions = chunk.meta.transactions;
         this->timer.start();
 
         // Necessary to be able to update the browsable concept hierarchy in
-        // Analyst::fpstreamProcessedBatch().
+        // Analyst::fpstreamProcessedChunkOfBatch().
         this->uniqueItemsBeforeMining = this->itemIDNameHash.size();
 
         // Notify the UI.
@@ -210,22 +211,23 @@ namespace Analytics {
 
         // Perform the actual mining.
         static bool initial = true;
+        this->isLastChunk = chunk.meta.isLastChunk;
         bool startNewTimeWindow;
         if (initial) {
             this->fpstream->setConstraints(this->frequentItemsetItemConstraints);
             this->fpstream->setConstraintsToPreprocess(this->ruleConsequentItemConstraints);
             initial = false;
         }
-        if (batch.meta.batchID != this->currentQuarterID) {
-            this->currentQuarterID = batch.meta.batchID;
+        if (chunk.meta.batchID != this->currentQuarterID) {
+            this->currentQuarterID = chunk.meta.batchID;
             startNewTimeWindow = true;
         }
         else
             startNewTimeWindow = false;
-        this->fpstream->processBatchTransactions(batch.data,
-                                                 batch.meta.transactionsPerSample,
+        this->fpstream->processBatchTransactions(chunk.data,
+                                                 chunk.meta.transactionsPerSample,
                                                  startNewTimeWindow,
-                                                 batch.meta.isLastChunk);
+                                                 chunk.meta.isLastChunk);
 
         /*
         qDebug() << this->fpstream->getPatternTree().getNodeCount();
@@ -235,8 +237,9 @@ namespace Analytics {
 
         // Since the mining above is performed asynchronously, this is NOT the
         // place where we know the calculations end. Only FP-Stream can know,
-        // hence FP-Stream's processedBatch() signal is the correct indicator.
-        // This signal is then sent from the @function fpstreamProcessedBatch()
+        // hence FP-Stream's processedChunkOfBatch() signal is the correct
+        // indicator.
+        // This signal is then sent from the fpstreamProcessedChunkOfBatch()
         // slot.
     }
 
@@ -495,7 +498,7 @@ namespace Analytics {
     //------------------------------------------------------------------------
     // Protected slots.
 
-    void Analyst::fpstreamProcessedBatch() {
+    void Analyst::fpstreamProcessedChunkOfBatch() {
         int duration = this->timer.elapsed();
         if (this->allBatchesStartTime == 0)
             this->allBatchesStartTime = this->currentBatchStartTime;
@@ -516,6 +519,6 @@ namespace Analytics {
                     this->fpstream->getPatternTreeSize()
         );
         emit analyzing(false, 0, 0, 0, 0);
-        emit processedBatch();
+        emit processedChunkOfBatch(this->isLastChunk);
     }
 }
