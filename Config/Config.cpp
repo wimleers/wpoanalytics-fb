@@ -17,6 +17,10 @@ namespace Config {
             QString rawJSON = file.readAll();
             QVariantMap json = QxtJSON::parse(rawJSON).toMap();
 
+            // Metadata.
+            if (json.keys().contains("metadata"))
+                this->metadata = json["metadata"].toMap();
+
             // Parser.
             const QVariantMap & parserJSON = json["parser"].toMap();
             this->parserCategoricalItemConstraints = Config::parseConstraints(parserJSON, "categorical item constraints");

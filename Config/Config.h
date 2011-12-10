@@ -71,6 +71,9 @@ namespace Config {
         bool parse(const QString & fileName);
         bool reload() { return this->parse(this->fileName); }
 
+        // Getters (meta).
+        const QVariantMap & getMetadata() const { return this->metadata; }
+
         // Getters (parser).
         const Analytics::ItemConstraintsHash & getParserCategoricalItemConstraints() const { return this->parserCategoricalItemConstraints; }
         const Analytics::ItemConstraintsHash & getParserNumericalItemConstraints() const { return this->parserNumericalItemConstraints; }
@@ -103,6 +106,9 @@ namespace Config {
         static Attribute parseAttribute(const QVariantMap & json, const QString & field);
         static QSet<Discretization> parseDiscretizations(const QVariant & json, const QString & field);
         static QString parseSerializedTTWDef(const QVariantMap & json, const QString & field);
+
+        // Meta.
+        QVariantMap metadata;
 
         // Parser.
         Analytics::ItemConstraintsHash parserCategoricalItemConstraints;

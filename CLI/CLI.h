@@ -5,6 +5,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QPair>
+#include <QDateTime>
 
 #include "../shared/qxtcommandoptions.h"
 #include "../shared/qxtjson.h"
@@ -102,6 +103,7 @@ private:
     bool optionOutput;
     QString optionOutputFile;
     bool optionOutputStdout;
+    bool optionOutputFormatRFEJSON;
     bool optionSaveStateAfterEveryChunk;
 
     // Threads.

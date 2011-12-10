@@ -1,4 +1,8 @@
 {
+  "metadata" : {
+    "dataset" : "cavalry",
+    "subset" : "*",
+  },
 	"query" : {
 		"patterns" : {
 			"minimum support" : 0.05,

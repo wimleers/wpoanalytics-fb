@@ -319,7 +319,6 @@ void CLI::updateRuleMiningStats(int duration, Time start, Time end, quint64 numA
 void CLI::minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange) {
     Q_UNUSED(from)
     Q_UNUSED(to)
-    Q_UNUSED(eventsInTimeRange)
 
 
     QFile file;
@@ -341,20 +340,69 @@ void CLI::minedRules(uint from, uint to, QList<Analytics::AssociationRule> assoc
     else {
         QTextStream out(&file);
 
+        Time time = QDateTime::currentDateTime().toTime_t();
+
         QVariantMap ruleJSON;
         foreach (const Analytics::AssociationRule & rule, associationRules) {
-            QVariantList antecedentJSON;
-            foreach (const Analytics::ItemName & itemName, this->analyst->itemsetIDsToNames(rule.antecedent))
-                antecedentJSON.append((QString) itemName);
+            Analytics::ItemNameList itemNames;
+            double relSupport = 1.0 * rule.support / eventsInTimeRange;
 
-            QVariantList consequentJSON;
-            foreach (const Analytics::ItemName & itemName, this->analyst->itemsetIDsToNames(rule.consequent))
-                consequentJSON.append((QString) itemName);
+            // "JSON" output format.
+            if (!this->optionOutputFormatRFEJSON) {
+                QVariantList antecedentJSON;
+                itemNames = this->analyst->itemsetIDsToNames(rule.antecedent);
+                foreach (const Analytics::ItemName & itemName, itemNames)
+                    antecedentJSON.append((QString) itemName);
 
-            ruleJSON.insert("antecedent", antecedentJSON);
-            ruleJSON.insert("consequent", consequentJSON);
-            ruleJSON.insert("support", (int) rule.support);
-            ruleJSON.insert("confidence", (double) rule.confidence);
+                QVariantList consequentJSON;
+                itemNames = this->analyst->itemsetIDsToNames(rule.consequent);
+                foreach (const Analytics::ItemName & itemName, itemNames)
+                    consequentJSON.append((QString) itemName);
+
+                ruleJSON.insert("antecedent", antecedentJSON);
+                ruleJSON.insert("consequent", consequentJSON);
+                ruleJSON.insert("support", (int) rule.support);
+                ruleJSON.insert("confidence", (double) rule.confidence);
+                ruleJSON.insert("relativeSupport", (double) relSupport);
+            }
+            // "RFEJSON" output format.
+            else {
+                // "normal" fields.
+                static QVariantMap normalSection;
+                if (normalSection.isEmpty()) {
+                    QStringList keys = QStringList() << "dataset" << "subset";
+                    foreach (const QString & key, keys)
+                        if (this->config->getMetadata().keys().contains(key))
+                            normalSection.insert(
+                                key, this->config->getMetadata()[key]
+                            );
+                }
+                ruleJSON["normal"] = normalSection;
+
+                // "int" fields.
+                QVariantMap intSection;
+                intSection.insert("time", (int) time);
+                intSection.insert("support", (int) rule.support);
+                intSection.insert("confidence", (int) (rule.confidence*10000));
+                intSection.insert("relativeSupport", (int) (relSupport*10000));
+                ruleJSON["int"] = intSection;
+
+                // "tags" fields.
+                QVariantMap tagsSection;
+                QVariantMap antecedentSection, consequentSection;
+                itemNames = this->analyst->itemsetIDsToNames(rule.antecedent);
+                foreach (const Analytics::ItemName & itemName, itemNames)
+                    antecedentSection.insert((QString) itemName, 1);
+                tagsSection.insert("antecedent", antecedentSection);
+                itemNames = this->analyst->itemsetIDsToNames(rule.consequent);
+                foreach (const Analytics::ItemName & itemName, itemNames)
+                    consequentSection.insert((QString) itemName, 1);
+                tagsSection.insert("consequent", antecedentSection);
+
+                // Throw all fields in the structure RFE expects.
+                ruleJSON.insert("int", intSection);
+                ruleJSON.insert("tags", tagsSection);
+            }
 
             out << QxtJSON::stringify(ruleJSON) << "\n";
 
@@ -573,6 +621,8 @@ bool CLI::parseCommandOptions() {
     options.alias("output", "o");
     options.add("output-stdout", "Use stdout as output for storing the mined rules (overrides --output).", QxtCommandOptions::NoValue, outputGroup);
     options.alias("output-stdout", "os");
+    options.add("output-format", "Define the output format. Supported formats: 'JSON' (default), 'RFEJSON'. When using 'RFEJSON', specify 'dataset' and 'subset' metadata values in Config file.", QxtCommandOptions::ValueRequired);
+    options.alias("output-format", "of");
     // Verification.
     options.add("verify-config", "Verify a config file.", QxtCommandOptions::NoValue);
     options.add("verify-state", "Verify a state file.", QxtCommandOptions::NoValue);
@@ -675,6 +725,14 @@ bool CLI::parseCommandOptions() {
         else if (options.count("output-stdout")) {
             this->optionOutput = true;
             this->optionOutputStdout = true;
+        }
+
+        // --output-format
+        if (options.count("output-format")) {
+            QString fmt = options.value("output-format").toString().toUpper();
+            if (fmt == "RFEJSON")
+                this->optionOutputFormatRFEJSON = true;
+            // "JSON" is already the default.
         }
     }
 
