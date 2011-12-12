@@ -141,13 +141,20 @@ void MainWindow::updateAnalyzingStats(int duration, Time start, Time end, quint6
     );
 }
 
-void MainWindow::minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange) {
-    // Confusing here, `toTime` uses `from`, `fromTime` uses `to`. It has good
+void MainWindow::minedRules(uint from, uint to,
+                            uint startTime, uint endTime,
+                            QList<Analytics::AssociationRule> associationRules,
+                            Analytics::SupportCount eventsInTimeRange)
+{
+    Q_UNUSED(startTime)
+    Q_UNUSED(endTime)
+
+    // Confusing here, `toTime` uses `from`, `fromTime` uses `to`. It has a good
     // reason though: the `from` bucket refers to the first bucket in memory,
     // but it contains the most recent data, hence `toTime`.
-    Time lastBucketEndTime = this->ttwDef->calculateTimeOfNextBucket(this->endTime);
-    Time toTime = lastBucketEndTime- this->ttwDef->calculateSecondsToBucket(from, false);
-    Time fromTime = lastBucketEndTime - this->ttwDef->calculateSecondsToBucket(to, true);
+    Time lastTime = this->ttwDef->timeOfNextBucket(this->endTime);
+    Time toTime   = lastTime - this->ttwDef->secondsToBucket(from, false);
+    Time fromTime = lastTime - this->ttwDef->secondsToBucket(to, true);
 
     this->statusMutex.lock();
     this->causesDescription->setText(

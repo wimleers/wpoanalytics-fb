@@ -87,7 +87,10 @@ public slots:
     // Analyst: mining.
     void updateRuleMiningStatus(bool mining);
     void updateRuleMiningStats(int duration, Time start, Time end, quint64 numAssociationRules, quint64 numTransactions, quint64 numLines);
-    void minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange);
+    void minedRules(uint from, uint to,
+                    uint startTime, uint endTime,
+                    QList<Analytics::AssociationRule> associationRules,
+                    Analytics::SupportCount eventsInTimeRange);
     void comparedMinedRules(uint fromOlder, uint toOlder,
                             uint fromNewer, uint toNewer,
                             QList<Analytics::AssociationRule> intersectedRules,

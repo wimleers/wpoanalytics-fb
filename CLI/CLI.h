@@ -5,7 +5,6 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QPair>
-#include <QDateTime>
 
 #include "../shared/qxtcommandoptions.h"
 #include "../shared/qxtjson.h"
@@ -138,6 +137,7 @@ private:
     int patternTreeSize;
     Time startTime;
     Time endTime;
+    Time currentBatchEndTime;
     // Parser.
     quint64 statsParserDuration;
     quint64 statsParserLines;

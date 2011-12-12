@@ -171,9 +171,9 @@ void CLI::updatePatternMiningStatus(bool miningPatterns, Time start, Time end, q
 
 void CLI::updatePatternMiningStats(int duration, Time start, Time end, quint64 pageViews, quint64 transactions, quint64 uniqueItems, quint64 frequentItems, quint64 patternTreeSize) {
     Q_UNUSED(start)
-    Q_UNUSED(end)
 
     this->statsMutex.lock();
+    this->currentBatchEndTime = end;
     // Chunk-specific.
     this->statsAnalystDuration += duration;
     this->statsAnalystLines += pageViews;
@@ -340,7 +340,13 @@ void CLI::minedRules(uint from, uint to, QList<Analytics::AssociationRule> assoc
     else {
         QTextStream out(&file);
 
-        Time time = QDateTime::currentDateTime().toTime_t();
+        // Confusing here, `toTime` uses `from`, `fromTime` uses `to`. It has a
+        // good reason though: the `from` bucket refers to the first bucket in
+        // memory, but it contains the most recent data, hence `toTime`.
+        Time lastTime, toTime, fromTime;
+        lastTime = this->ttwDef->timeOfNextBucket(this->currentBatchEndTime);
+        toTime   = lastTime - this->ttwDef->secondsToBucket(from, false);
+        fromTime = lastTime - this->ttwDef->secondsToBucket(to, true);
 
         QVariantMap ruleJSON;
         foreach (const Analytics::AssociationRule & rule, associationRules) {
@@ -381,7 +387,8 @@ void CLI::minedRules(uint from, uint to, QList<Analytics::AssociationRule> assoc
 
                 // "int" fields.
                 QVariantMap intSection;
-                intSection.insert("time", (int) time);
+                intSection.insert("startTime", (int) fromTime);
+                intSection.insert("endTime", (int) toTime);
                 intSection.insert("support", (int) rule.support);
                 intSection.insert("confidence", (int) (rule.confidence*10000));
                 intSection.insert("relativeSupport", (int) (relSupport*10000));

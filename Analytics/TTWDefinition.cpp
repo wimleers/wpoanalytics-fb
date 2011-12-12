@@ -71,7 +71,7 @@ namespace Analytics {
     /**
      * Measure the distance from bucket 0 to the given bucket.
      */
-    uint TTWDefinition::calculateSecondsToBucket(Bucket bucket, bool includeBucketItself) const {
+    uint TTWDefinition::secondsToBucket(Bucket bucket, bool includeBucketItself) const {
         uint secs = 0;
         Granularity g = 0;
         uint secsPerBucket = this->secPerWindow;
@@ -89,7 +89,7 @@ namespace Analytics {
         return secs;
     }
 
-    uint TTWDefinition::calculateTimeOfNextBucket(uint time) const {
+    uint TTWDefinition::timeOfNextBucket(uint time) const {
         return time - (time % this->secPerWindow) + this->secPerWindow;
     }
 
