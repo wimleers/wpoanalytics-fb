@@ -5,6 +5,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QPair>
+#include <QDateTime>
 
 #include "../shared/qxtcommandoptions.h"
 #include "../shared/qxtjson.h"

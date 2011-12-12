@@ -341,6 +341,8 @@ void CLI::minedRules(uint from, uint to,
     else {
         QTextStream out(&file);
 
+        Time currentTime = QDateTime::currentDateTime().toTime_t();
+
         // Confusing here, `toTime` uses `from`, `fromTime` uses `to`. It has a
         // good reason though: the `from` bucket refers to the first bucket in
         // memory, but it contains the most recent data, hence `toTime`.
@@ -387,6 +389,7 @@ void CLI::minedRules(uint from, uint to,
 
                 // "int" fields.
                 QVariantMap intSection;
+                intSection.insert("time",       (int) currentTime);
                 intSection.insert("time_start", (int) fromTime);
                 intSection.insert("time_end",   (int) toTime);
                 intSection.insert("support",    (int) rule.support);
@@ -469,6 +472,8 @@ void CLI::comparedMinedRules(uint fromOlder, uint toOlder,
     else {
         QTextStream out(&file);
 
+        Time currentTime = QDateTime::currentDateTime().toTime_t();
+
         // Confusing here, `toTime` uses `from`, `fromTime` uses `to`. It has a
         // good reason though: the `from` bucket refers to the first bucket in
         // memory, but it contains the most recent data, hence `toTime`.
@@ -526,6 +531,7 @@ void CLI::comparedMinedRules(uint fromOlder, uint toOlder,
 
                 // "int" fields.
                 QVariantMap intSection;
+                intSection.insert("time",             (int) currentTime);
                 intSection.insert("time_older_start", (int) olderFromTime);
                 intSection.insert("time_older_end",   (int) olderToTime);
                 intSection.insert("time_newer_start", (int) newerFromTime);
