@@ -63,7 +63,7 @@ public slots:
 
 private slots:
     void patterMiningFinished();
-    void startRuleMiningAfterbatch(bool lastChunkPatternMined);
+    void startRuleMiningAfterBatch(bool lastChunkPatternMined);
 
 private:
     // CLI functionality.

@@ -597,7 +597,7 @@ void CLI::patterMiningFinished() {
     this->run();
 }
 
-void CLI::startRuleMiningAfterbatch(bool lastChunkPatternMined) {
+void CLI::startRuleMiningAfterBatch(bool lastChunkPatternMined) {
     if (lastChunkPatternMined && this->optionMineRulesAfterBatch)
         this->runRuleMiner();
 }
@@ -1096,7 +1096,7 @@ void CLI::connectLogic() {
     connect(this->analyst, SIGNAL(mining(bool)), SLOT(updateRuleMiningStatus(bool)));
     connect(this->analyst, SIGNAL(ruleMiningStats(int,Time,Time,quint64,quint64,quint64)), SLOT(updateRuleMiningStats(int,Time,Time,quint64,quint64,quint64)));
 
-    connect(this->analyst, SIGNAL(processedChunkOfBatch(bool)), this, SLOT(startRuleMiningAfterbatch(bool)));
+    connect(this->analyst, SIGNAL(processedChunkOfBatch(bool)), this, SLOT(startRuleMiningAfterBatch(bool)));
 
     connect(this->analyst, SIGNAL(loaded(bool,Time,Time,quint64,quint64,quint64,quint64,quint64)), SLOT(loaded(bool,Time,Time,quint64,quint64,quint64,quint64,quint64)));
     connect(this->analyst, SIGNAL(saved(bool)), SLOT(saved(bool)));
