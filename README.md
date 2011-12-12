@@ -134,6 +134,20 @@ was introduced.
 There is only one external dependency: Qt.
 
 
+## Data stream format (input data)
+
+The data stream format is very simple. Each sample in the data stream:
+
+* is terminated by a newline character (`\n`)
+* is a JSON object that contains up to 3 other JSON objects:
+  * `int`: all numerical attributes
+  * `normal`: all normalized attributes (i.e. limited range of values)
+  * `denorm`: all denormalized attributes (i.e. *unlimited* range of values)
+
+Example of a valid sample:
+
+    { "int" : {"time":1316383200, "some value":42}, "normal" : {"category":"foo", "section":"bar"}, "denorm" : {"ip address":"127.0.0.1"}}
+
 
 ## Code style
 
@@ -197,7 +211,7 @@ Meego, iOS or embedded Linux).
 Install Qt Creator. Then open any of the .pro files; Qt Creator will open
 automatically. Click the green arrow at the bottom left and off you go.
 
-**Note**: I recommend configuring Qt Creator to set the `-j 8` argument for
+**Note:** I recommend configuring Qt Creator to set the `-j 8` argument for
 `make`. To do this, go to Projects → Build settings → Build steps → Make →
 Details → Make arguments and enter `-j 8`. Your builds will now be
 *significantly* faster!
