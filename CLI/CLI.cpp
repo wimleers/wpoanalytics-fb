@@ -316,11 +316,10 @@ void CLI::updateRuleMiningStats(int duration, Time start, Time end, quint64 numA
 
 }
 
-void CLI::minedRules(uint from, uint to, QList<Analytics::AssociationRule> associationRules, Analytics::SupportCount eventsInTimeRange) {
-    Q_UNUSED(from)
-    Q_UNUSED(to)
-
-
+void CLI::minedRules(uint from, uint to,
+                     QList<Analytics::AssociationRule> associationRules,
+                     Analytics::SupportCount eventsInTimeRange)
+{
     QFile file;
     bool opened = false;
 
@@ -329,13 +328,15 @@ void CLI::minedRules(uint from, uint to, QList<Analytics::AssociationRule> assoc
         opened = file.open(stdout, QIODevice::WriteOnly | QIODevice::Text);
     }
     else {
-        this->out("CLI", QString("Saving rules to '%1'.").arg(this->optionOutputFile), 0);
+        this->out("CLI", QString("Saving rules to '%1'.")
+             .arg(this->optionOutputFile), 0);
         file.setFileName(this->optionOutputFile);
         opened = file.open(QIODevice::WriteOnly | QIODevice::Text);
     }
 
     if (!opened) {
-        qCritical("Could not open file %s for writing.", qPrintable(this->optionOutputFile));
+        qCritical("Could not open file %s for writing.",
+                  qPrintable(this->optionOutputFile));
     }
     else {
         QTextStream out(&file);
@@ -459,13 +460,15 @@ void CLI::comparedMinedRules(uint fromOlder, uint toOlder,
         opened = file.open(stdout, QIODevice::WriteOnly | QIODevice::Text);
     }
     else {
-        this->out("CLI", QString("Saving rules to '%1'.").arg(this->optionOutputFile), 0);
+        this->out("CLI", QString("Saving rules to '%1'.")
+             .arg(this->optionOutputFile), 0);
         file.setFileName(this->optionOutputFile);
         opened = file.open(QIODevice::WriteOnly | QIODevice::Text);
     }
 
     if (!opened) {
-        qCritical("Could not open file %s for writing.", qPrintable(this->optionOutputFile));
+        qCritical("Could not open file %s for writing.",
+                  qPrintable(this->optionOutputFile));
     }
     else {
         QTextStream out(&file);
