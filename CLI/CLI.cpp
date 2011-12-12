@@ -366,10 +366,10 @@ void CLI::minedRules(uint from, uint to,
                 foreach (const Analytics::ItemName & itemName, itemNames)
                     consequentJSON.append((QString) itemName);
 
-                ruleJSON.insert("antecedent", antecedentJSON);
-                ruleJSON.insert("consequent", consequentJSON);
-                ruleJSON.insert("support", (int) rule.support);
-                ruleJSON.insert("confidence", (double) rule.confidence);
+                ruleJSON.insert("antecedent",      antecedentJSON);
+                ruleJSON.insert("consequent",      consequentJSON);
+                ruleJSON.insert("support",         (int) rule.support);
+                ruleJSON.insert("confidence",      (double) rule.confidence);
                 ruleJSON.insert("relativeSupport", (double) relSupport);
             }
             // "RFEJSON" output format.
@@ -384,15 +384,14 @@ void CLI::minedRules(uint from, uint to,
                                 key, this->config->getMetadata()[key]
                             );
                 }
-                ruleJSON["normal"] = normalSection;
 
                 // "int" fields.
                 QVariantMap intSection;
-                intSection.insert("startTime", (int) fromTime);
-                intSection.insert("endTime", (int) toTime);
-                intSection.insert("support", (int) rule.support);
+                intSection.insert("time_start", (int) fromTime);
+                intSection.insert("time_end",   (int) toTime);
+                intSection.insert("support",    (int) rule.support);
                 intSection.insert("confidence", (int) (rule.confidence*10000));
-                intSection.insert("relativeSupport", (int) (relSupport*10000));
+                intSection.insert("support_relative", (int) (relSupport*10000));
                 ruleJSON["int"] = intSection;
 
                 // "tags" fields.
@@ -408,8 +407,9 @@ void CLI::minedRules(uint from, uint to,
                 tagsSection.insert("consequent", antecedentSection);
 
                 // Throw all fields in the structure RFE expects.
-                ruleJSON.insert("int", intSection);
-                ruleJSON.insert("tags", tagsSection);
+                ruleJSON.insert("normal", normalSection);
+                ruleJSON.insert("int",    intSection);
+                ruleJSON.insert("tags",   tagsSection);
             }
 
             out << QxtJSON::stringify(ruleJSON) << "\n";
@@ -441,10 +441,6 @@ void CLI::comparedMinedRules(uint fromOlder, uint toOlder,
                             Analytics::SupportCount eventsInOlderTimeRange,
                             Analytics::SupportCount eventsInNewerTimeRange)
 {
-    Q_UNUSED(fromOlder)
-    Q_UNUSED(toOlder)
-    Q_UNUSED(fromNewer)
-    Q_UNUSED(toNewer)
     Q_UNUSED(intersectedRules)
     Q_UNUSED(olderRules)
     Q_UNUSED(newerRules)
@@ -473,30 +469,100 @@ void CLI::comparedMinedRules(uint fromOlder, uint toOlder,
     else {
         QTextStream out(&file);
 
+        // Confusing here, `toTime` uses `from`, `fromTime` uses `to`. It has a
+        // good reason though: the `from` bucket refers to the first bucket in
+        // memory, but it contains the most recent data, hence `toTime`.
+        Time lastTime, olderToTime, olderFromTime, newerToTime, newerFromTime;
+        lastTime = this->ttwDef->timeOfNextBucket(this->currentBatchEndTime);
+        olderToTime  =lastTime- this->ttwDef->secondsToBucket(fromOlder, false);
+        olderFromTime=lastTime- this->ttwDef->secondsToBucket(toOlder, true);
+        newerToTime  =lastTime- this->ttwDef->secondsToBucket(fromNewer, false);
+        newerFromTime=lastTime- this->ttwDef->secondsToBucket(toNewer, true);
+
         QVariantMap ruleJSON;
         for (int i = 0; i < comparedRules.size(); i++) {
             Analytics::AssociationRule rule = comparedRules.at(i);
+            Analytics::ItemNameList itemNames;
 
-            QVariantList antecedentJSON;
-            foreach (const Analytics::ItemName & itemName, this->analyst->itemsetIDsToNames(rule.antecedent))
-                antecedentJSON.append((QString) itemName);
+            // "JSON" output format.
+            if (!this->optionOutputFormatRFEJSON) {
+                QVariantList antecedentJSON;
+                itemNames = this->analyst->itemsetIDsToNames(rule.antecedent);
+                foreach (const Analytics::ItemName & itemName, itemNames)
+                    antecedentJSON.append((QString) itemName);
 
-            QVariantList consequentJSON;
-            foreach (const Analytics::ItemName & itemName, this->analyst->itemsetIDsToNames(rule.consequent))
-                consequentJSON.append((QString) itemName);
+                QVariantList consequentJSON;
+                itemNames = this->analyst->itemsetIDsToNames(rule.consequent);
+                foreach (const Analytics::ItemName & itemName, itemNames)
+                    consequentJSON.append((QString) itemName);
 
-            ruleJSON.insert("antecedent",          antecedentJSON);
-            ruleJSON.insert("consequent",          consequentJSON);
-            ruleJSON.insert("support",             (int) rule.support);
-            ruleJSON.insert("confidence",          (double) rule.confidence);
-            ruleJSON.insert("support variance",    (double) supportVariance[i]);
-            // TRICKY: we're explicitly checking -1/1 because QxtJSON doesn't
-            // appear able to serialize this correctly :(
-            if (confidenceVariance[i] == -1 || confidenceVariance[i] == 1)
-                ruleJSON.insert("confidence variance", (int) confidenceVariance[i]);
-            else
-                ruleJSON.insert("confidence variance", (bool) confidenceVariance[i]);
-            ruleJSON.insert("relative support",    (double) relativeSupport[i]);
+                ruleJSON.insert("antecedent",       antecedentJSON);
+                ruleJSON.insert("consequent",       consequentJSON);
+                ruleJSON.insert("support",          (int) rule.support);
+                ruleJSON.insert("confidence",       (double) rule.confidence);
+                ruleJSON.insert("relative support", (double)relativeSupport[i]);
+                ruleJSON.insert("support variance", (double)supportVariance[i]);
+                // TRICKY: we're explicitly checking -1/1 because QxtJSON does
+                // not appear able to serialize this correctly :(
+                if (confidenceVariance[i] == -1 || confidenceVariance[i] == 1)
+                    ruleJSON.insert("confidence variance",
+                                    (int) confidenceVariance[i]);
+                else
+                    ruleJSON.insert("confidence variance",
+                                    (double) confidenceVariance[i]);
+            }
+            // "RFEJSON" output format.
+            else {
+                // "normal" fields.
+                static QVariantMap normalSection;
+                if (normalSection.isEmpty()) {
+                    QStringList keys = QStringList() << "dataset" << "subset";
+                    foreach (const QString & key, keys)
+                        if (this->config->getMetadata().keys().contains(key))
+                            normalSection.insert(
+                                key, this->config->getMetadata()[key]
+                            );
+                }
+
+                // "int" fields.
+                QVariantMap intSection;
+                intSection.insert("time_older_start", (int) olderFromTime);
+                intSection.insert("time_older_end",   (int) olderToTime);
+                intSection.insert("time_newer_start", (int) newerFromTime);
+                intSection.insert("time_newer_end",   (int) newerToTime);
+                intSection.insert("support",    (int) rule.support);
+                intSection.insert("confidence", (int) (rule.confidence*10000));
+                intSection.insert("support_relative",
+                                  (int) (relativeSupport[i] * 10000));
+                intSection.insert("support_variance",
+                                  (double) supportVariance[i]);
+                // TRICKY: we're explicitly checking -1/1 because QxtJSON does
+                // not appear able to serialize this correctly :(
+                if (confidenceVariance[i] == -1 || confidenceVariance[i] == 1)
+                    intSection.insert("confidence_variance",
+                                      (int) confidenceVariance[i]);
+                else
+                    intSection.insert("confidence_variance",
+                                      (double) confidenceVariance[i]);
+                ruleJSON["int"] = intSection;
+
+                // "tags" fields.
+                QVariantMap tagsSection;
+                QVariantMap antecedentSection, consequentSection;
+                itemNames = this->analyst->itemsetIDsToNames(rule.antecedent);
+                foreach (const Analytics::ItemName & itemName, itemNames)
+                    antecedentSection.insert((QString) itemName, 1);
+                tagsSection.insert("antecedent", antecedentSection);
+                itemNames = this->analyst->itemsetIDsToNames(rule.consequent);
+                foreach (const Analytics::ItemName & itemName, itemNames)
+                    consequentSection.insert((QString) itemName, 1);
+                tagsSection.insert("consequent", antecedentSection);
+
+                // Throw all fields in the structure RFE expects.
+                ruleJSON.insert("normal", normalSection);
+                ruleJSON.insert("int",    intSection);
+                ruleJSON.insert("tags",   tagsSection);
+            }
 
             out << QxtJSON::stringify(ruleJSON) << "\n";
 
@@ -506,8 +572,11 @@ void CLI::comparedMinedRules(uint fromOlder, uint toOlder,
         file.close();
     }
 
-    this->mineCompleted = true;
-    this->run();
+    // Only call run() if we're mining only once, not after ever batch.
+    if (!this->optionMineRulesAfterBatch) {
+        this->mineCompleted = true;
+        this->run();
+    }
 }
 
 
