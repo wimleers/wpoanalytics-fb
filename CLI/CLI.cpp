@@ -377,15 +377,16 @@ void CLI::minedRules(uint from, uint to,
             // "RFEJSON" output format.
             else {
                 // "normal" fields.
-                static QVariantMap normalSection;
-                if (normalSection.isEmpty()) {
+                static QVariantMap baseNormalSection;
+                if (baseNormalSection.isEmpty()) {
                     QStringList keys = QStringList() << "dataset" << "subset";
                     foreach (const QString & key, keys)
                         if (this->config->getMetadata().keys().contains(key))
-                            normalSection.insert(
+                            baseNormalSection.insert(
                                 key, this->config->getMetadata()[key]
                             );
                 }
+                QVariantMap normalSection = baseNormalSection;
 
                 // "int" fields.
                 QVariantMap intSection;
@@ -399,15 +400,26 @@ void CLI::minedRules(uint from, uint to,
 
                 // "tags" fields.
                 QVariantMap tagsSection;
-                QVariantMap antecedentSection, consequentSection;
+                QVariantMap antecedentTagsSection, consequentTagsSection;
+                QString antecedentNormal, consequentNormal;
                 itemNames = this->analyst->itemsetIDsToNames(rule.antecedent);
-                foreach (const Analytics::ItemName & itemName, itemNames)
-                    antecedentSection.insert((QString) itemName, 1);
-                tagsSection.insert("antecedent", antecedentSection);
+                for (int i = 0; i < itemNames.size(); i++) {
+                    antecedentTagsSection.insert((QString) itemNames[i], 1);
+                    antecedentNormal.append((QString) itemNames[i]);
+                    if (i < itemNames.size() - 1)
+                        antecedentNormal.append(" ");
+                }
+                tagsSection.insert("antecedent", antecedentTagsSection);
+                normalSection.insert("antecedent_string", antecedentNormal);
                 itemNames = this->analyst->itemsetIDsToNames(rule.consequent);
-                foreach (const Analytics::ItemName & itemName, itemNames)
-                    consequentSection.insert((QString) itemName, 1);
-                tagsSection.insert("consequent", antecedentSection);
+                for (int i = 0; i < itemNames.size(); i++) {
+                    consequentTagsSection.insert((QString) itemNames[i], 1);
+                    consequentNormal.append((QString) itemNames[i]);
+                    if (i < itemNames.size() - 1)
+                        consequentNormal.append(" ");
+                }
+                tagsSection.insert("consequent", consequentTagsSection);
+                normalSection.insert("consequent_string", consequentNormal);
 
                 // Throw all fields in the structure RFE expects.
                 ruleJSON.insert("normal", normalSection);
@@ -519,15 +531,16 @@ void CLI::comparedMinedRules(uint fromOlder, uint toOlder,
             // "RFEJSON" output format.
             else {
                 // "normal" fields.
-                static QVariantMap normalSection;
-                if (normalSection.isEmpty()) {
+                static QVariantMap baseNormalSection;
+                if (baseNormalSection.isEmpty()) {
                     QStringList keys = QStringList() << "dataset" << "subset";
                     foreach (const QString & key, keys)
                         if (this->config->getMetadata().keys().contains(key))
-                            normalSection.insert(
+                            baseNormalSection.insert(
                                 key, this->config->getMetadata()[key]
                             );
                 }
+                QVariantMap normalSection = baseNormalSection;
 
                 // "int" fields.
                 QVariantMap intSection;
@@ -554,15 +567,26 @@ void CLI::comparedMinedRules(uint fromOlder, uint toOlder,
 
                 // "tags" fields.
                 QVariantMap tagsSection;
-                QVariantMap antecedentSection, consequentSection;
+                QVariantMap antecedentTagsSection, consequentTagsSection;
+                QString antecedentNormal, consequentNormal;
                 itemNames = this->analyst->itemsetIDsToNames(rule.antecedent);
-                foreach (const Analytics::ItemName & itemName, itemNames)
-                    antecedentSection.insert((QString) itemName, 1);
-                tagsSection.insert("antecedent", antecedentSection);
+                for (int i = 0; i < itemNames.size(); i++) {
+                    antecedentTagsSection.insert((QString) itemNames[i], 1);
+                    antecedentNormal.append((QString) itemNames[i]);
+                    if (i < itemNames.size() - 1)
+                        antecedentNormal.append(" ");
+                }
+                tagsSection.insert("antecedent", antecedentTagsSection);
+                normalSection.insert("antecedent_string", antecedentNormal);
                 itemNames = this->analyst->itemsetIDsToNames(rule.consequent);
-                foreach (const Analytics::ItemName & itemName, itemNames)
-                    consequentSection.insert((QString) itemName, 1);
-                tagsSection.insert("consequent", antecedentSection);
+                for (int i = 0; i < itemNames.size(); i++) {
+                    consequentTagsSection.insert((QString) itemNames[i], 1);
+                    consequentNormal.append((QString) itemNames[i]);
+                    if (i < itemNames.size() - 1)
+                        consequentNormal.append(" ");
+                }
+                tagsSection.insert("consequent", consequentTagsSection);
+                normalSection.insert("consequent_string", consequentNormal);
 
                 // Throw all fields in the structure RFE expects.
                 ruleJSON.insert("normal", normalSection);
