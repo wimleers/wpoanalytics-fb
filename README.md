@@ -234,6 +234,11 @@ The following commands can simply be copy/pasted and executed. They build it wit
     qmake patternminer-CLI.pro -config release && make -j 8 && ./patternminer
 
 
+#### Tests
+
+    qmake patternminer-tests.pro && make -j 8 && ./Tests
+
+
 #### GUI in debug mode
 
     qmake patternminer-GUI.pro && make -j 8 && open "PatternMiner GUI.app"

@@ -49,6 +49,7 @@ for more meaningful association rules. Again, this is yet to be implemented.
 There are three sections (JSON object keys) at the root level:
 
 1. `metadata`
+2. `parser`: optionally filter to a subset of the data set
 2. `query`: define the query that you want to apply to the data stream
 3. `attributes`: define which attributes should be
 
@@ -56,6 +57,7 @@ I.e. the overall structure is:
 
     {
       "metadata" : {},
+      "parser" : {},
       "query" : {},
       "atributes" : {},
     }
@@ -80,7 +82,42 @@ I.e. the overall structure is:
     {
       "metadata" : {
         "dataset" : "some data set",
-        "subset" : "cavalry",
+        "subset" : "*",
+      },
+      "parser" : {},
+      "query" : {},
+      "atributes" : {},
+    }
+
+
+
+
+## `parser`
+
+These settings *cannot* be changed anymore once patterns have been mined and
+mining is continued from the state of a previous mining session.
+Unless, of course, you don't mind that data that already exists in the state
+(specifically, in the `PatternTree`) will not be compliant with your new
+settings. They will gradually (as time and thus the data stream passes) be
+updated automatically though.
+
+* `categorical item constraints`: See `query`:`patterns`:`item constraints` for
+details. When parsing, the categorical items of a sample are parsed first.
+If they do not match the categorical item constraints, the sample is dropped.
+* `numerical item constraints`: See `query`:`patterns`:`item constraints` for
+details. When parsing, the numerical items of a sample are parsed after the
+categorical items, because the categorical item constraints may not be matched,
+which allows us to not perform the discretization, which is relatively costly.
+If the discretized numerical items do not match the numerical item constraints,
+the sample is dropped.
+
+I.e. the overall structure is:
+
+    {
+      "metadata" : {},
+      "parser" : {
+        "categorical item constraints" : {},
+        "numerical item constraints" : {},
       },
       "query" : {},
       "atributes" : {},
@@ -100,6 +137,7 @@ I.e. the overall structure is:
 
     {
       "metadata" : {},
+      "parser" : {},
       "query" : {
         "patterns" : {},
         "association rules" : {},
@@ -136,7 +174,10 @@ are OR'ed and support wildcards (thus for negative item constraints: "NOR").
 All item constraints together are AND'ed. See the documentation for the
 `attributes` section for more information about the transformations items go
 through: the item constraints apply to the items as they are defined in the
-`attributes` section. Sample item constraints are:
+`attributes` section. Note that it may sometimes be interesting to add negative
+item constraints here, just to avoid patterns that are occurring 100% of the
+time (which typically occurs when filtering to a subset of the data).  
+Sample item constraints are:
   * `[{ "type" : "==", "items" : ["category:foo"]}]`: positive item constraint
     that requires a value of `"foo"` for the attribute `"category"` for the
     pattern to be stored.
@@ -151,7 +192,7 @@ through: the item constraints apply to the items as they are defined in the
   * `[{ "type" : "==", "items" : ["category:*"]}, { "type" : "!=", "items" : ["category:foo", "category:bar"]}]`:
     positive *and* negative item constraint, that accept a pattern that
     contains *any* category (hence the wildcard) *except* the categories "foo"
-    and "bar".
+    and "bar"
 * `tilted time window definition`: the definition of the tilted time window
 that should be used. `"900:QQQQH"` will create a new time window of the smallest
 (most granular) granularity every 900 seconds (15 minutes, or a **Q**uarter),
@@ -169,6 +210,7 @@ I.e. the overall structure is:
 
     {
       "metadata" : {},
+      "parser" : {},
       "query" : {
         "patterns" : {
           "minimum support" : 0.05,
@@ -206,6 +248,7 @@ I.e. the overall structure is:
 
     {
       "metadata" : {},
+      "parser" : {},
       "query" : {
         "patterns" : {},
         "association rules" : {
@@ -215,7 +258,7 @@ I.e. the overall structure is:
           ],
           "consequent item constraints" : [
             { "type" : "==", "items" : ["circumstance:*"] },
-          ]
+          ],
         },
       },
       "atributes" : {},
@@ -249,6 +292,7 @@ I.e. the overall structure is:
 
     {
       "metadata" : {},
+      "parser" : {},
       "query" : {},
       "atributes" : {
         "categorical" : {},
@@ -343,6 +387,7 @@ I.e. the overall structure is:
 
     {
       "metadata" : {},
+      "parser" : {},
       "query" : {},
       "atributes" : {
         "categorical" : {
